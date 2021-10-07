@@ -38,10 +38,10 @@ pca <-prcomp(aged_data)
 fviz_eig(pca)
 pca_plus_age <- cbind(pca,aged_data$age)
 fviz_pca_var(pca,
-             col.var = "cos2", # Color by contributions to the PC
+             col.var = "contrib", # Color by contributions to the PC
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
              repel = TRUE,     # Avoid text overlapping
-             select.var = list(name =c("FDG_Pos_EM_CD4s","FDG_High_TEMRA_CD8s","FDG_High_EM_CD8s""), cos2 = 10, contrib = 10)
+             select.var = list(name =NULL, cos2 = NULL, contrib = 20)
   )
 factors <- data.frame(pca$x)
 factors$age <- flipped_data$age
