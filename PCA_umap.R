@@ -9,7 +9,7 @@ library(corrplot)
 library(reshape)
 library(Hmisc)
 library(tidyverse)
-
+library(RColorBrewer)
 
 setwd("/home/atom/Desktop/AgingProjects/")
 data <- read_csv("20donors.csv", col_names=FALSE)
@@ -75,13 +75,19 @@ age_correlation$Significance <- age_correlation_test[,1]
 colnames(age_correlation) <- c("Correlation", "Marker", "Significance")
 age_correlation<- age_correlation %>% arrange(Correlation)
 age_correlation$Significance <- round(age_correlation$Significance,3)
+age_correlation$Significance <- paste("(", age_correlation$Significance,sep = "")
+age_correlation$Significance <- paste(age_correlation$Significance,")",sep = "")
+age_correlation$Correlation <- round(age_correlation$Correlation,2)
+age_correlation$Combined <- paste(age_correlation$Correlation, age_correlation$Significance)
 
-ggplot(age_correlation, aes(x = Correlation, y = reorder(Marker, -Correlation), fill=Significance)) + 
+ggplot(age_correlation, aes(x = Correlation, y = reorder(Marker, -Correlation), fill=Correlation)) + 
   geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  geom_text(label=age_correlation$Significance,hjust=-.1) +
+  geom_text(label=age_correlation$Combined,hjust=-.02) +
   theme(
     panel.grid.major = element_blank(), 
     panel.grid.minor = element_blank(),
     panel.background = element_rect(fill = "transparent",colour = NA),
     plot.background = element_rect(fill = "transparent",colour = NA)
-  ) + ylab("Marker") + xlab("Correlation")
+  ) + ylab("Marker") + xlab("Correlation") + guides(fill=FALSE) +
+  xlim(c(0, .7)) + scale_fill_viridis_c(option = "magma")
+
