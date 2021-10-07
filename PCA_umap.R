@@ -27,7 +27,7 @@ ggplot(flipped_data, aes(age, fdg_high_temra_cd4s)) +
   geom_point() +
   geom_smooth(method=lm)
 
-ggscatter(flipped_data, x = "age", y = "FDG_Pos_EM_CD4s", 
+ggscatter(flipped_data, x = "age", y = "FDG_Pos_CM_CD8s", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Age", ylab = "% FDG High Central Memory CD8s ")
@@ -38,23 +38,24 @@ pca <-prcomp(aged_data)
 fviz_eig(pca)
 pca_plus_age <- cbind(pca,aged_data$age)
 fviz_pca_var(pca,
-             col.var = "contrib", # Color by contributions to the PC
+             col.var = "cos2", # Color by contributions to the PC
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE     # Avoid text overlapping
-)
+             repel = TRUE,     # Avoid text overlapping
+             select.var = list(name =c("FDG_Pos_EM_CD4s","FDG_High_TEMRA_CD8s","FDG_High_EM_CD8s""), cos2 = 10, contrib = 10)
+  )
 factors <- data.frame(pca$x)
 factors$age <- flipped_data$age
 ggscatter(factors, x = "age", y = "PC1",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "age", ylab = "PC1")
+          xlab = "Age", ylab = "PC1")
 
 aged_umap <- umap(aged_data,labels = factors$age)
 df <- data.frame(PC1 = aged_umap$layout[,1],
                  PC2 = aged_umap$layout[,2],
                  Age = factors$age)
 ggscatter(df, x= "PC1", y="PC2", color="Age")
-ggscatter(df, x = "Age", y = "PC1", 
+ggscatter(df, x = "Age", y = "PC2", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Age", ylab = "PC2")
@@ -89,5 +90,5 @@ ggplot(age_correlation, aes(x = Correlation, y = reorder(Marker, -Correlation), 
     panel.background = element_rect(fill = "transparent",colour = NA),
     plot.background = element_rect(fill = "transparent",colour = NA)
   ) + ylab("Marker") + xlab("Correlation") + guides(fill=FALSE) +
-  xlim(c(0, .7)) + scale_fill_viridis_c(option = "magma")
+  xlim(c(0, .7)) + scale_fill_distiller(palette = "Reds", direction=11)
 
