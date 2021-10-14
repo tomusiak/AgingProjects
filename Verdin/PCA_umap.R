@@ -11,7 +11,7 @@ library(Hmisc)
 library(tidyverse)
 library(RColorBrewer)
 
-setwd("/home/atom/Desktop/AgingProjects/")
+setwd("/home/atom/Desktop/AgingProjects/Verdin/")
 data <- read_csv("20donors.csv", col_names=FALSE)
 data <- data.frame(data)
 new_data <- data.frame(data[,-c(1,3,4)])
@@ -38,10 +38,10 @@ pca <-prcomp(aged_data)
 fviz_eig(pca)
 pca_plus_age <- cbind(pca,aged_data$age)
 fviz_pca_var(pca,
-             col.var = "cos2", # Color by contributions to the PC
+             col.var = "contrib", # Color by contributions to the PC
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
              repel = TRUE,     # Avoid text overlapping
-             select.var = list(name =c("FDG_Pos_EM_CD4s","FDG_High_TEMRA_CD8s","FDG_High_EM_CD8s""), cos2 = 10, contrib = 10)
+             select.var = list(name =NULL, cos2 = NULL, contrib = 20)
   )
 factors <- data.frame(pca$x)
 factors$age <- flipped_data$age
@@ -91,4 +91,25 @@ ggplot(age_correlation, aes(x = Correlation, y = reorder(Marker, -Correlation), 
     plot.background = element_rect(fill = "transparent",colour = NA)
   ) + ylab("Marker") + xlab("Correlation") + guides(fill=FALSE) +
   xlim(c(0, .7)) + scale_fill_distiller(palette = "Reds", direction=11)
+
+sup_learning <- read_csv("correlation_values.csv")
+data_summary <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      se = sd(x[[col]], na.rm=TRUE) / 4.47
+      )
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+  return(data_sum)
+}
+sup_learning_sum <- data_summary(sup_learning, varname="Data", 
+                    groupnames=c("Model"))
+ggplot(sup_learning_sum, aes(x=Model, y=Data, fill = "Red")) + 
+  geom_bar(stat="identity", position=position_dodge()) +
+  geom_errorbar(aes(ymin=Data-se, ymax=Data+se), width=.2,
+                position=position_dodge(.9)) + theme_classic() + scale_fill_brewer(palette = "Reds", direction=11) +
+  ylab("Correlation with Age") + xlab("Model") + guides(fill=FALSE)
 
