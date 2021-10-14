@@ -111,5 +111,5 @@ ggplot(sup_learning_sum, aes(x=Model, y=Data, fill = "Red")) +
   geom_bar(stat="identity", position=position_dodge()) +
   geom_errorbar(aes(ymin=Data-se, ymax=Data+se), width=.2,
                 position=position_dodge(.9)) + theme_classic() + scale_fill_brewer(palette = "Reds", direction=11) +
-  ylab("Correlation with Age") + xlab("Model") + guides(fill=FALSE)
+  ylab("Correlation with Age") + xlab("Model") + guides(fill=FALSE) + theme(axis.text=element_text(size=15))
 
