@@ -1,7 +1,7 @@
 ##########====HEPATIC SHY5Y MDP-SEQ SCRIPT=====#########
-setwd('/Users/BrendanMiller/Google Drive/Cohen Lab/Projects/Shadel/chrM/cleaned/')
+setwd("/home/atom/Desktop/Data/")
+list_of_sams <- c("SRR13961047.1.sam","SRR13961048.1.sam","SRR13961049.1.sam","SRR13961050.1.sam")
 sampleTable<-read.csv("shadel_sample_table.csv")
-
 
 slist.files(getwd())
 filenames <- file.path(getwd(), paste0(sampleTable$id, "Aligned.out_sorted_chrM.bam"))
@@ -24,7 +24,7 @@ seqinfo(bamfiles[1])
 library("Biobase")
 library("AnnotationDbi")
 library("GenomicFeatures")
-gtffile <- file.path(getwd(),"mdp_atg.gtf")
+gtffile <- file.path(getwd(),"mdp_atg_noATC.gtf")
 txdb <- makeTxDbFromGFF(gtffile, format = "gtf", circ_seqs = character())
 txdb
 
@@ -39,7 +39,7 @@ library("SummarizedExperiment")
 library("GenomicAlignments")
 library("BiocParallel")
 
-se <- summarizeOverlaps(features=ebg, reads=bamfiles,
+se <- summarizeOverlaps(features=ebg, reads=samfiles,
                         mode="Union",
                         singleEnd=TRUE,
                         ignore.strand=FALSE,
