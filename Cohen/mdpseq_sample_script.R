@@ -1,6 +1,6 @@
 ##########====HEPATIC SHY5Y MDP-SEQ SCRIPT=====#########
 setwd("/home/atom/Desktop/Data/")
-list_of_sams <- c("SRR13961047.1.sam","SRR13961048.1.sam","SRR13961049.1.sam","SRR13961050.1.sam")
+list_of_bams <- c("SRR13961047.1.fastq.subread.BAM","SRR13961048.1.fastq.subread.BAM","SRR13961049.1.fastq.subread.BAM","SRR13961050.1.fastq.subread.BAM")
 sampleTable<-read.csv("shadel_sample_table.csv")
 
 slist.files(getwd())
@@ -17,7 +17,7 @@ library("BiocParallel")
 library("XVector")
 library("Biostrings")
 library("Rsamtools")
-bamfiles<-BamFileList(filenames, yieldSize = 2000000)
+bamfiles<-BamFileList(list_of_bams, yieldSize = 2000000)
 seqinfo(bamfiles[1])
 
 ###LOAD
@@ -39,7 +39,7 @@ library("SummarizedExperiment")
 library("GenomicAlignments")
 library("BiocParallel")
 
-se <- summarizeOverlaps(features=ebg, reads=samfiles,
+se <- summarizeOverlaps(features=ebg, reads=list_of_bams,
                         mode="Union",
                         singleEnd=TRUE,
                         ignore.strand=FALSE,
