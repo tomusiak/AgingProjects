@@ -1,7 +1,8 @@
 ##########====HEPATIC SHY5Y MDP-SEQ SCRIPT=====#########
 setwd("/home/atom/Desktop/Data/")
-list_of_bams <- c("SRR13961047.1.fastq.subread.BAM","SRR13961048.1.fastq.subread.BAM","SRR13961049.1.fastq.subread.BAM","SRR13961050.1.fastq.subread.BAM")
-sampleTable<-read.csv("shadel_sample_table.csv")
+list_of_bams <- c("D7OFF.fastq.subread.BAM","D7ON.fastq.subread.BAM","D11OFF.fastq.subread.BAM",
+                  "D11ON.fastq.subread.BAM","D15OFF.fastq.subread.BAM","D15ON.fastq.subread.BAM")
+sampleTable<-read.csv("samples.csv")
 
 slist.files(getwd())
 filenames <- file.path(getwd(), paste0(sampleTable$id, "Aligned.out_sorted_chrM.bam"))
@@ -53,9 +54,8 @@ se <- readRDS('shadel_se_all.rds')
 library("DESeq2")
 library(dplyr)
 colData(se) <- DataFrame(sampleTable) ###for the diagnosis
-colData(se)
-se$disease <- relevel(se$passage, "Passage5")
-dds <- DESeqDataSet(se, design = ~  passage)
+colData(se)$Day <- as.factor(colData(se)$Day)
+dds <- DESeqDataSet(se, design = ~  CAR + Day)
 dds <- DESeq(dds)
 #saveRDS(dds, "shadel_dds.rds")
 dds <- readRDS('shadel_dds.rds')
@@ -70,16 +70,34 @@ res <- results(dds)
 library("pheatmap")
 library(ggplot2)
 vsd <- varianceStabilizingTransformation(dds) ###mdp-seq script
-mat <- assay(vsd)[ head(order(res$padj),100), ]
-mat <- mat - rowMeans(mat)
-df <- as.data.frame(colData(vsd)[,c("id","passage")])
-pheatmap(mat, annotation_col=df)
+
+mat <- assay(vsd)
+on_minus_off_day7 <- mat[,2] - mat[,1]
+on_minus_off_day11 <- mat[,4] - mat[,3]
+on_minus_off_day15 <- mat[,6] - mat[,5]
+data <- data.frame(on_minus_off_day7)
+data$day11 <- on_minus_off_day11
+data$day15 <- on_minus_off_day15
+df <- as.data.frame(colData(vsd)[,c("Day","CAR")])
+rownames(new_annot) <- as.data.frame(df[c(1,3,5),1])
+rownames(new_annot) <- c(7,11,15)
+colnames(data) <- c(7,11,15)
+pheatmap(data, annotation_col=new_annot,axis=1)
+
+data
+processing <- as.data.frame((data$"15") + (data$"11") + (data$"7")) 
+rownames(processing) <- rownames(data)
+colnames(processing) <- "values"
+head(processing)
+sorted <- processing[order(processing$"values"),,drop=FALSE]
+head(sorted,10)
+tail(sorted,20)
 
 library(ggrepel)
-plotPCA(vsd, "id") +
+plotPCA(vsd, "Day") +
   theme_classic()+
- geom_point(aes(colour = factor(id)))+
-  geom_label_repel(aes(label = id),
+ geom_point(aes(colour = factor(Day)))+
+  geom_label_repel(aes(label = Day),
                    box.padding   = 0.35, 
                    point.padding = 0.5,
                    segment.color = 'grey50') +
@@ -99,59 +117,26 @@ plotPCA(vsd, "id") +
         axis.text.x=element_text(size=15, face="bold", color="black"),
         axis.text.y=element_text(size=15, face="bold", colour = "black"))
 
+res<-results(dds, name="CAR_ON_vs_OFF")
+res<-results(dds,contrast=c("CAR","ON","OFF"))
+resLFC <- lfcShrink(dds, coef="CAR_ON_vs_OFF", type="apeglm")
+resOrdered <- res[order(res$pvalue),]
+top <- head(resOrdered, 30)
+top[">Peptide3A",]
+topGene <- ">Peptide98D"
+#14A = humanin
+#9A = MOTSC
 
-
-
-library(EnhancedVolcano)
-EnhancedVolcano(res,
-                lab = rownames(res),
-                x = 'log2FoldChange',
-                y = 'padj',
-                
-                xlim=c(-6,6),
-                xlab = bquote(~Log[2]~ 'fold change'),
-                title = 'Healthy vs. NASH',
-                titleLabSize = 50,
-                ylab = bquote(~-Log[10]~adjusted~italic(P)),
-                pCutoff = 0.1,
-                FCcutoff = 0.5,
-                transcriptPointSize = 5.5,
-                transcriptLabSize = 6.0,
-                col=c('black', 'red', 'orange', 'blue'),
-                legendPosition = 'right',
-                legend=c('Not Significant','Not Significant, But Big Fold Change',
-                         'Signficant, Minimal Fold Change','Signficant, Big Fold Change'),
-                legendLabSize = 16,
-                legendIconSize = 10.0,    transcriptLabCol = 'black',
-                transcriptLabFace = 'bold') +
-  labs(title = "Senescence MDP-Seq Fold Changes",
-       subtitle = "Each dot represents one smORF",
-       caption = "", 
-       x = "Log2 Fold Change", y = "-Log10 adjusted P")
-
-topGene <- rownames(res)[148] #humanin
-topGene <- rownames(res)[644] #shlp2
-topGene <- rownames(res)[525] #shmoose
-plotCounts(dds, topGene, "passage", xlab="Group", ylabel="Normalized Counts") 
-
-colours <- c("blue", "red")
-plotCounts(dds, topGene, intgroup="passage", returnData=TRUE) %>% 
-  ggplot(aes(passage, count)) + geom_boxplot(aes(fill=passage), lwd = 1.5) + 
-  geom_point(aes(fill=passage),size=3, color = "grey") +
+plotCounts(dds, topGene, intgroup=c("Day","CAR"), returnData=TRUE) %>% 
+  ggplot(aes(Day, count)) + geom_boxplot(aes(color=CAR), lwd = 1.5) + 
+  geom_point(aes(color=CAR),size=3, color = "grey") +
   # geom_signif(annotation="pAdj<0.15", textsize = 5.5,
   #             y_position=4.76, xmin=1, xmax=4, tip_length = 0.1, size = 1, fontface="bold", color="black") +
   scale_fill_manual(values=colours, name="Group")+
   scale_color_manual(values=colours)+
-  scale_y_log10() + ggtitle("SHMOOSE Transcript Differences Between Senescence") + 
+  scale_y_log10() + ggtitle("Transcript Differences Between Perma-On CAR and Perma-Off CAR") + 
   ylab("Normalized Count")+
-  scale_x_discrete(labels= c("Control-SHMOOSE WT (n=59)","AD-SHMOOSE WT (n=59)", "Control-SHMOOSE WT (n=59)"))+
-  theme_minimal()+
-  theme(axis.text=element_text(size=30),
-        plot.title=element_text(size=35, face="bold"),
-        axis.title=element_text(size=20,face="bold"), 
-        legend.text=element_text(size=18),
-        legend.title=element_text(size=20, face="bold"),
-        axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.text.y=element_text(size=20, face="bold", color="black"))
+  scale_x_discrete(labels= c("Day 7","Day 11", "Day 15"))+
+  theme_minimal()
+
 
