@@ -118,9 +118,10 @@ res <- results(dds)
 resOrdered <- res[order(res$padj),]
 top_hits_combo <- head(resOrdered,10)
 write.csv(top_hits_sabgal,"top_hits_sabgal.csv")
-pd1_with_age <- plotCounts(dds, gene="IL6", intgroup="sabgal_high_or_low",returnData=TRUE)
-ggplot(pd1_with_age, aes(x=sabgal_high_or_low, y=count)) + 
-  geom_bar(stat="identity", fill="gray") + theme_classic()
+pd1_with_age <- plotCounts(dds, gene="TP53", intgroup=c("cm_or_te","sabgal_high_or_low"),returnData=TRUE)
+ggplot(pd1_with_age, aes(x=sabgal_high_or_low, y=count,fill=cm_or_te)) + 
+  geom_violin() + theme_classic() + labs(title="P53 Expression On T Cell Subsets in SA-bGal High Or Low Cells",x = "SAbGal High or Low",
+  y="Counts",fill="Central Memory (CM) \n or Terminal + \n Effector Memory (TE)")
 
 res <- results(dds, contrast=c("young_or_aged","young","aged"))
 resLFC <- lfcShrink(dds, res = res, contrast = "young_or_aged",type="ashr")
