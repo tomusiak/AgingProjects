@@ -16,6 +16,12 @@ library(biomaRt)
 library(tidyr)
 library(ggplot2)
 library(ashr)
+library(DEGreport)
+library(clusterProfiler)
+library(qvalue)
+library("RColorBrewer")
+library("pheatmap")
+library(scales)
 
 setwd("/home/atom/Desktop/Data/Yong-Ho/BAMs") #Sets directory.
 BAMs <- list.files(pattern = "\\.BAM$") #Acquires all BAM files in directory.
@@ -51,10 +57,14 @@ matched_symbols[unmatched_positions] <- matrix_ids[unmatched_positions] #Maps in
 unique_symbols <- make.names(matched_symbols, unique = TRUE) #Creates unique identifier for each gene name.
 rownames(raw_count_matrix) <- unique_symbols #Replaces IDs with names.
 
-"X20857" %in% rownames(raw_count_matrix)
 #Next few segments of code are purely to perform segmentation of the count matrix and to find
 #top differentially expressed genes depending on category.
 #Below are top DEGs for CD4/CD8.
+
+good_donor_samples <- colnames(dds_norm)[!grepl("09",colnames(dds_norm),fixed=TRUE)]
+raw_count_matrix <- raw_count_matrix[,good_donor_samples]
+yongho_metadata <- yongho_metadata[good_donor_samples,]
+
 dds <- DESeqDataSetFromMatrix(raw_count_matrix,
                                    colData = yongho_metadata,
                                    design = ~ young_or_aged + cd8_or_cd4 + cm_or_te + sabgal_high_or_low +
@@ -82,6 +92,108 @@ plotMA(aged_resLFC, ylim=c(-2,2))
 aged_resOrdered <- aged_resLFC[order(aged_resLFC$padj),]
 top_hits_aged <- aged_resOrdered[!is.na(aged_resOrdered$padj) & aged_resOrdered$padj < .05,]
 write.csv(top_hits_aged,"top_hits_aged.csv")
+
+#Next segment is to find high-level patterns in data via UMAP.
+dds_norm <- vst(dds) #VST normalization.
+normalized_counts <- assay(dds_norm) %>% t()
+umap_results <- umap::umap(normalized_counts)
+complete_umap <- data.frame(umap_results$layout) %>%
+  tibble::rownames_to_column("id") %>%
+  dplyr::inner_join(yongho_metadata, by = "id")
+#CM or TE
+ggplot(
+  complete_umap,
+  aes( x = X1, y = X2, color=cm_or_te)) +
+  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction - Cell Type", x="Component 1", y="Component 2",
+                                        color = "Central Memory or \n Terminal/Effector \n Memory") +
+  theme(legend.key.height= unit(1, 'cm'),
+        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
+#Donor ID
+ggplot(
+  complete_umap,
+  aes( x = X1, y = X2, color=donor_id_long)) +
+  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction - Donors", x="Component 1", y="Component 2",
+                                        color = "Donor ID                   ") +
+  theme(legend.key.height= unit(1, 'cm'),
+        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
+#Age
+ggplot(
+  complete_umap,
+  aes( x = X1, y = X2, color=young_or_aged)) +
+  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction - Young vs. Older", x="Component 1", y="Component 2",
+                                        color = "Donor Age                   ") +
+  theme(legend.key.height= unit(1, 'cm'),
+        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
+#SABGal High or Low
+ggplot(
+  complete_umap,
+  aes( x = X1, y = X2, color=sabgal_high_or_low)) +
+  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction - SABGal", x="Component 1", y="Component 2",
+                                        color = "SABGal                   ") +
+  theme(legend.key.height= unit(1, 'cm'),
+        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
+
+#Below we segment into CM and TE, as those are the dominant clusters in the data.
+#We will then proceed with looking at UMAP analysis for these separated populations.
+cm_samples <- colnames(dds_norm)[grepl("CM",colnames(dds_norm),fixed=TRUE)]
+te_samples <- colnames(dds_norm)[grepl("TE",colnames(dds_norm),fixed=TRUE)]
+cm_counts <- assay(dds_norm)[,cm_samples ] %>% t()
+te_counts <-  assay(dds_norm)[,te_samples] %>% t()
+
+umap_results_cm <- umap::umap(cm_counts)
+cm_umap <- data.frame(umap_results_cm$layout) %>%
+  tibble::rownames_to_column("id") %>%
+  dplyr::inner_join(yongho_metadata, by = "id")
+ggplot(
+  cm_umap,
+  aes( x = X1, y = X2, color=young_or_aged)) +
+  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction CM Only - SAbGal", x="Component 1", y="Component 2",
+                                        color = "SAbGal High Or Low") +
+  theme(legend.key.height= unit(1, 'cm'),
+        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
+
+umap_results_te <- umap::umap(te_counts)
+te_umap <- data.frame(umap_results_te$layout) %>%
+  tibble::rownames_to_column("id") %>%
+  dplyr::inner_join(yongho_metadata, by = "id")
+ggplot(
+  te_umap,
+  aes( x = X1, y = X2, color=young_or_aged)) +
+  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction EM Only - SAbGal", x="Component 1", y="Component 2",
+                                        color = "SAbGal High Or Low") +
+  theme(legend.key.height= unit(1, 'cm'),
+        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
+
+#Below we segment into CD4 and CD8.
+#We will then proceed with looking at UMAP analysis for these separated populations.
+CD4_samples <- colnames(dds_norm)[grepl("CD4",colnames(dds_norm),fixed=TRUE)]
+CD8_samples <- colnames(dds_norm)[grepl("CD8",colnames(dds_norm),fixed=TRUE)]
+CD4_counts <- assay(dds_norm)[,CD4_samples ] %>% t()
+CD8_counts <-  assay(dds_norm)[,CD8_samples] %>% t()
+
+umap_results_CD4 <- umap::umap(CD4_counts)
+CD4_umap <- data.frame(umap_results_CD4$layout) %>%
+  tibble::rownames_to_column("id") %>%
+  dplyr::inner_join(yongho_metadata, by = "id")
+ggplot(
+  CD4_umap,
+  aes( x = X1, y = X2, color=sabgal_high_or_low)) +
+  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction CD4 Only - SAbGal", x="Component 1", y="Component 2",
+                                        color = "SAbGal High Or Low") +
+  theme(legend.key.height= unit(1, 'cm'),
+        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
+
+umap_results_CD8 <- umap::umap(CD8_counts)
+CD8_umap <- data.frame(umap_results_CD8$layout) %>%
+  tibble::rownames_to_column("id") %>%
+  dplyr::inner_join(yongho_metadata, by = "id")
+ggplot(
+  CD8_umap,
+  aes( x = X1, y = X2, color=sabgal_high_or_low)) +
+  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction CD8 Only - SAbGal", x="Component 1", y="Component 2",
+                                        color = "SAbGal High Or Low") +
+  theme(legend.key.height= unit(1, 'cm'),
+        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
 
 #Below are top DEGs for CD4sabgal high/low
 CD4_samples <- colnames(raw_count_matrix)[grepl("CD4",colnames(dds_norm),fixed=TRUE)]
@@ -274,108 +386,6 @@ CD4TEyoungsabgal_resOrdered <- CD4TEyoungsabgal_resLFC[order(CD4TEyoungsabgal_re
 top_hits_CD4TEyoungsabgal <- CD4TEyoungsabgal_resOrdered[!is.na(CD4TEyoungsabgal_resOrdered$padj) & CD4TEyoungsabgal_resOrdered$padj < .05,]
 write.csv(top_hits_CD4TEyoungsabgal,"yongho_top_hits_CD4TEyoung_sabgal.csv")
 
-#Next segment is to find high-level patterns in data via UMAP.
-dds_norm <- vst(dds) #VST normalization.
-normalized_counts <- assay(dds_norm) %>% t()
-umap_results <- umap::umap(normalized_counts)
-complete_umap <- data.frame(umap_results$layout) %>%
-  tibble::rownames_to_column("id") %>%
-  dplyr::inner_join(yongho_metadata, by = "id")
-#CM or TE
-ggplot(
-  complete_umap,
-  aes( x = X1, y = X2, color=cm_or_te)) +
-  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction - Cell Type", x="Component 1", y="Component 2",
-                                        color = "Central Memory or \n Terminal/Effector \n Memory") +
-  theme(legend.key.height= unit(1, 'cm'),
-        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
-#Donor ID
-ggplot(
-  complete_umap,
-  aes( x = X1, y = X2, color=donor_id_long)) +
-  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction - Donors", x="Component 1", y="Component 2",
-                                        color = "Donor ID                   ") +
-  theme(legend.key.height= unit(1, 'cm'),
-        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
-#Age
-ggplot(
-  complete_umap,
-  aes( x = X1, y = X2, color=young_or_aged)) +
-  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction - Young vs. Older", x="Component 1", y="Component 2",
-                                        color = "Donor Age                   ") +
-  theme(legend.key.height= unit(1, 'cm'),
-        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
-#SABGal High or Low
-ggplot(
-  complete_umap,
-  aes( x = X1, y = X2, color=sabgal_high_or_low)) +
-  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction - SABGal", x="Component 1", y="Component 2",
-                                        color = "SABGal                   ") +
-  theme(legend.key.height= unit(1, 'cm'),
-        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
-
-#Below we segment into CM and TE, as those are the dominant clusters in the data.
-#We will then proceed with looking at UMAP analysis for these separated populations.
-cm_samples <- colnames(dds_norm)[grepl("CM",colnames(dds_norm),fixed=TRUE)]
-te_samples <- colnames(dds_norm)[grepl("TE",colnames(dds_norm),fixed=TRUE)]
-cm_counts <- assay(dds_norm)[,cm_samples ] %>% t()
-te_counts <-  assay(dds_norm)[,te_samples] %>% t()
-
-umap_results_cm <- umap::umap(cm_counts)
-cm_umap <- data.frame(umap_results_cm$layout) %>%
-  tibble::rownames_to_column("id") %>%
-  dplyr::inner_join(yongho_metadata, by = "id")
-ggplot(
-  cm_umap,
-  aes( x = X1, y = X2, color=young_or_aged)) +
-  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction CM Only - SAbGal", x="Component 1", y="Component 2",
-                                        color = "SAbGal High Or Low") +
-  theme(legend.key.height= unit(1, 'cm'),
-        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
-
-umap_results_te <- umap::umap(te_counts)
-te_umap <- data.frame(umap_results_te$layout) %>%
-  tibble::rownames_to_column("id") %>%
-  dplyr::inner_join(yongho_metadata, by = "id")
-ggplot(
-  te_umap,
-  aes( x = X1, y = X2, color=young_or_aged)) +
-  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction EM Only - SAbGal", x="Component 1", y="Component 2",
-                                        color = "SAbGal High Or Low") +
-  theme(legend.key.height= unit(1, 'cm'),
-        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
-
-#Below we segment into CD4 and CD8.
-#We will then proceed with looking at UMAP analysis for these separated populations.
-CD4_samples <- colnames(dds_norm)[grepl("CD4",colnames(dds_norm),fixed=TRUE)]
-CD8_samples <- colnames(dds_norm)[grepl("CD8",colnames(dds_norm),fixed=TRUE)]
-CD4_counts <- assay(dds_norm)[,CD4_samples ] %>% t()
-CD8_counts <-  assay(dds_norm)[,CD8_samples] %>% t()
-
-umap_results_CD4 <- umap::umap(CD4_counts)
-CD4_umap <- data.frame(umap_results_CD4$layout) %>%
-  tibble::rownames_to_column("id") %>%
-  dplyr::inner_join(yongho_metadata, by = "id")
-ggplot(
-  CD4_umap,
-  aes( x = X1, y = X2, color=sabgal_high_or_low)) +
-  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction CD4 Only - SAbGal", x="Component 1", y="Component 2",
-                                        color = "SAbGal High Or Low") +
-  theme(legend.key.height= unit(1, 'cm'),
-        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
-
-umap_results_CD8 <- umap::umap(CD8_counts)
-CD8_umap <- data.frame(umap_results_CD8$layout) %>%
-  tibble::rownames_to_column("id") %>%
-  dplyr::inner_join(yongho_metadata, by = "id")
-ggplot(
-  CD8_umap,
-  aes( x = X1, y = X2, color=sabgal_high_or_low)) +
-  geom_point() + theme_classic() + labs(title="RNA-Seq UMAP Dimensional Reduction CD8 Only - SAbGal", x="Component 1", y="Component 2",
-                                        color = "SAbGal High Or Low") +
-  theme(legend.key.height= unit(1, 'cm'),
-        legend.key.width= unit(1.5, 'cm'), legend.title = element_text(size=10))
-
 #Looking at boxplots for interesting genes with age (subsetted by CM or TE)
 interesting_gene_with_age <- plotCounts(dds, gene="B3GAT1", intgroup=c("cm_or_te","young_or_aged"),returnData=TRUE)
 ggplot(interesting_gene_with_age, aes(x=young_or_aged, y=count,fill=cm_or_te)) + 
@@ -412,4 +422,83 @@ ggplot(interesting_gene_with_sabgal_cd4, aes(x=sabgal_high_or_low, y=count,fill=
   geom_boxplot() + theme_classic() + labs(title="CXCL10 Expression On T Cell Subsets in SA-bGal High Or Low Cells - CD4s only",x = "SAbGal High or Low",
                                           y="Counts",fill="Central Memory (CM) \n or Terminal + \n Effector Memory (TE)")
 
+#Summarization function cribbed from Goldfar Lab
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE, removeOutliers=F, logt=F) {
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  datac <- plyr::ddply(data, groupvars, .drop=.drop,
+                       .fun = function(xx, col) {
+                         
+                         if (removeOutliers) {
+                           print('pre')
+                           print(xx[[col]])
+                           #xx[[col]] <- boxB(xx[[col]])
+                           print('post')
+                           #print(exp(rm.outlier(log(xx[[col]]), fill = FALSE, median = FALSE, opposite = FALSE)))
+                           print(scores(log(xx[[col]]), type="t", prob=0.90) )
+                           #print(xx[[col]][boxB(xx[[col]], method="resistant", logt=logt, k=2.5)[["outliers"]]])
+                         }
+                         c(N    = length2(xx[[col]], na.rm=na.rm),
+                           mean = mean   (xx[[col]], na.rm=na.rm),
+                           sd   = sd     (xx[[col]], na.rm=na.rm)
+                         )
+                       },
+                       measurevar
+  )
+  datac <- plyr::rename(datac, c("mean" = measurevar))
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  return(datac)
+}
 
+#Quick visualization and summarization..
+count_data <- trial %>% t()
+data_complete <- data.frame(count_data ) %>%
+  tibble::rownames_to_column("id") %>%
+  dplyr::inner_join(yongho_metadata, by = "id")
+data_summary <- summarySE(data_complete,"KLRG1",c("young_or_aged","sabgal_high_or_low"))
+CD8CM_counts["KLRG1",]
+ggplot(data_summary, aes(x=young_or_aged, y=KLRG1, fill=sabgal_high_or_low)) +
+  geom_bar(stat="identity", color="black", position=position_dodge()) +
+  geom_errorbar(aes(ymin=KLRG1-se,ymax=KLRG1+se),position = position_dodge(width = .9),width=.2) + 
+  theme_classic() + 
+  labs(title="KLRG1 Expression On T Cell Subsets in SA-bGal High Or Low CD8+ CM Cells",x = "Younger or Older",
+                                          y="Normalized Counts",
+       fill="SAbGal High or Low") +
+  scale_fill_manual(values=c("pink","firebrick4"))
+  
+#Let's use some of Marius's code for cool heatmaps..
+dds_lrt <- DESeq(dds, test="LRT", reduced = ~ 1)
+res_LRT <- results(dds_lrt, alpha=0.01) 
+res_LRT$qvalue <- qvalue(res_LRT$pvalue)$qvalue
+sabgal_resLFC$qvalue<- qvalue(sabgal_resLFC$pvalue)$qvalue
+cd8_resLFC$qvalue <- qvalue(cd8_resLFC$pvalue)$qvalue
+res_Infection_in_WT$qvalue<- qvalue(res_Infection_in_WT$pvalue)$qvalue
+res_Infection_in_KO$qvalue<- qvalue(res_Infection_in_KO$pvalue)$qvalue
+plotDispEsts(dds, main="Dispersion plot")
+trial <- apply(CD8CM_counts, 1, rescale) %>% t()
+interesting_genes <- c("RGS3",
+                       "KLRD1",
+                       "FCGR3A",
+                       "CXCR5",
+                       "HLA.DRB5",
+                       "HLA.DQA2",
+                       "LYN",
+                       "GAS7", "FOXP3", "IL2RA", "IL7R")
+df <- as.data.frame(colData(dds)[,c("sabgal_high_or_low","young_or_aged","donor_id_long")])
+pheatmap(trial[interesting_genes,], cluster_rows=TRUE, show_rownames=TRUE, show_colnames=FALSE,
+         cluster_cols=TRUE, annotation_col=df,labs_row="PDCD1")
+sampleDists <- dist(t(assay(dds_norm)))
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- paste(dds_norm$condition, dds_norm$type, sep="-")
+colnames(sampleDistMatrix) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+colnames(sampleDistMatrix) <- rownames(yongho_metadata)
+pheatmap(sampleDistMatrix,
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         col=colors)
