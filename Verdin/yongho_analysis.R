@@ -22,6 +22,12 @@ library(qvalue)
 library("RColorBrewer")
 library("pheatmap")
 library(scales)
+library(gplots)
+library(devtools)
+library(EnhancedVolcano)
+library(msigdbr)
+library(circlize)
+library(ComplexHeatmap)
 
 setwd("/home/atom/Desktop/Data/Yong-Ho/BAMs") #Sets directory.
 BAMs <- list.files(pattern = "\\.BAM$") #Acquires all BAM files in directory.
@@ -35,6 +41,14 @@ raw_count_matrix <- raw_count_matrix[keep,]
 yongho_metadata <- read_csv("~/Desktop/Data/Yong-Ho/yongho_metadata.csv") #Pulls metadata.
 yongho_metadata <- yongho_metadata %>% arrange(id) #Re-arranges by alphabetical order.
 colnames(raw_count_matrix) <- yongho_metadata$id
+yongho_metadata$age_sabgal <- paste(yongho_metadata$young_or_aged,yongho_metadata$sabgal_high_or_low)
+yongho_metadata$young_or_aged <- as.factor(yongho_metadata$young_or_aged)
+yongho_metadata$cm_or_te <- as.factor(yongho_metadata$cm_or_te)
+yongho_metadata$sabgal_high_or_low <- as.factor(yongho_metadata$sabgal_high_or_low)
+yongho_metadata$sex <- as.factor(yongho_metadata$sex)
+yongho_metadata$cd8_or_cd4 <- as.factor(yongho_metadata$cd8_or_cd4)
+yongho_metadata$age_sabgal <- as.factor(yongho_metadata$age_sabgal)
+rownames(yongho_metadata) <- yongho_metadata$id
 
 # The role of the below segment of code is to replace gene IDs with gene names in the count matrix.
 gene_list <- rownames(raw_count_matrix) #Acquires full list of genes.
@@ -64,11 +78,12 @@ rownames(raw_count_matrix) <- unique_symbols #Replaces IDs with names.
 good_donor_samples <- colnames(dds_norm)[!grepl("09",colnames(dds_norm),fixed=TRUE)]
 raw_count_matrix <- raw_count_matrix[,good_donor_samples]
 yongho_metadata <- yongho_metadata[good_donor_samples,]
+rownames(yongho_metadata) <- yongho_metadata$id
 
 dds <- DESeqDataSetFromMatrix(raw_count_matrix,
                                    colData = yongho_metadata,
-                                   design = ~ young_or_aged + cd8_or_cd4 + cm_or_te + sabgal_high_or_low +
-                                     sex + age + pooled) #Transforms count matrix into DESeq object.
+                                   design = ~ age_sabgal) 
+#Transforms count matrix into DESeq object.
 dds <- DESeq(dds) #Performs DE analysis.
 CD8_res <- results(dds, contrast=c("cd8_or_cd4","cd8","cd4")) 
 CD8_resLFC <- lfcShrink(dds, res = CD8_res, contrast = "cd8_or_cd4",type="ashr")
@@ -198,12 +213,10 @@ ggplot(
 #Below are top DEGs for CD4sabgal high/low
 CD4_samples <- colnames(raw_count_matrix)[grepl("CD4",colnames(dds_norm),fixed=TRUE)]
 CD4_counts <- raw_count_matrix[,CD4_samples ]
-rownames(yongho_metadata) <- yongho_metadata$id
 CD4_metadata <-  yongho_metadata[CD4_samples,]
 CD4_dds <- DESeqDataSetFromMatrix(CD4_counts,
                                   colData = CD4_metadata,
-                                  design = ~ young_or_aged + cm_or_te + sabgal_high_or_low +
-                                    sex + age + pooled)
+                                  design = ~ age_sabgal)
 CD4_dds <- DESeq(CD4_dds)
 cd4sabgal_res <- results(CD4_dds, contrast=c("sabgal_high_or_low","high","low"))
 cd4sabgal_resLFC <- lfcShrink(CD4_dds, res = cd4sabgal_res, contrast = "sabgal_high_or_low",type="ashr")
@@ -217,8 +230,7 @@ CD8_counts <- raw_count_matrix[,CD8_samples ]
 CD8_metadata <-  yongho_metadata[CD8_samples,]
 CD8_dds <- DESeqDataSetFromMatrix(CD8_counts,
                                   colData = CD8_metadata,
-                                  design = ~ young_or_aged + cm_or_te + sabgal_high_or_low +
-                                    sex + age + pooled)
+                                  design = ~ age_sabgal)
 CD8_dds <- DESeq(CD8_dds)
 cd8sabgal_res <- results(CD8_dds, contrast=c("sabgal_high_or_low","high","low"))
 cd8sabgal_resLFC <- lfcShrink(CD8_dds, res = cd8sabgal_res, contrast = "sabgal_high_or_low",type="ashr")
@@ -248,8 +260,7 @@ CD4CM_counts <- raw_count_matrix[,CD4CM_samples ]
 CD4CM_metadata <-  yongho_metadata[CD4CM_samples,]
 CD4CM_dds <- DESeqDataSetFromMatrix(CD4CM_counts,
                                     colData = CD4CM_metadata,
-                                    design = ~ young_or_aged + sabgal_high_or_low +
-                                      sex + age + pooled)
+                                    design = ~ age_sabgal)
 CD4CM_dds <- DESeq(CD4CM_dds)
 cd4CMsabgal_res <- results(CD4CM_dds, contrast=c("sabgal_high_or_low","high","low"))
 cd4CMsabgal_resLFC <- lfcShrink(CD4CM_dds, res = cd4CMsabgal_res, contrast = "sabgal_high_or_low",type="ashr")
@@ -264,8 +275,7 @@ CD8TE_counts <- raw_count_matrix[,CD8TE_samples ]
 CD8TE_metadata <-  yongho_metadata[CD8TE_samples,]
 CD8TE_dds <- DESeqDataSetFromMatrix(CD8TE_counts,
                                     colData = CD8TE_metadata,
-                                    design = ~ young_or_aged + sabgal_high_or_low +
-                                      sex + age + pooled)
+                                    design = ~ age_sabgal)
 CD8TE_dds <- DESeq(CD8TE_dds)
 cd8TEsabgal_res <- results(CD8TE_dds, contrast=c("sabgal_high_or_low","high","low"))
 cd8TEsabgal_resLFC <- lfcShrink(CD8TE_dds, res = cd8TEsabgal_res, contrast = "sabgal_high_or_low",type="ashr")
@@ -472,9 +482,6 @@ ggplot(data_summary, aes(x=young_or_aged, y=KLRG1, fill=sabgal_high_or_low)) +
   scale_fill_manual(values=c("pink","firebrick4"))
   
 #Let's use some of Marius's code for cool heatmaps..
-dds_lrt <- DESeq(dds, test="LRT", reduced = ~ 1)
-res_LRT <- results(dds_lrt, alpha=0.01) 
-res_LRT$qvalue <- qvalue(res_LRT$pvalue)$qvalue
 sabgal_resLFC$qvalue<- qvalue(sabgal_resLFC$pvalue)$qvalue
 cd8_resLFC$qvalue <- qvalue(cd8_resLFC$pvalue)$qvalue
 res_Infection_in_WT$qvalue<- qvalue(res_Infection_in_WT$pvalue)$qvalue
@@ -502,3 +509,320 @@ pheatmap(sampleDistMatrix,
          clustering_distance_rows=sampleDists,
          clustering_distance_cols=sampleDists,
          col=colors)
+
+dds_lrt <- DESeq(CD4CM_dds, test="LRT", reduced = ~ 1)
+rld <- vst(dds_lrt)
+res_LRT <- results(dds_lrt)
+res_LRT$qvalue <- qvalue(res_LRT$pvalue)$qvalue
+top_hits_overall <- res_LRT[!is.na(res_LRT$qvalue) & res_LRT$qvalue < .1
+                         #   & ((res_LRT$log2FoldChange > 1  | res_LRT$log2FoldChange < -1))
+                            ,]
+top_hits_ordered <- rownames(top_hits_overall[order(top_hits_overall$qvalue),])
+rld_mat <- assay(rld)
+Selected_rld <- rld_mat[top_hits_ordered,]
+rownames(CD4CM_metadata) <- CD4CM_metadata$id
+clusters <- degPatterns(Selected_rld, CD4CM_metadata, time ='age_sabgal',col='young_or_aged')
+p <- clusters$plot +
+  theme_classic() +
+  labs(x="SAbGal High or Low", title="Cluster analysis of DE Genes - CD4 CM+ Only") +
+  scale_x_discrete("SAbGal High or Low", labels = c("aged high" = "High","aged low" = "Low", 
+                                                  "young high" = "High","young low" = "Low")) +
+  scale_fill_manual(values=c("pink","firebrick4"))
+p
+
+assayCluster <- rld_mat[clusters$df$genes,]
+my_palette <- colorRampPalette(c("blue",'white','red'))(n=1000)
+assayCluster <- assayCluster[,c(1,3,2,4,5,7,9,11,6,8,10,12)]
+heatmap.2(assayCluster, col=my_palette,
+          scale="row", key=F, keysize=1, symkey=T,
+          density.info="none", trace="none",
+          cexCol=0.6, labRow=F, dendrogram="row",Rowv=TRUE,Colv=FALSE,
+          main="CD4+ CM q < .05 and log2fc > 1 or < -1 ")
+
+dds_lrt <- DESeq(CD8TE_dds, test="LRT", reduced = ~ 1)
+rld <- vst(dds_lrt)
+res_LRT <- results(dds_lrt)
+res_LRT$qvalue <- qvalue(res_LRT$pvalue)$qvalue
+top_hits_overall <- res_LRT[!is.na(res_LRT$qvalue) & res_LRT$qvalue < .05 
+                            & ((res_LRT$log2FoldChange > 1  | res_LRT$log2FoldChange < -1))
+                            ,]
+top_hits_ordered <- rownames(top_hits_overall[order(top_hits_overall$qvalue),])
+rld_mat <- assay(rld)
+Selected_rld <- rld_mat[top_hits_ordered,]
+rownames(CD8TE_metadata) <- CD8TE_metadata$id
+clusters <- degPatterns(Selected_rld, CD8TE_metadata, time ='age_sabgal',col='young_or_aged')
+p <- clusters$plot +
+  theme_classic() +
+  labs(x="SAbGal High or Low", title="Cluster analysis of DE Genes - CD8+ TE Only") +
+  scale_x_discrete("SAbGal High or Low", labels = c("aged high" = "High","aged low" = "Low", 
+                                                    "young high" = "High","young low" = "Low")) +
+  scale_fill_manual(values=c("pink","firebrick4"))
+p
+
+assayCluster <- rld_mat[clusters$df$genes,]
+my_palette <- colorRampPalette(c("blue",'white','red'))(n=1000)
+assayCluster <- assayCluster[,c(1,3,2,4,5,7,9,11,6,8,10,12)]
+heatmap.2(assayCluster, col=my_palette,
+          scale="row", key=F, keysize=1, symkey=T,
+          density.info="none", trace="none",
+          cexCol=0.6, labRow=F, dendrogram="row",Rowv=TRUE,Colv=FALSE,
+          main="CD8+ TE q < .05 and log2fc > 1 or < -1 ")
+
+dds_lrt <- DESeq(CD8_dds, test="LRT", reduced = ~ 1)
+rld <- vst(dds_lrt)
+res_LRT <- results(dds_lrt)
+res_LRT$qvalue <- qvalue(res_LRT$pvalue)$qvalue
+top_hits_overall <- res_LRT[!is.na(res_LRT$qvalue) & res_LRT$qvalue < .05 
+                            & ((res_LRT$log2FoldChange > 1  | res_LRT$log2FoldChange < -1))
+                            ,]
+top_hits_ordered <- rownames(top_hits_overall[order(top_hits_overall$qvalue),])
+rld_mat <- assay(rld)
+Selected_rld <- rld_mat[top_hits_ordered,]
+rownames(CD8_metadata) <- CD8_metadata$id
+clusters <- degPatterns(Selected_rld, CD8_metadata, time ='age_sabgal',col='young_or_aged')
+p <- clusters$plot +
+  theme_classic() +
+  labs(x="SAbGal High or Low", title="Cluster analysis of DE Genes - CD8+ Only") +
+  scale_x_discrete("SAbGal High or Low", labels = c("aged high" = "High","aged low" = "Low", 
+                                                    "young high" = "High","young low" = "Low")) +
+  scale_fill_manual(values=c("pink","firebrick4"))
+p
+
+assayCluster <- rld_mat[clusters$df$genes,]
+my_palette <- colorRampPalette(c("blue",'white','red'))(n=1000)
+assayCluster <- assayCluster[,c(1,3,5,7,2,4,6,8,11,13,15,17,19,10,12,14,16,18,20)]
+heatmap.2(assayCluster, col=my_palette,
+          scale="row", key=F, keysize=1, symkey=T,
+          density.info="none", trace="none",
+          cexCol=0.6, labRow=F, dendrogram="row",Rowv=TRUE,Colv=FALSE,
+          main="CD8+ q < .05 and log2fc > 1 or < -1 ")
+
+dds_lrt <- DESeq(CD4_dds, test="LRT", reduced = ~ 1)
+rld <- vst(dds_lrt)
+res_LRT <- results(dds_lrt)
+res_LRT$qvalue <- qvalue(res_LRT$pvalue)$qvalue
+top_hits_overall <- res_LRT[!is.na(res_LRT$qvalue) & res_LRT$qvalue < .1 
+                     #       & ((res_LRT$log2FoldChange > 1  | res_LRT$log2FoldChange < -1))
+                            ,]
+top_hits_ordered <- rownames(top_hits_overall[order(top_hits_overall$qvalue),])
+rld_mat <- assay(rld)
+Selected_rld <- rld_mat[top_hits_ordered,]
+rownames(CD4_metadata) <- CD4_metadata$id
+clusters <- degPatterns(Selected_rld, CD4_metadata, time ='age_sabgal',col='young_or_aged')
+p <- clusters$plot +
+  theme_classic() +
+  labs(x="SAbGal High or Low", title="Cluster analysis of DE Genes - CD4+ Only") +
+  scale_x_discrete("SAbGal High or Low", labels = c("aged high" = "High","aged low" = "Low", 
+                                                    "young high" = "High","young low" = "Low")) +
+  scale_fill_manual(values=c("pink","firebrick4"))
+p
+
+assayCluster <- rld_mat[clusters$df$genes,]
+my_palette <- colorRampPalette(c("blue",'white','red'))(n=1000)
+assayCluster <- assayCluster[,c(1,3,5,7,2,4,6,8,11,13,15,17,19,10,12,14,16,18,20)]
+heatmap.2(assayCluster, col=my_palette,
+          scale="row", key=F, keysize=1, symkey=T,
+          density.info="none", trace="none",
+          cexCol=0.6, labRow=F, dendrogram="row",Rowv=TRUE,Colv=FALSE,
+          main="CD4+ q < .05 and log2fc > 1 or < -1 ")
+
+
+dds_lrt <- DESeq(dds, test="LRT", reduced = ~ 1)
+rld <- vst(dds_lrt)
+res_LRT <- results(dds_lrt)
+res_LRT$qvalue <- qvalue(res_LRT$pvalue)$qvalue
+top_hits_overall <- res_LRT[!is.na(res_LRT$qvalue) & res_LRT$padj < .1
+                            & ((res_LRT$log2FoldChange > .1  | res_LRT$log2FoldChange < -.1))
+                            ,]
+top_hits_ordered <- rownames(top_hits_overall[order(top_hits_overall$qvalue),])
+rld_mat <- assay(rld)
+Selected_rld <- rld_mat[top_hits_ordered,]
+rownames(yongho_metadata) <- yongho_metadata$id
+clusters <- degPatterns(Selected_rld, yongho_metadata, time ='age_sabgal',col='young_or_aged')
+p <- clusters$plot +
+  theme_classic() +
+  labs(x="SAbGal High or Low", title="Cluster analysis of DE Genes") +
+  scale_x_discrete("SAbGal High or Low", labels = c("aged high" = "High","aged low" = "Low", 
+                                                    "young high" = "High","young low" = "Low")) +
+  scale_fill_manual(values=c("pink","firebrick4"))
+p
+
+assayCluster <- rld_mat[clusters$df$genes,]
+my_palette <- colorRampPalette(c("blue",'white','red'))(n=1000)
+assayCluster <- assayCluster[,c(1,3,5,7,9,11,13,15,2,4,6,8,10,12,14,16,17,19,21,23,25,27,29,31,33,35,37,39,41,18,20,22,
+                                24,26,28,30,32,34,36,38,40,42)]
+heatmap.2(assayCluster, col=my_palette,
+          scale="row", key=F, keysize=1, symkey=T,
+          density.info="none", trace="none",
+          cexCol=0.6, labRow=F, dendrogram="row",Rowv=TRUE,Colv=FALSE,
+          main="q < .05 and log2fc > 1 or < -1 ")
+
+msig <- msigdbr(species = "Homo sapiens") %>% filter(gs_cat == "H" | (gs_cat == "C2" & gs_subcat == "CP:REACTOME"))   %>% select(gs_name,human_gene_symbol)
+
+#Find gene sets enriched in cluster 1 to 8
+enrichment.results <- tibble()
+for (clusterID in c(1, 2, 3,4,5,6)) {
+  geneIds.cluster <-  clusters$df[(clusters$df$cluster ==clusterID),]
+  em <- enricher(gene=geneIds.cluster$genes,TERM2GENE=msig, minGSSize = 8, qvalueCutoff=0.05)
+  #write.table(clusters$df$symbol[(clusters$df$cluster ==clusterID)],sep=" ",row.names=F,col.names=F ,file=paste("cluster_",clusterID,".txt"))
+  
+  if (!is.null(em)) {
+    result <- em@result
+    result$cluster <- clusterID
+    result <- filter(result, qvalue <= 0.05)
+    if (nrow(result) > 0) {
+      result$genes <- apply(result, 1, function(x) {str_c(sort(unlist(str_split(x[["geneID"]],"/"))),collapse=",")} )
+      enrichment.results <- rbind(enrichment.results, result)
+    }
+  }
+}
+enrichment.results$category <- ""
+enrichment.results$category[str_detect(enrichment.results$Description, "^HALLMARK")] <- "Hallmark"
+enrichment.results$category[str_detect(enrichment.results$Description, "^REACTOME")] <- "Reactome"
+enrichment.results$category[str_detect(enrichment.results$Description, "^GO")] <- "GO_CC"
+table(enrichment.results$category)
+
+#Exemple to get enriched gene sets and genes in cluster 8
+enrichment.results$Description[enrichment.results$cluster == 4]
+enrichment.results$genes[enrichment.results$cluster == 3]
+
+num.in.cluster <- data.frame(table(clusters$df$cluster))
+names(num.in.cluster) <- c("cluster", "n")
+enrichment.results$ratio <- enrichment.results$Count / num.in.cluster$n[enrichment.results$cluster]
+
+# convert to matrix format
+enrichment.results_wide = pivot_wider(enrichment.results, id_cols = 
+                                        c(Description, category), names_from = cluster, 
+                                      values_from=c(pvalue, p.adjust, qvalue, Count, 
+                                                    GeneRatio, BgRatio, ratio, genes))
+include_sets <- c(
+  #"REACTOME_INTERFERON_ALPHA_BETA_SIGNALING", 
+  "REACTOME_IMMUNOREGULATORY_INTERACTIONS_BETWEEN_A_LYMPHOID_AND_A_NON_LYMPHOID_CELL",
+  "REACTOME_METABOLISM_OF_AMINO_ACIDS_AND_DERIVATIVES",
+  "HALLMARK_IL6_JAK_STAT3_SIGNALING",
+  "REACTOME_CELL_CYCLE_CHECKPOINTS",
+  "REACTOME_M_PHASE",
+  "REACTOME_TRANSLATION",
+  "REACTOME_NONSENSE_MEDIATED_DECAY_NMD", 
+  "REACTOME_CELL_CYCLE_MITOTIC",  
+  "REACTOME_CHEMOKINE_RECEPTORS_BIND_CHEMOKINES",
+  "REACTOME_NEF_AND_SIGNAL_TRANSDUCTION" ,
+  #"REACTOME_INTERFERON_ALPHA_BETA_SIGNALING", 
+  "REACTOME_NEUTROPHIL_DEGRANULATION",
+  "HALLMARK_PROTEIN_SECRETION",
+  "HALLMARK_TNFA_SIGNALING_VIA_NFKB",
+  "REACTOME_ANTIGEN_PRESENTATION_FOLDING_ASSEMBLY_AND_PEPTIDE_LOADING_OF_CLASS_I_MHC",
+  "REACTOME_ER_QUALITY_CONTROL_COMPARTMENT_ERQC",
+  "REACTOME_EXTRACELLULAR_MATRIX_ORGANIZATION",
+  "REACTOME_CHOLESTEROL_BIOSYNTHESIS",
+  "REACTOME_GLUCOSE_METABOLISM",
+  "HALLMARK_INFLAMMATORY_RESPONSE",
+  "HALLMARK_INTERFERON_ALPHA_RESPONSE",
+  "REACTOME_CELLULAR_RESPONSE_TO_HEAT_STRESS",
+  "HALLMARK_CHOLESTEROL_HOMEOSTASIS",
+  "HALLMARK_PROTEIN_SECRETION",
+  "HALLMARK_MTORC1_SIGNALING" ,
+  "HALLMARK_HYPOXIA" ,
+  "HALLMARK_INTERFERON_GAMMA_RESPONSE" ,
+  #"HALLMARK_ESTROGEN_RESPONSE_EARLY",
+  #"HALLMARK_ESTROGEN_RESPONSE_LATE",
+  "HALLMARK_FATTY_ACID_METABOLISM",
+  "HALLMARK_P53_PATHWAY",
+  "HALLMARK_TNFA_SIGNALING_VIA_NFKB",
+  "HALLMARK_COAGULATION",
+  "HALLMARK_OXIDATIVE_PHOSPHORYLATION" 
+)
+
+enrichment.results.pruned <- filter(enrichment.results_wide, Description %in% c(include_sets))
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_CELL_CYCLE_CHECKPOINTS")] <- "Cell cycle checkpoints"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_METABOLISM_OF_AMINO_ACIDS_AND_DERIVATIVES")] <- "Metabolism of Amino Acids"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_IL6_JAK_STAT3_SIGNALING")] <- "IL6 JAK-STAT Signaling"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_CELL_CYCLE_CHECKPOINTS")] <- "Cell Cycle Checkpoints"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_M_PHASE")] <- "Mitosis"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_TRANSLATION")] <- "Translation"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_NONSENSE_MEDIATED_DECAY_NMD")] <- "Nonsense Mediated Decay"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_CHEMOKINE_RECEPTORS_BIND_CHEMOKINES")] <- "Chemokine Receptor Binding"    
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_NEF_AND_SIGNAL_TRANSDUCTION")] <- "NEF and Signal Transduction"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_NEUTROPHIL_DEGRANULATION")] <- "Neutrophil Degranulation"    
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_PROTEIN_SECRETION")] <- "Protein Secretion"    
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_TNFA_SIGNALING_VIA_NFKB")] <- "TNFa Signaling via NFkB"    
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_ANTIGEN_PRESENTATION_FOLDING_ASSEMBLY_AND_PEPTIDE_LOADING_OF_CLASS_I_MHC")] <- "Antigen presentation by MHC class I"    
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_ER_QUALITY_CONTROL_COMPARTMENT_ERQC")] <- "ER quality control compartment"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_EXTRACELLULAR_MATRIX_ORGANIZATION")] <- "Extracellular matrix organisation"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_CHOLESTEROL_BIOSYNTHESIS")] <- "Cholesterol Biosynthesis"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_GLUCOSE_METABOLISM")] <- "Glucose Metabolism"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_INFLAMMATORY_RESPONSE")] <- "Inflammatory Response"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_INTERFERON_ALPHA_RESPONSE")] <- "Interferon Alpha and Beta response"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_CELLULAR_RESPONSE_TO_HEAT_STRESS")] <- "Cellular Response to Heat Stress"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_CHOLESTEROL_HOMEOSTASIS")] <- "Cholesterol Homeostasis"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_PROTEIN_SECRETION")] <- "Protein Secretion"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_MTORC1_SIGNALING")] <- "mTORC1 Signaling"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_HYPOXIA")] <- "Hypoxia"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_INTERFERON_GAMMA_RESPONSE")] <- "Interferon Gamma response"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_FATTY_ACID_METABOLISM")] <- "Fatty Acid Metabolism"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_P53_PATHWAY")] <- "P53 Pathway"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_COAGULATION")] <- "Coagulation"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_OXIDATIVE_PHOSPHORYLATION")] <- "Oxidative Phosphorilation"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_IMMUNOREGULATORY_INTERACTIONS_BETWEEN_A_LYMPHOID_AND_A_NON_LYMPHOID_CELL")] <- "Interactions between a Lymphoid and a Non-Lymphoid Cell"
+
+enrichment.results.pruned <- arrange(enrichment.results.pruned, category)
+em.q.values <- select(enrichment.results.pruned, grep("qvalue", colnames(enrichment.results.pruned), value=T))
+
+em.q.values <- em.q.values[, c("qvalue_1", "qvalue_2", "qvalue_3", "qvalue_4", "qvalue_5","qvalue_6")]
+rownames(em.q.values) <- as.character(enrichment.results.pruned$Description)
+colnames(em.q.values) <- c(1,2,3,4,5,6)
+em.q.values <- -log10(as.matrix(em.q.values))
+
+ratio.values <- select(enrichment.results.pruned, grep("ratio", colnames(enrichment.results.pruned), value=T))
+ratio.values <- ratio.values[, c("ratio_1", "ratio_2", "ratio_3", "ratio_4", "ratio_5", "ratio_6")]
+
+colnames(ratio.values) <- c(1,2,3,4,5,6)
+ratio.values <- data.frame(ratio.values)
+
+num.clusters <-6
+max.q = 5 #max(em.q.values, na.rm=T)
+min.q = min(em.q.values, na.rm=T)
+#col_fun = colorRamp2(c(min.q, max.q, max.q), c("#300101", "#e41a1c", "#e41a1c"))
+col_fun = colorRamp2(c(0, 2, 10), c("white",  "#e41a1c", "black"))
+
+col.annot <- HeatmapAnnotation(cluster = anno_simple(colnames(em.q.values),
+                                                     pt_gp = gpar(fontsize = 6),
+                                                     height = unit(1, "mm"),
+                                                     col = structure(brewer.pal(num.clusters, "Set3"), 
+                                                                     names = colnames(em.q.values))),
+                               show_annotation_name = F,
+                               show_legend = F,
+                               annotation_name_gp = gpar(fontsize = 6))
+
+
+h <- Heatmap(em.q.values, 
+             # labels
+             column_title = "Enriched gene sets",
+             column_title_gp = gpar(fontsize=7),
+             row_names_gp = gpar(fontsize = 7),
+             column_names_gp = gpar(fontsize = 6),
+             column_names_rot = 0,
+             row_title_gp = gpar(fontsize=7),
+             #name = "-log10(q-value)",
+             # legends
+             bottom_annotation = col.annot,
+             show_heatmap_legend = T,
+             col = col_fun,
+             heatmap_legend_param = list(color_bar = "continuous",
+                                         title_gp = gpar(fontsize = 6),
+                                         labels_gp = gpar(fontsize = 6),
+                                         grid_width = unit(2,"mm")),
+             
+             cluster_rows = F,
+             cluster_columns = F,
+             show_row_names = T,
+             show_column_names = T,
+             #split = enrichment.results.pruned$category,
+             cell_fun = function(j, i, x, y, width, height, fill) {
+               grid.rect(x = x, y = y, width = width, height = height, 
+                         gp = gpar(fill = "white", col = "#EEEEEE"))
+               grid.circle(x = x, y = y, r = sqrt(ratio.values[i, j]) * 0.1,
+                           gp = gpar(fill = col_fun(em.q.values[i, j]), col = NA))
+             }
+)
+h
