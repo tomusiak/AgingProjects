@@ -825,4 +825,23 @@ h <- Heatmap(em.q.values,
                            gp = gpar(fill = col_fun(em.q.values[i, j]), col = NA))
              }
 )
-h
+
+cols <- densCols(res_LRT$log2FoldChange, -log10(res_LRT$padj),nbin=128,
+                 colramp = colorRampPalette(brewer.pal(3, "Reds")))
+cols[res_LRT$padj ==0] <- "purple"
+res_LRT$pch <- 19
+res_LRT$pch[res_LRT$padj ==0] <- 6
+plot(x= res_LRT$log2FoldChange, 
+     y = -log10(res_LRT$padj), 
+     col=cols, panel.first=grid(),
+     main="Volcano plot", 
+     xlab="Effect size: log2(fold-change)",
+     ylab="-log10(adjusted p-value)",
+     xlim=c(-10,10),
+     pch=res_LRT$pch, cex=0.4)
+alpha <- 0.0001
+gn.selected <- abs(res_LRT$log2FoldChange) > 2 & res_LRT$padj < alpha 
+text(res_LRT$log2FoldChange[gn.selected],
+     -log10(res_LRT$padj)[gn.selected],
+     lab=rownames(res_LRT)[gn.selected ], cex=0.6)
+
