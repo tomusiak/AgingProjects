@@ -597,18 +597,18 @@ heatmap.2(assayCluster, col=my_palette,
           cexCol=0.6, labRow=F, dendrogram="both",Rowv=TRUE,Colv=TRUE,
           main="CD8+ q < .05 and log2fc > 1 or < -1 ")
 
-dds_lrt <- DESeq(CD4_dds, test="LRT", reduced = ~ 1)
+dds_lrt <- DESeq(CD8CM_dds, test="LRT", reduced = ~ 1)
 rld <- vst(dds_lrt)
 res_LRT <- results(dds_lrt)
 res_LRT$qvalue <- qvalue(res_LRT$pvalue)$qvalue
 top_hits_overall <- res_LRT[!is.na(res_LRT$qvalue) & res_LRT$qvalue < .1 
-                     #       & ((res_LRT$log2FoldChange > 1  | res_LRT$log2FoldChange < -1))
+                            & ((res_LRT$log2FoldChange > 1  | res_LRT$log2FoldChange < -1))
                             ,]
 top_hits_ordered <- rownames(top_hits_overall[order(top_hits_overall$qvalue),])
 rld_mat <- assay(rld)
 Selected_rld <- rld_mat[top_hits_ordered,]
-rownames(CD4_metadata) <- CD4_metadata$id
-clusters <- degPatterns(Selected_rld, CD4_metadata, time ='age_sabgal',col='young_or_aged')
+rownames(CD8CM_metadata) <- CD8CM_metadata$id
+clusters <- degPatterns(Selected_rld, CD8CM_metadata, time ='age_sabgal',col='young_or_aged')
 p <- clusters$plot +
   theme_classic() +
   labs(x="SAbGal High or Low", title="Cluster analysis of DE Genes - CD4+ Only") +
@@ -663,7 +663,7 @@ msig <- msigdbr(species = "Homo sapiens") %>% filter(gs_cat == "H" | (gs_cat == 
 
 #Find gene sets enriched in cluster 1 to 8
 enrichment.results <- tibble()
-for (clusterID in c(1, 2, 3,4,5,6)) {
+for (clusterID in c(1, 2, 3,4,5,6,7,8)) {
   geneIds.cluster <-  clusters$df[(clusters$df$cluster ==clusterID),]
   em <- enricher(gene=geneIds.cluster$genes,TERM2GENE=msig, minGSSize = 8, qvalueCutoff=0.05)
   #write.table(clusters$df$symbol[(clusters$df$cluster ==clusterID)],sep=" ",row.names=F,col.names=F ,file=paste("cluster_",clusterID,".txt"))
@@ -685,7 +685,7 @@ enrichment.results$category[str_detect(enrichment.results$Description, "^GO")] <
 table(enrichment.results$category)
 
 #Exemple to get enriched gene sets and genes in cluster 8
-enrichment.results$Description[enrichment.results$cluster == 4]
+enrichment.results$Description[enrichment.results$cluster == 2]
 enrichment.results$genes[enrichment.results$cluster == 3]
 
 num.in.cluster <- data.frame(table(clusters$df$cluster))
@@ -699,11 +699,12 @@ enrichment.results_wide = pivot_wider(enrichment.results, id_cols =
                                                     GeneRatio, BgRatio, ratio, genes))
 include_sets <- c(
   #"REACTOME_INTERFERON_ALPHA_BETA_SIGNALING", 
+  "HALLMARK_G2M_CHECKPOINT",
   "REACTOME_IMMUNOREGULATORY_INTERACTIONS_BETWEEN_A_LYMPHOID_AND_A_NON_LYMPHOID_CELL",
-  "REACTOME_METABOLISM_OF_AMINO_ACIDS_AND_DERIVATIVES",
+  "HALLMARK_APICAL_JUNCTION",
   "HALLMARK_IL6_JAK_STAT3_SIGNALING",
   "REACTOME_CELL_CYCLE_CHECKPOINTS",
-  "REACTOME_M_PHASE",
+  "REACTOME_ROS_AND_RNS_PRODUCTION_IN_PHAGOCYTES",
   "REACTOME_TRANSLATION",
   "REACTOME_NONSENSE_MEDIATED_DECAY_NMD", 
   "REACTOME_CELL_CYCLE_MITOTIC",  
@@ -714,14 +715,14 @@ include_sets <- c(
   "HALLMARK_PROTEIN_SECRETION",
   "HALLMARK_TNFA_SIGNALING_VIA_NFKB",
   "REACTOME_ANTIGEN_PRESENTATION_FOLDING_ASSEMBLY_AND_PEPTIDE_LOADING_OF_CLASS_I_MHC",
-  "REACTOME_ER_QUALITY_CONTROL_COMPARTMENT_ERQC",
+  "REACTOME_ACTIVATION_OF_SMO",
   "REACTOME_EXTRACELLULAR_MATRIX_ORGANIZATION",
-  "REACTOME_CHOLESTEROL_BIOSYNTHESIS",
+  "REACTOME_COMPLEMENT_CASCADE",
   "REACTOME_GLUCOSE_METABOLISM",
   "HALLMARK_INFLAMMATORY_RESPONSE",
   "HALLMARK_INTERFERON_ALPHA_RESPONSE",
   "REACTOME_CELLULAR_RESPONSE_TO_HEAT_STRESS",
-  "HALLMARK_CHOLESTEROL_HOMEOSTASIS",
+  "REACTOME_INTERLEUKIN_4_AND_INTERLEUKIN_13_SIGNALING",
   "HALLMARK_PROTEIN_SECRETION",
   "HALLMARK_MTORC1_SIGNALING" ,
   "HALLMARK_HYPOXIA" ,
@@ -731,16 +732,17 @@ include_sets <- c(
   "HALLMARK_FATTY_ACID_METABOLISM",
   "HALLMARK_P53_PATHWAY",
   "HALLMARK_TNFA_SIGNALING_VIA_NFKB",
-  "HALLMARK_COAGULATION",
+  "REACTOME_SIGNALING_BY_WNT",
   "HALLMARK_OXIDATIVE_PHOSPHORYLATION" 
 )
 
 enrichment.results.pruned <- filter(enrichment.results_wide, Description %in% c(include_sets))
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_G2M_CHECKPOINT")] <- "G2M Checkpoint"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_CELL_CYCLE_CHECKPOINTS")] <- "Cell cycle checkpoints"
-enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_METABOLISM_OF_AMINO_ACIDS_AND_DERIVATIVES")] <- "Metabolism of Amino Acids"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_APICAL_JUNCTION")] <- "Apical Junction"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_IL6_JAK_STAT3_SIGNALING")] <- "IL6 JAK-STAT Signaling"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_CELL_CYCLE_CHECKPOINTS")] <- "Cell Cycle Checkpoints"
-enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_M_PHASE")] <- "Mitosis"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_ROS_AND_RNS_PRODUCTION_IN_PHAGOCYTES")] <- "ROS Production"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_TRANSLATION")] <- "Translation"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_NONSENSE_MEDIATED_DECAY_NMD")] <- "Nonsense Mediated Decay"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_CHEMOKINE_RECEPTORS_BIND_CHEMOKINES")] <- "Chemokine Receptor Binding"    
@@ -749,39 +751,39 @@ enrichment.results.pruned$Description[which(enrichment.results.pruned$Descriptio
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_PROTEIN_SECRETION")] <- "Protein Secretion"    
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_TNFA_SIGNALING_VIA_NFKB")] <- "TNFa Signaling via NFkB"    
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_ANTIGEN_PRESENTATION_FOLDING_ASSEMBLY_AND_PEPTIDE_LOADING_OF_CLASS_I_MHC")] <- "Antigen presentation by MHC class I"    
-enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_ER_QUALITY_CONTROL_COMPARTMENT_ERQC")] <- "ER quality control compartment"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_ACTIVATION_OF_SMO")] <- "SMO Activation"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_EXTRACELLULAR_MATRIX_ORGANIZATION")] <- "Extracellular matrix organisation"
-enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_CHOLESTEROL_BIOSYNTHESIS")] <- "Cholesterol Biosynthesis"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_COMPLEMENT_CASCADE")] <- "Complement Cascade"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_GLUCOSE_METABOLISM")] <- "Glucose Metabolism"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_INFLAMMATORY_RESPONSE")] <- "Inflammatory Response"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_INTERFERON_ALPHA_RESPONSE")] <- "Interferon Alpha and Beta response"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_CELLULAR_RESPONSE_TO_HEAT_STRESS")] <- "Cellular Response to Heat Stress"
-enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_CHOLESTEROL_HOMEOSTASIS")] <- "Cholesterol Homeostasis"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_INTERLEUKIN_4_AND_INTERLEUKIN_13_SIGNALING")] <- "IL-4 and IL-13 Signaling"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_PROTEIN_SECRETION")] <- "Protein Secretion"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_MTORC1_SIGNALING")] <- "mTORC1 Signaling"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_HYPOXIA")] <- "Hypoxia"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_INTERFERON_GAMMA_RESPONSE")] <- "Interferon Gamma response"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_FATTY_ACID_METABOLISM")] <- "Fatty Acid Metabolism"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_P53_PATHWAY")] <- "P53 Pathway"
-enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_COAGULATION")] <- "Coagulation"
+enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_SIGNALING_BY_WNT")] <- "Wnt Signaling"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "HALLMARK_OXIDATIVE_PHOSPHORYLATION")] <- "Oxidative Phosphorilation"
 enrichment.results.pruned$Description[which(enrichment.results.pruned$Description == "REACTOME_IMMUNOREGULATORY_INTERACTIONS_BETWEEN_A_LYMPHOID_AND_A_NON_LYMPHOID_CELL")] <- "Interactions between a Lymphoid and a Non-Lymphoid Cell"
 
 enrichment.results.pruned <- arrange(enrichment.results.pruned, category)
 em.q.values <- select(enrichment.results.pruned, grep("qvalue", colnames(enrichment.results.pruned), value=T))
 
-em.q.values <- em.q.values[, c("qvalue_1", "qvalue_2", "qvalue_3", "qvalue_4", "qvalue_5","qvalue_6")]
+em.q.values <- em.q.values[, c("qvalue_1", "qvalue_2", "qvalue_3", "qvalue_4", "qvalue_6","qvalue_7","qvalue_8")]
 rownames(em.q.values) <- as.character(enrichment.results.pruned$Description)
-colnames(em.q.values) <- c(1,2,3,4,5,6)
+colnames(em.q.values) <- c(1,2,3,4,5,6,7,8)
 em.q.values <- -log10(as.matrix(em.q.values))
 
 ratio.values <- select(enrichment.results.pruned, grep("ratio", colnames(enrichment.results.pruned), value=T))
-ratio.values <- ratio.values[, c("ratio_1", "ratio_2", "ratio_3", "ratio_4", "ratio_5", "ratio_6")]
+ratio.values <- ratio.values[, c("ratio_1", "ratio_2", "ratio_3", "ratio_4",  "ratio_6","ratio_7","ratio_8")]
 
-colnames(ratio.values) <- c(1,2,3,4,5,6)
+colnames(ratio.values) <- c(1,2,3,4,5,6,7,8)
 ratio.values <- data.frame(ratio.values)
 
-num.clusters <-6
+num.clusters <-8
 max.q = 5 #max(em.q.values, na.rm=T)
 min.q = min(em.q.values, na.rm=T)
 #col_fun = colorRamp2(c(min.q, max.q, max.q), c("#300101", "#e41a1c", "#e41a1c"))
