@@ -226,13 +226,13 @@ top_hits_cd4sabgal <- cd4sabgal_resOrdered[!is.na(cd4sabgal_resOrdered$padj) & c
 
 #Below are top DEGs for CD8sabgal high/low
 CD8_samples <- colnames(raw_count_matrix)[grepl("CD8",colnames(dds_norm),fixed=TRUE)]
-CD8_counts <- raw_count_matrix[,CD8_samples ]
+CD8_counts <- raw_count_matrix[,CD8_samples]
 CD8_metadata <-  yongho_metadata[CD8_samples,]
 CD8_dds <- DESeqDataSetFromMatrix(CD8_counts,
                                   colData = CD8_metadata,
-                                  design = ~ age_sabgal)
+                                  design = ~ sabgal_high_or_low)
 CD8_dds <- DESeq(CD8_dds)
-cd8sabgal_res <- results(CD8_dds, contrast=c("sabgal_high_or_low","high","low"))
+cd8sabgal_res <- results(CD8_dds)
 cd8sabgal_resLFC <- lfcShrink(CD8_dds, res = cd8sabgal_res, contrast = "sabgal_high_or_low",type="ashr")
 plotMA(cd8sabgal_resLFC, ylim=c(-2,2))
 cd8sabgal_resOrdered <- cd8sabgal_resLFC[order(cd8sabgal_resLFC$padj),]
@@ -275,7 +275,7 @@ CD8TE_counts <- raw_count_matrix[,CD8TE_samples ]
 CD8TE_metadata <-  yongho_metadata[CD8TE_samples,]
 CD8TE_dds <- DESeqDataSetFromMatrix(CD8TE_counts,
                                     colData = CD8TE_metadata,
-                                    design = ~ age_sabgal)
+                                    design = ~ sabgal_high_or_low)
 CD8TE_dds <- DESeq(CD8TE_dds)
 cd8TEsabgal_res <- results(CD8TE_dds, contrast=c("sabgal_high_or_low","high","low"))
 cd8TEsabgal_resLFC <- lfcShrink(CD8TE_dds, res = cd8TEsabgal_res, contrast = "sabgal_high_or_low",type="ashr")
@@ -594,7 +594,7 @@ assayCluster <- assayCluster[,c(1,3,5,7,2,4,6,8,11,13,15,17,19,10,12,14,16,18,20
 heatmap.2(assayCluster, col=my_palette,
           scale="row", key=F, keysize=1, symkey=T,
           density.info="none", trace="none",
-          cexCol=0.6, labRow=F, dendrogram="row",Rowv=TRUE,Colv=FALSE,
+          cexCol=0.6, labRow=F, dendrogram="both",Rowv=TRUE,Colv=TRUE,
           main="CD8+ q < .05 and log2fc > 1 or < -1 ")
 
 dds_lrt <- DESeq(CD4_dds, test="LRT", reduced = ~ 1)
@@ -627,18 +627,20 @@ heatmap.2(assayCluster, col=my_palette,
           main="CD4+ q < .05 and log2fc > 1 or < -1 ")
 
 
-dds_lrt <- DESeq(dds, test="LRT", reduced = ~ 1)
+dds_lrt <- DESeq(CD8_dds, test="LRT", reduced = ~ 1)
 rld <- vst(dds_lrt)
 res_LRT <- results(dds_lrt)
 res_LRT$qvalue <- qvalue(res_LRT$pvalue)$qvalue
-top_hits_overall <- res_LRT[!is.na(res_LRT$qvalue) & res_LRT$padj < .1
-                            & ((res_LRT$log2FoldChange > .1  | res_LRT$log2FoldChange < -.1))
-                            ,]
+top_hits_overall <- res_LRT[!is.na(res_LRT$qvalue) & !is.na(res_LRT$log2FoldChange),]
+top_hits_overall <- top_hits_overall[top_hits_overall$qvalue < .1 
+                                     & ((top_hits_overall$log2FoldChange > .1  | 
+                                  top_hits_overall$log2FoldChange < -.1))
+                                     ,]
 top_hits_ordered <- rownames(top_hits_overall[order(top_hits_overall$qvalue),])
 rld_mat <- assay(rld)
 Selected_rld <- rld_mat[top_hits_ordered,]
-rownames(yongho_metadata) <- yongho_metadata$id
-clusters <- degPatterns(Selected_rld, yongho_metadata, time ='age_sabgal',col='young_or_aged')
+rownames(CD8_metadata) <- CD8_metadata$id
+clusters <- degPatterns(Selected_rld,CD8_metadata, time ='age_sabgal',col='young_or_aged')
 p <- clusters$plot +
   theme_classic() +
   labs(x="SAbGal High or Low", title="Cluster analysis of DE Genes") +
@@ -654,7 +656,7 @@ assayCluster <- assayCluster[,c(1,3,5,7,9,11,13,15,2,4,6,8,10,12,14,16,17,19,21,
 heatmap.2(assayCluster, col=my_palette,
           scale="row", key=F, keysize=1, symkey=T,
           density.info="none", trace="none",
-          cexCol=0.6, labRow=F, dendrogram="row",Rowv=TRUE,Colv=FALSE,
+          cexCol=0.6, labRow=F, dendrogram="both",Rowv=TRUE,Colv=TRUE,
           main="q < .05 and log2fc > 1 or < -1 ")
 
 msig <- msigdbr(species = "Homo sapiens") %>% filter(gs_cat == "H" | (gs_cat == "C2" & gs_subcat == "CP:REACTOME"))   %>% select(gs_name,human_gene_symbol)
@@ -826,22 +828,28 @@ h <- Heatmap(em.q.values,
              }
 )
 
-cols <- densCols(res_LRT$log2FoldChange, -log10(res_LRT$padj),nbin=128,
-                 colramp = colorRampPalette(brewer.pal(3, "Reds")))
-cols[res_LRT$padj ==0] <- "purple"
-res_LRT$pch <- 19
-res_LRT$pch[res_LRT$padj ==0] <- 6
-plot(x= res_LRT$log2FoldChange, 
-     y = -log10(res_LRT$padj), 
+cols <- densCols(cd8CMsabgal_resLFC$log2FoldChange, -log10(cd8CMsabgal_resLFC$padj),
+                 nbin=25, bandwidth=1,
+                 colramp = colorRampPalette(brewer.pal(5, "Reds")))
+cd8CMsabgal_resLFC$inv_change <- 1/cd8CMsabgal_resLFC$log2FoldChange
+cd8CMsabgal_resLFC$combo <- abs((cd8CMsabgal_resLFC$inv_change**5 * cd8CMsabgal_resLFC$padj))
+cols[cd8CMsabgal_resLFC$padj ==0] <- "purple"
+cd8CMsabgal_resLFC$pch <- 19
+cd8CMsabgal_resLFC$pch[cd8CMsabgal_resLFC$padj ==0] <- 6
+plot(x= cd8CMsabgal_resLFC$log2FoldChange, 
+     y = -log10(cd8CMsabgal_resLFC$padj), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
      ylab="-log10(adjusted p-value)",
-     xlim=c(-10,10),
-     pch=res_LRT$pch, cex=0.4)
-alpha <- 0.0001
-gn.selected <- abs(res_LRT$log2FoldChange) > 2 & res_LRT$padj < alpha 
-text(res_LRT$log2FoldChange[gn.selected],
-     -log10(res_LRT$padj)[gn.selected],
-     lab=rownames(res_LRT)[gn.selected ], cex=0.6)
-
+     xlim=c(-5,5),
+     ylim=c(0,8),
+     pch=cd8CMsabgal_resLFC$pch, cex=0.4)
+alpha <- 0.00001
+gn.selected <- abs(cd8CMsabgal_resLFC$log2FoldChange) >2 & cd8CMsabgal_resLFC$padj < .05
+text(cd8CMsabgal_resLFC$log2FoldChange[gn.selected],
+     -log10(cd8CMsabgal_resLFC$padj)[gn.selected],
+     lab=rownames(cd8CMsabgal_resLFC)[gn.selected ], cex=0.6)
+cd8sabgal_resOrdered <- cd8CMsabgal_resLFC[order(cd8CMsabgal_resLFC$padj),]
+"CD68" %in% rownames(head(cd8sabgal_resOrdered,500))
+cd8sabgal_resOrdered["CD16",]
