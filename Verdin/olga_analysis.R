@@ -8,23 +8,26 @@ library(limma)
 library(dplyr)
 require("biomaRt")
 library("RColorBrewer")
-
-#Helper function to go from human to mouse genes
-convertHumanGeneList <- function(x){
-  human = useMart("ensembl", dataset = "hsapiens_gene_ensembl")
-  mouse = useMart("ensembl", dataset = "mmusculus_gene_ensembl")
-  genesV2 = getLDS(attributes = c("hgnc_symbol"), filters = "hgnc_symbol", values = x , mart = human, attributesL = c("mgi_symbol"), martL = mouse, uniqueRows=T)
-  return(genesV2)
-}
+library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+library(DMRcate)
+library(readxl)
 
 #Loading in data.
 load("./data/NormalizedData/all_probes_sesame_normalized.Rdata")
 datSample=read.csv("./data/SampleSheetAgeN80version4.csv")
-annotations <- readRDS("./tools/geneAnnotations/AnnotationAminHaghani/Latest versions/Human.Homo_sapiens.hg38.Amin.V4.RDS", refhook = NULL)
+annotations <-  readRDS("/home/atom/Desktop/Data/Olga/tools/geneAnnotations/AnnotationAminHaghani/Latest versions/Mouse.Mus_musculus.GRCm38.100.Amin.V6.RDS")
 dat0=data.frame(normalized_betas_sesame)
 
+#Let's swap CG ID's for gene names, and remove any NA values.
+matched_positions <- match(dat0$CGid,annotations$CGid) #Finds valid matches in table.
+matched_symbols <- annotations$SYMBOL[matched_positions]
+dat0$Symbol <- matched_symbols
+dat0 <- dat0[!is.na(dat0$Symbol),]
+rownames(dat0) <- make.names(dat0$Symbol,unique=TRUE)
+dat0 <- dat0[,1:81]
+
 #Some QC checks and re-formatting performed by Horvath's group and copied here.
-#QC primarily performed by cluster analysis.
+#QC primarily performed by cluster analysis
 colnames(dat0)[-1]=paste0(datSample$OriginalOrderInBatch,datSample$Tissue)
 corSample=cor(dat0[,-1], use="p")
 hierSample=hclust(as.dist(1-corSample), method="a")
@@ -39,52 +42,54 @@ datColors=data.frame(branch= datSample$ClusteringColor,
                      Female=ifelse(datSample$Female==1,"pink","lightblue") )
 plotDendroAndColors(hierSample, colors=datColors)
 
-#Setting gene names in place of CpG ID.
-matched_positions <- match(dat0$CGid,annotations$CGid) #Finds valid matches in table.
-matched_symbols <- annotations$SYMBOL[matched_positions]
-dat0$symbol <- matched_symbols
-unique_symbols <- make.names(matched_symbols, unique = TRUE)
-rownames(dat0) <- unique_symbols
-dat0 <- dat0[,2:81]
+#processing
+mouse_list <- dat0[,2:81]
+m_values <- log2(mouse_list/(1-mouse_list))
 
-#limma differential analysis
+#limma differential methylation analysis
 genotype_group <- factor(datSample$Genotype,levels=c("WT","KO"))
-tissue_group <- factor(datSample$Tissue)
-design <- model.matrix(~genotype_group + tissue_group)
-fit.reduced <- lmFit(dat0,design)
+tissue_group <- factor(datSample$Tissue,levels=c("Heart","Brain","Liver","Muscle","Cerebellum"))
+sex_group <- factor(datSample$Sex)
+design <- model.matrix(~genotype_group + tissue_group + sex_group)
+fit.reduced <- lmFit(m_values,design)
 fit.reduced <- eBayes(fit.reduced, robust=TRUE)
 summary(decideTests(fit.reduced))
-top<-topTable(fit.reduced,coef=2,number=20000)
-top_genes <- rownames(top)
-top_genes <- gsub("\\..*","", top_genes )
-matched_positions <- match(top_genes,genes$HGNC.symbol) #Finds valid matches in table.
-matched_symbols <- genes$MGI.symbol[matched_positions]
-rownames(top) <- make.names(matched_symbols,unique=TRUE)
-cols <- densCols(top$logFC, -log10(top$adj.P.Val),
+diff_exp <-topTable(fit.reduced,coef=2,number=30000)
+
+#Differential variability analysis using missMethyl.
+fitvar <- varFit(m_values, design = design, coef = c(1,4))
+summary(decideTests(fitvar))
+topDV <- topVar(fitvar, coef=2,number=300)
+diff_exp["Clk1.1",]
+
+#let's pull only unique stuff
+single_genes <- gsub("\\..*","", rownames(diff_exp) )
+first_iteration <- diff_exp[!duplicated(single_genes,MARGIN=1),]
+
+#limma differential analysis
+cols <- densCols(first_iteration$logFC, -log10(first_iteration$adj.P.Val),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
-plot(x= top$logFC, 
-     y = -log10(top$adj.P.Val), 
+plot(x= first_iteration$logFC, 
+     y = -log10(first_iteration$adj.P.Val), 
      col=cols, panel.first=grid(),
      main="Volcano plot of KO vs. WT mice", 
-     xlim=c(-.20,.20),
+     xlim=c(-2,2),
      ylim=c(0,20),
      xlab="Effect size: log(fold-change)",
      ylab="-log10(adjusted p-value)",
      cex=0.6)
-gn.selected <- abs(top$logFC) >.025 & (top$adj.P.Val) < .0000005
-text(top$logFC[gn.selected],
-     -log10(top$adj.P.Val)[gn.selected],
-     lab=rownames(top)[gn.selected ], cex=0.5)
+gn.selected <- abs(first_iteration$logFC) >.01 & (first_iteration$adj.P.Val) < .0000005
+text(first_iteration$logFC[gn.selected],
+     -log10(first_iteration$adj.P.Val)[gn.selected],
+     lab=rownames(first_iteration)[gn.selected ], cex=0.6)
 
-
-mouse_genes <- matched_symbols[!is.na(matched_symbols)]
-top_genes_unique <- (data.frame(top_genes) %>% distinct())[,1]
-top["Kdm5a",]
-rownames(dat0)
-genes <- convertHumanGeneList(top_genes_unique)
-matched_positions <- match(top_genes,genes$HGNC.symbol) #Finds valid matches in table.
+#other stuff
+matched_positions <- match(single_genes,genes$HGNC.symbol) #Finds valid matches in table.
 matched_symbols <- genes$MGI.symbol[matched_positions]
 mouse_genes <- matched_symbols[!is.na(matched_symbols)]
-write.csv(mouse_genes,"mouse_genes.csv")
-
+matched_positions <- match(top_genes,genes$HGNC.symbol) #Finds valid matches in table.
+matched_symbols <- genes$MGI.symbol[matched_positions]
+rownames(top) <- make.names(make.unique(matched_symbols,sep="."))
+single_genes <- gsub("\\..*","", rownames(top) )
+first_iteration <- top[!duplicated(single_genes,MARGIN=1),]
