@@ -60,7 +60,7 @@ diff_exp <-topTable(fit.reduced,coef=2,number=30000)
 fitvar <- varFit(m_values, design = design, coef = c(1,4))
 summary(decideTests(fitvar))
 topDV <- topVar(fitvar, coef=2,number=300)
-diff_exp["Clk1.1",]
+diff_exp["Mfn2",]
 
 #let's pull only unique stuff
 single_genes <- gsub("\\..*","", rownames(diff_exp) )
