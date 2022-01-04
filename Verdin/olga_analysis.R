@@ -70,7 +70,7 @@ diff_exp <-topTable(fit.reduced,coef=2,number=30000)
 fitvar <- varFit(mouse_list, design = design)
 summary(decideTests(fitvar))
 topDV <- topVar(fitvar, coef=2,number=300)
-diff_exp["Tet1",]
+diff_exp["Tet2",]
 
 #let's pull only unique stuff
 single_genes <- gsub("\\..*","", rownames(diff_exp) )
@@ -95,8 +95,10 @@ text(diff_exp$logFC[gn.selected],
      lab=rownames(diff_exp)[gn.selected ], cex=0.6)
 
 #GO analysis
-sig_dmrs <- data.frame(rownames(diff_exp[diff_exp$adj.P.Val < .001,]))
-not_sig_dmrs <- data.frame(rownames(diff_exp[diff_exp$adj.P.Val > .001,]))
+sig_dmrs <- data.frame( gsub("\\..*","",rownames(diff_exp[diff_exp$adj.P.Val <= .001 &
+                                                            abs(diff_exp$logFC) >=.025,])))
+not_sig_dmrs <- data.frame(gsub("\\..*","",rownames(diff_exp[diff_exp$adj.P.Val > .001&
+                                                               abs(diff_exp$logFC) <.025,])))
 colnames(sig_dmrs) <- "gene_ids"
 colnames(not_sig_dmrs) <- "gene_ids"
 sig_dmrs$is_candidate <- 1
@@ -106,7 +108,7 @@ res_hyper_bg = go_enrich(combined, n_randsets=100,organism="Mus.musculus")
 top_gos_hyper_bg = res_hyper_bg[[1]][1:5, 'node_id']
 plot_stats = plot_anno_scores(res_hyper_bg, top_gos_hyper_bg)
 plot_stats
-res_hyper_bg[[1]][1:5, 'node_name']
+res_hyper_bg[[1]][1:10, 'node_name']
 
 #other stuff
 sig_dmrs_full_data<-diff_exp[sig_dmrs$gene_ids,]
@@ -216,8 +218,10 @@ ggplot(total_data, aes(x=tissue,fill=Genotype,y=HorvathClockAge, ymin=HorvathClo
   
 #Let's look at GO terms enriched for heart tissues only.
 #GO analysis
-sig_dmrs_heart <- data.frame(rownames(diff_exp_heart[diff_exp_heart$adj.P.Val < .001,]))
-not_sig_dmrs_heart <- data.frame(rownames(diff_exp_heart[diff_exp_heart$adj.P.Val > .001,]))
+sig_dmrs_heart <- data.frame(gsub("\\..*","",rownames(diff_exp_heart[diff_exp_heart$adj.P.Val <= .001 &
+                                                                       abs(diff_exp_heart$logFC) >=.025,])))
+not_sig_dmrs_heart <- data.frame(gsub("\\..*","",rownames(diff_exp_heart[diff_exp_heart$adj.P.Val > .001 &
+                                                                           abs(diff_exp_heart$logFC) <.025,])))
 colnames(sig_dmrs_heart) <- "gene_ids"
 colnames(not_sig_dmrs_heart) <- "gene_ids"
 sig_dmrs_heart$is_candidate <- 1
@@ -227,7 +231,7 @@ res_hyper_bg_heart = go_enrich(combined_heart, n_randsets=100,organism="Mus.musc
 top_gos_hyper_bg_heart = res_hyper_bg_heart[[1]][1:5, 'node_id']
 plot_stats_heart = plot_anno_scores(res_hyper_bg_heart, top_gos_hyper_bg_heart)
 plot_stats_heart
-res_hyper_bg_heart[[1]][1:5, 'node_name']
+res_hyper_bg_heart[[1]][1:10, 'node_name']
 
 #Volcano plot for heart only
 cols <- densCols(diff_exp_heart$logFC, -log10(diff_exp_heart$adj.P.Val),
@@ -246,3 +250,7 @@ gn.selected <- abs(diff_exp_heart$logFC) >.16 & (diff_exp_heart$adj.P.Val) < .00
 text(diff_exp_heart$logFC[gn.selected],
      -log10(diff_exp_heart$adj.P.Val)[gn.selected],
      lab=rownames(diff_exp_heart)[gn.selected ], cex=0.6)
+
+#Other Stuff
+diff_exp_heart["Dnmt3a",]
+
