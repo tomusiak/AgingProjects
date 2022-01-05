@@ -75,14 +75,15 @@ rownames(raw_count_matrix) <- unique_symbols #Replaces IDs with names.
 #top differentially expressed genes depending on category.
 #Below are top DEGs for CD4/CD8.
 
-good_donor_samples <- colnames(dds_norm)[!grepl("09",colnames(dds_norm),fixed=TRUE)]
+good_donor_samples <- colnames(dds_norm)[grepl("04",colnames(dds_norm),fixed=TRUE) |
+                                           grepl("05",colnames(dds_norm),fixed=TRUE)]
 raw_count_matrix <- raw_count_matrix[,good_donor_samples]
 yongho_metadata <- yongho_metadata[good_donor_samples,]
 rownames(yongho_metadata) <- yongho_metadata$id
 
 dds <- DESeqDataSetFromMatrix(raw_count_matrix,
                                    colData = yongho_metadata,
-                                   design = ~ age_sabgal) 
+                                   design = ~ sabgal_high_or_low + cm_or_te + cd8_or_cd4 ) 
 #Transforms count matrix into DESeq object.
 dds <- DESeq(dds) #Performs DE analysis.
 CD8_res <- results(dds, contrast=c("cd8_or_cd4","cd8","cd4")) 
@@ -99,6 +100,7 @@ plotMA(sabgal_resLFC, ylim=c(-2,2))
 sabgal_resOrdered <- sabgal_resLFC[order(sabgal_resLFC$padj),]
 top_hits_sabgal <- sabgal_resOrdered[!is.na(sabgal_resOrdered$padj) & sabgal_resOrdered$padj < .05,]
 write.csv(top_hits_sabgal,"yongho_top_hits_sabgal.csv")
+top_hits_sabgal["CD16",]
 
 #Below are top DEGs for Old/Young
 aged_res <- results(dds, contrast=c("young_or_aged","young","aged"))

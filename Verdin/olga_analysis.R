@@ -8,7 +8,6 @@ library(limma)
 library(dplyr)
 require("biomaRt")
 library("RColorBrewer")
-library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 library(DMRcate)
 library(readxl)
 library(ggplot2)
@@ -186,29 +185,36 @@ clock_results <- read_csv("data/ResultsClock/OutputMouseClockFeb8.2021.csv")
 
 #Clock analysis looking at different tissues.
 horvathclock_heart <- clock_results[clock_results$Tissue=="Heart",]
-summarized_heart <- horvathclock_heart %>% group_by(Genotype) %>% summarise(HorvathClockAge = mean(DNAmAgeFinalClockHeart), 
+summarized_heart <- horvathclock_heart %>% group_by(Genotype) %>% summarise(HorvathClockAge = 
+                                                                              mean(DNAmAgeFinalClockHeart), 
                                                         se= std.error(DNAmAgeFinalClockHeart))
 summarized_heart$tissue <- "Heart"
 horvathclock_muscle <- clock_results[clock_results$Tissue=="Muscle",]
-summarized_muscle <- horvathclock_muscle %>% group_by(Genotype) %>% summarise(HorvathClockAge = mean(DNAmAgeFinalClockMuscle), 
+summarized_muscle <- horvathclock_muscle %>% group_by(Genotype) %>% summarise(HorvathClockAge = 
+                                                                                mean(DNAmAgeFinalClockMuscle), 
                                                                             se= std.error(DNAmAgeFinalClockMuscle))
 summarized_muscle$tissue <- "Muscle"
 horvathclock_liver <- clock_results[clock_results$Tissue=="Liver",]
-summarized_liver <- horvathclock_liver %>% group_by(Genotype) %>% summarise(HorvathClockAge = mean(DNAmAgeFinalClockLiver), 
+summarized_liver <- horvathclock_liver %>% group_by(Genotype) %>% summarise(HorvathClockAge = 
+                                                                              mean(DNAmAgeFinalClockLiver), 
                                                                              se= std.error(DNAmAgeFinalClockLiver))
 summarized_liver$tissue <- "Liver"
 horvathclock_brain <- clock_results[clock_results$Tissue=="Brain",]
-summarized_brain <- horvathclock_brain %>% group_by(Genotype) %>% summarise(HorvathClockAge = mean(DNAmAgeFinalClockBrain), 
+summarized_brain <- horvathclock_brain %>% group_by(Genotype) %>% summarise(HorvathClockAge = 
+                                                                              mean(DNAmAgeFinalClockBrain), 
                                                                             se= std.error(DNAmAgeFinalClockBrain))
 summarized_brain$tissue <- "Brain"
 horvathclock_cerebellum <- clock_results[clock_results$Tissue=="Cerebellum",]
-summarized_cerebellum <- horvathclock_cerebellum %>% group_by(Genotype) %>% summarise(HorvathClockAge = mean(DNAmAgeFinalClockBrain), 
+summarized_cerebellum <- horvathclock_cerebellum %>% group_by(Genotype) %>% summarise(HorvathClockAge = 
+                                                                                        mean(DNAmAgeFinalClockBrain), 
                                                                             se= std.error(DNAmAgeFinalClockBrain))
 summarized_cerebellum$tissue <- "Cerebellum"
-total_data <- rbind(summarized_heart,summarized_muscle,summarized_liver,summarized_brain,summarized_cerebellum)
+total_data <- rbind(summarized_heart,summarized_muscle,summarized_liver,summarized_brain,
+                    summarized_cerebellum)
 total_data$se <- total_data$se*100
 total_data$HorvathClockAge <- total_data$HorvathClockAge*100
-ggplot(total_data, aes(x=tissue,fill=Genotype,y=HorvathClockAge, ymin=HorvathClockAge-se, ymax = HorvathClockAge+se)) + 
+ggplot(total_data, aes(x=tissue,fill=Genotype,y=HorvathClockAge, 
+                       ymin=HorvathClockAge-se, ymax = HorvathClockAge+se)) + 
   geom_bar(stat="identity",position=position_dodge(), color="black") + theme_minimal() +
   geom_errorbar(width=.2,position=position_dodge(.9)) +
   scale_fill_manual(values=c('#FF9999','#FF0055')) + labs(x="Tissue", 
