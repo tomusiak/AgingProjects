@@ -257,6 +257,8 @@ text(diff_exp_heart$logFC[gn.selected],
      -log10(diff_exp_heart$adj.P.Val)[gn.selected],
      lab=rownames(diff_exp_heart)[gn.selected ], cex=0.6)
 
-#Other Stuff
-diff_exp_heart["Dnmt3a",]
-
+#Printing top differentially methylated CpGs for heart and overall.
+heart_hits <- data.frame((diff_exp_heart[diff_exp_heart$adj.P.Val < .05,]))
+hits <- data.frame(diff_exp[diff_exp$adj.P.Val < .05,])
+write.csv(heart_hits,"diff_methexp_heart.csv")
+write.csv(hits,"diff_methexp.csv")
