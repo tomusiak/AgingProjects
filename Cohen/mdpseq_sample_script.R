@@ -1,13 +1,10 @@
-##########====HEPATIC SHY5Y MDP-SEQ SCRIPT=====#########
-setwd("/home/atom/Desktop/Data/")
-list_of_bams <- c("D7OFF.fastq.subread.BAM","D7ON.fastq.subread.BAM","D11OFF.fastq.subread.BAM",
-                  "D11ON.fastq.subread.BAM","D15OFF.fastq.subread.BAM","D15ON.fastq.subread.BAM")
-sampleTable<-read.csv("samples.csv")
+#MDPSeq code on constitutively vs. non-constitutively active CARs.
+#Based off code provided by Brendan Miller.
 
-slist.files(getwd())
-filenames <- file.path(getwd(), paste0(sampleTable$id, "Aligned.out_sorted_chrM.bam"))
-file.exists(filenames)
-#####LOAD BAM FILES----
+#Loading in background correction code.
+source("mdpseq_background_correction.R")
+
+#Loading in libraries.
 library("BiocManager")
 library("S4Vectors")
 library("IRanges")
@@ -18,47 +15,65 @@ library("BiocParallel")
 library("XVector")
 library("Biostrings")
 library("Rsamtools")
-bamfiles<-BamFileList(list_of_bams, yieldSize = 2000000)
-seqinfo(bamfiles[1])
-
-###LOAD
-library("Biobase")
-library("AnnotationDbi")
-library("GenomicFeatures")
-gtffile <- file.path(getwd(),"mdp_atg_noATC.gtf")
-txdb <- makeTxDbFromGFF(gtffile, format = "gtf", circ_seqs = character())
-txdb
-
-######annotate exons (or MDPs)
-ebg <- exonsBy(txdb, by="gene")
-ebg
-
-#####ALIGN TO MDP CALLS
 library("matrixStats")
 library("DelayedArray")
 library("SummarizedExperiment")
 library("GenomicAlignments")
 library("BiocParallel")
+library("DESeq2")
+library("Biobase")
+library("AnnotationDbi")
+library("GenomicFeatures")
+library(dplyr)
+library("pheatmap")
+library(ggplot2)
+library("RColorBrewer")
+library(Rsubread)
 
-se <- summarizeOverlaps(features=ebg, reads=list_of_bams,
-                        mode="Union",
-                        singleEnd=TRUE,
-                        ignore.strand=FALSE,
-                        fragments=FALSE,
-                        inter.feature=FALSE) ###this will count each)
+#Loading in data.
+setwd("/home/atom/Desktop/Data/")
+list_of_bams <- c("D11OFF.fastq.subread.BAM", "D11ON.fastq.subread.BAM",
+                  "D15OFF.fastq.subread.BAM","D15ON.fastq.subread.BAM")
+sampleTable<-read.csv("samples.csv")
+sampleTable <- sampleTable[3:6,]
+bamfiles<-BamFileList(list_of_bams, yieldSize = 2000000)
+gtffile <- file.path(getwd(),"mdp_atg_noATC.gtf")
+txdb <- makeTxDbFromGFF(gtffile, format = "gtf", circ_seqs = character())
 
-#saveRDS(se, "shadel_se_all.rds")
-se <- readRDS('shadel_se_all.rds')
+# Annotating and aligning. Saving & loading optional - summarizeOverlaps() can take time.
+ebg <- exonsBy(txdb, by="gene")
+#se <- summarizeOverlaps(features=ebg, reads=list_of_bams,
+#                        mode="Union",
+#                        singleEnd=TRUE,
+#                        ignore.strand=FALSE,
+#                        fragments=FALSE,
+#                        inter.feature=FALSE) ###this will count each)
+#saveRDS(se, "mito_se.rds")
+se <- readRDS('mito_se.rds')
+mdp_counts <- assays(se)$counts
+
+#gene_counts <- featureCounts(list_of_bams,annot.ext="~/Desktop/Data/mitochondria_db.gtf",
+#                             isGTFAnnotationFile=TRUE,nthreads=5) #Count matrix generation
+#raw_count_genes <- gene_counts$counts
+#rownames(raw_count_genes) <- c("MT-TF", "MT-RNR1", "MT-TV", "MT-RNR2", "MT-TL1",
+#                               "MT-ND1", "MT-TI", "MT-TQ", "MT-TM", "MT-ND2",
+#                               "MT-TW", "MT-TA", "MT-TN", "MT-TC","MT-TY",
+#                               "MT-CO1", "MT-TS","MT-TD", "MT-CO2","MT-TK",
+#                               "MT-ATP8","MT-ATP6","MT-CO3", "MT-TG", "MT-ND3",
+#                               "MT-TR","MT-ND4L","MT-ND4","MT-TH","MT-TS2",
+#                               "MT-TL2","MT-ND5","MT-ND6","MT-TE","MT-CYB",
+#                             "MT-TT","MT-TP")
+#write.csv(raw_count_genes,"gene_counts_raw.csv") #Writes count matrix for easier future loading.
+raw_count_genes <- read.csv("gene_counts_raw.csv", row.names=1) 
+
 
 ####PERFORM DESEQ BETWEEN GROUPS
-library("DESeq2")
-library(dplyr)
 colData(se) <- DataFrame(sampleTable) ###for the diagnosis
 colData(se)$Day <- as.factor(colData(se)$Day)
 dds <- DESeqDataSet(se, design = ~  CAR + Day)
 dds <- DESeq(dds)
 #saveRDS(dds, "shadel_dds.rds")
-dds <- readRDS('shadel_dds.rds')
+#dds <- readRDS('shadel_dds.rds')
 
 res <- results(dds)
 #write.csv(res, "shadel_results.csv")
@@ -67,8 +82,6 @@ res <- results(dds)
 #results <- as.data.frame(res)
 
 # #######GENERATEA FIGURES
-library("pheatmap")
-library(ggplot2)
 vsd <- varianceStabilizingTransformation(dds) ###mdp-seq script
 
 mat <- assay(vsd)
@@ -94,10 +107,10 @@ head(sorted,10)
 tail(sorted,20)
 
 library(ggrepel)
-plotPCA(vsd, "Day") +
+plotPCA(vsd, "CAR") +
   theme_classic()+
- geom_point(aes(colour = factor(Day)))+
-  geom_label_repel(aes(label = Day),
+ geom_point(aes(colour = factor(CAR)))+
+  geom_label_repel(aes(label = CAR),
                    box.padding   = 0.35, 
                    point.padding = 0.5,
                    segment.color = 'grey50') +
@@ -120,23 +133,35 @@ plotPCA(vsd, "Day") +
 res<-results(dds, name="CAR_ON_vs_OFF")
 res<-results(dds,contrast=c("CAR","ON","OFF"))
 resLFC <- lfcShrink(dds, coef="CAR_ON_vs_OFF", type="apeglm")
-resOrdered <- res[order(res$pvalue),]
+resOrdered <- res[order(res$log2FoldChange),]
 top <- head(resOrdered, 30)
-top[">Peptide3A",]
-topGene <- ">Peptide98D"
+gene <- resOrdered[">Peptide9A",]
 #14A = humanin
 #9A = MOTSC
 
-plotCounts(dds, topGene, intgroup=c("Day","CAR"), returnData=TRUE) %>% 
-  ggplot(aes(Day, count)) + geom_boxplot(aes(color=CAR), lwd = 1.5) + 
+plotCounts(dds, ">Peptide9A", intgroup=c("CAR"), returnData=TRUE) %>% 
+  ggplot(aes(CAR, count)) + geom_boxplot(aes(color=CAR), lwd = 1.5) + 
   geom_point(aes(color=CAR),size=3, color = "grey") +
   # geom_signif(annotation="pAdj<0.15", textsize = 5.5,
   #             y_position=4.76, xmin=1, xmax=4, tip_length = 0.1, size = 1, fontface="bold", color="black") +
-  scale_fill_manual(values=colours, name="Group")+
-  scale_color_manual(values=colours)+
   scale_y_log10() + ggtitle("Transcript Differences Between Perma-On CAR and Perma-Off CAR") + 
   ylab("Normalized Count")+
-  scale_x_discrete(labels= c("Day 7","Day 11", "Day 15"))+
+  scale_x_discrete(labels= c("Day 11", "Day 15"))+
   theme_minimal()
 
-
+cols <- densCols(resLFC$log2FoldChange, -log10(resLFC$padj),
+                 nbin=25, bandwidth=1,
+                 colramp = colorRampPalette(brewer.pal(5, "Reds")))
+plot(x= resLFC$log2FoldChange, 
+     y = -log10(resLFC$padj), 
+     col=cols, panel.first=grid(),
+     main="Volcano plot", 
+     xlab="Effect size: log2(fold-change)",
+     ylab="-log10(adjusted p-value)",
+     xlim=c(-1,1),
+     ylim=c(0,4),
+     pch=resLFC$pch, cex=0.4)
+gn.selected <- abs(resLFC$log2FoldChange) >.35 & resLFC$padj < .05
+text(resLFC$log2FoldChange[gn.selected],
+     -log10(resLFC$padj)[gn.selected],
+     lab=rownames(resLFC)[gn.selected ], cex=0.6)
