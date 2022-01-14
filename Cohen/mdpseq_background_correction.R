@@ -2,7 +2,7 @@
 library(tidyr)
 library(tidyverse)
 
-background_subtraction_factor <- 1
+read_length <- 90
 
 generateEncompassTable <- function(mdp_gtf, mitochondrial_gtf) {
   #Pre-processing MDP gtf.
@@ -97,14 +97,14 @@ generateEncompassTable <- function(mdp_gtf, mitochondrial_gtf) {
         overlap <- (mdp_e - mito_s) / (mdp_e - mdp_s)
         encompass_table <- encompass_table %>% add_row(mdp = mdp_db[mdp_row, "mdp_id"],
                                     mitogene = mitogene_db[mito_row, "mitogene_name"],
-                                    perc_overlap = overlap, proportion=overlap*(mdp_size/mito_size))
+                                    perc_overlap = overlap, proportion=overlap*((mdp_size+read_length)/mito_size))
       } 
       if (mdp_s > mito_s &
           mdp_s < mito_e & mdp_e > mito_s & mdp_e > mito_e) {
         overlap <- (mito_e - mdp_s) / (mdp_e - mdp_s)
         encompass_table <- encompass_table %>% add_row(mdp = mdp_db[mdp_row, "mdp_id"],
                                     mitogene = mitogene_db[mito_row, "mitogene_name"],
-                                    perc_overlap = overlap,proportion=overlap*(mdp_size/mito_size))
+                                    perc_overlap = overlap,proportion=overlap*((mdp_size+read_length)/mito_size))
       } 
       if (mdp_s > mito_s &
           mdp_s < mito_e & mdp_e > mito_s & mdp_e < mito_e) {
@@ -113,7 +113,7 @@ generateEncompassTable <- function(mdp_gtf, mitochondrial_gtf) {
           add_row(mdp = mdp_db[mdp_row, "mdp_id"],
                   mitogene = mitogene_db[mito_row, "mitogene_name"],
                   perc_overlap = overlap,
-                  proportion = mdp_size/mito_size)
+                  proportion = (mdp_size+read_length)/mito_size)
       } 
     }
   }
@@ -145,11 +145,13 @@ generateEncompassTable <- function(mdp_gtf, mitochondrial_gtf) {
 }
 
 determineBackgroundSignal <- function(mito_counts) {
-  for (mito_column in 2:ncol(mito_counts)) {
-      mito_counts[,mito_column] <- (mito_counts[,mito_column] - mito_counts[,1]) /
-        (background_subtraction_factor*mito_counts[,1])
+  average <- rowMeans(mito_counts[1:ncol(mito_counts)], na.rm=TRUE)
+  mito_counts$average <- average
+  for (mito_column in 1:(ncol(mito_counts)-1)) {
+      mito_counts[,mito_column] <- (mito_counts[,mito_column] - mito_counts[,ncol(mito_counts)]) /
+        (mito_counts[,ncol(mito_counts)])
   }
-  mito_counts[,1] <- 0
+  mito_counts <- mito_counts[,-ncol(mito_counts)]
   return (mito_counts)
 }
 

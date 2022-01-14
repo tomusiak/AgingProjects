@@ -111,10 +111,10 @@ top_corrected <- head(resOrdered_corrected, 30)
 
 #write.csv(res, "shadel_results.csv")
 #res <- read.csv('shadel_results.csv')
-corrected_counts["Peptide17C",]
-mdp_counts["Peptide17C",]
-res_corrected["Peptide17C",]
-res["Peptide17C",]
+corrected_counts["Peptide39A",]
+mdp_counts["Peptide39A",]
+res_corrected["Peptide39A",]
+res["Peptide39A",]
 raw_count_genes["MT-CO1",]
 
 #results <- as.data.frame(res)
@@ -129,6 +129,7 @@ resLFC <- lfcShrink(dds, coef="CAR_ON_vs_OFF", type="apeglm")
 vsd <- varianceStabilizingTransformation(dds) ###mdp-seq script
 resOrdered <- resLFC[order(abs(resLFC$padj)),]
 top <- head(resOrdered, 30)
+resOrdered["Peptide140B",]
 
 #PCa plot not corrected
 plotPCA(vsd, "CAR") +
@@ -206,11 +207,11 @@ plotCounts(dds_corrected, "Peptide32B", intgroup=c("CAR"), returnData=TRUE) %>%
   theme_minimal()
 
 #Volcano plot for corrected analysis
-cols <- densCols(resLFC_corrected$log2FoldChange, -log10(resLFC_corrected$pvalue),
+cols <- densCols(resLFC_corrected$log2FoldChange, -log10(resLFC_corrected$padj),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
 plot(x= resLFC_corrected$log2FoldChange, 
-     y = -log10(res_corrected$pvalue), 
+     y = -log10(res_corrected$padj), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
