@@ -111,10 +111,11 @@ top_corrected <- head(resOrdered_corrected, 30)
 
 #write.csv(res, "shadel_results.csv")
 #res <- read.csv('shadel_results.csv')
-corrected_counts["Peptide241C",]
-mdp_counts["Peptide241C",]
-res_corrected["Peptide241C",]
-res["Peptide241C",]
+corrected_counts["Peptide17C",]
+mdp_counts["Peptide17C",]
+res_corrected["Peptide17C",]
+res["Peptide17C",]
+raw_count_genes["MT-CO1",]
 
 #results <- as.data.frame(res)
 
@@ -205,37 +206,72 @@ plotCounts(dds_corrected, "Peptide32B", intgroup=c("CAR"), returnData=TRUE) %>%
   theme_minimal()
 
 #Volcano plot for corrected analysis
-cols <- densCols(resLFC_corrected$log2FoldChange, -log10(resLFC_corrected$padj),
+cols <- densCols(resLFC_corrected$log2FoldChange, -log10(resLFC_corrected$pvalue),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
 plot(x= resLFC_corrected$log2FoldChange, 
-     y = -log10(res_corrected$padj), 
+     y = -log10(res_corrected$pvalue), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
      ylab="-log10(adjusted p-value)",
-     xlim=c(-.5,.5),
-     ylim=c(0,4),
+     xlim=c(-1,1),
+     ylim=c(0,5),
      pch=resLFC_corrected$pch, cex=0.4)
-gn.selected <- abs(resLFC_corrected$log2FoldChange) >.32 & resLFC_corrected$padj < .1
+gn.selected <- abs(resLFC_corrected$log2FoldChange) >.4 & resLFC_corrected$padj < .05
 text(resLFC_corrected$log2FoldChange[gn.selected],
-     -log10(resLFC_corrected$padj)[gn.selected],
+     -log10(resLFC_corrected$pvalue)[gn.selected],
      lab=rownames(resLFC_corrected)[gn.selected ], cex=0.6)
 
 #Volcano plot for not corrected analysis.
 cols <- densCols(resLFC$log2FoldChange, -log10(resLFC$padj),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
+
 plot(x= resLFC$log2FoldChange, 
      y = -log10(resLFC$padj), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
      ylab="-log10(adjusted p-value)",
-     xlim=c(-.5,.5),
-     ylim=c(0,4),
+     xlim=c(-1,1),
+     ylim=c(0,5),
      pch=resLFC$pch, cex=0.4)
-gn.selected <- abs(resLFC$log2FoldChange) >.32 & resLFC$padj < .1
+gn.selected <- abs(resLFC$log2FoldChange) >.4 & resLFC$padj < .05
 text(resLFC$log2FoldChange[gn.selected],
      -log10(resLFC$padj)[gn.selected],
      lab=rownames(resLFC)[gn.selected ], cex=0.6)
+
+mito_dds <- DESeqDataSetFromMatrix(raw_count_genes,
+                                        colData = col_data,
+                                        design = ~ Day + CAR)
+mito_dds <- DESeq(mito_dds)
+mito_res <-results(mito_dds, name="CAR_ON_vs_OFF"
+                       ,independentFiltering=FALSE)
+mito_resLFC <- lfcShrink(mito_dds, coef="CAR_ON_vs_OFF", type="apeglm")
+mito_vsd <- varianceStabilizingTransformation(mito_dds) ###mdp-seq script
+mito_resOrdered <- mito_resLFC[order(abs(mito_resLFC$padj)),]
+mito_top <- head(mito_resOrdered, 30)
+
+coloring <- encompass_table %>% group_by (mitogene)
+
+#Volcano plot for not corrected analysis.
+cols <- densCols(mito_resLFC$log2FoldChange, -log10(mito_resLFC$padj),
+                 nbin=25, bandwidth=1,
+                 colramp = colorRampPalette(brewer.pal(5, "Reds")))
+plot(x= mito_resLFC$log2FoldChange, 
+     y = -log10(mito_resLFC$padj), 
+     col=cols, panel.first=grid(),
+     main="Volcano plot", 
+     xlab="Effect size: log2(fold-change)",
+     ylab="-log10(adjusted p-value)",
+     xlim=c(-1,1),
+     ylim=c(0,5),
+     pch=mito_resLFC$pch, cex=0.4)
+gn.selected <- abs(mito_resLFC$log2FoldChange) >.05 & mito_resLFC$padj < .3
+text(mito_resLFC$log2FoldChange[gn.selected],
+     -log10(mito_resLFC$padj)[gn.selected],
+     lab=rownames(mito_resLFC)[gn.selected ], cex=0.6)
+
+res["Peptide27A",]
+res_corrected["Peptide27A",]
