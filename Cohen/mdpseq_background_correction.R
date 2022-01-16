@@ -2,7 +2,7 @@
 library(tidyr)
 library(tidyverse)
 
-read_length <- 90
+read_length <- 200
 
 generateEncompassTable <- function(mdp_gtf, mitochondrial_gtf) {
   #Pre-processing MDP gtf.

@@ -97,9 +97,7 @@ dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
                               colData = col_data,
                               design = ~ Day + CAR)
 dds_corrected <- DESeq(dds_corrected, betaPrior=FALSE)
-res_corrected<-results(dds_corrected, name="CAR_ON_vs_OFF"
-                       ,independentFiltering=FALSE)
-resLFC_corrected <- lfcShrink(dds_corrected, coef="CAR_ON_vs_OFF", type="apeglm")
+res_corrected<-results(dds_corrected, name="CAR_ON_vs_OFF")
 vsd_corrected <- varianceStabilizingTransformation(dds_corrected) ###mdp-seq script
 resOrdered_corrected <- res_corrected[order(abs(res_corrected$padj)),]
 top_corrected <- head(resOrdered_corrected, 30)
@@ -108,14 +106,8 @@ top_corrected <- head(resOrdered_corrected, 30)
 #saveRDS(dds, "shadel_dds.rds")
 #dds <- readRDS('shadel_dds.rds')
 
-
 #write.csv(res, "shadel_results.csv")
 #res <- read.csv('shadel_results.csv')
-corrected_counts["Peptide241C",]
-mdp_counts["Peptide241C",]
-res_corrected["Peptide241C",]
-res["Peptide241C",]
-mito_res["MT-CO1",]
 
 #results <- as.data.frame(res)
 
@@ -125,9 +117,8 @@ dds <- DESeqDataSetFromMatrix(mdp_counts,
                                         design = ~ Day + CAR)
 dds <- DESeq(dds)
 res <-results(dds, name="CAR_ON_vs_OFF")
-resLFC <- lfcShrink(dds, coef="CAR_ON_vs_OFF", type="apeglm")
 vsd <- varianceStabilizingTransformation(dds) ###mdp-seq script
-resOrdered <- resLFC[order(abs(resLFC$padj)),]
+resOrdered <- res[order(abs(res$padj)),]
 top <- head(resOrdered, 30)
 resOrdered["Peptide52A",]
 
@@ -207,10 +198,10 @@ plotCounts(dds_corrected, "Peptide32B", intgroup=c("CAR"), returnData=TRUE) %>%
   theme_minimal()
 
 #Volcano plot for corrected analysis
-cols <- densCols(resLFC_corrected$log2FoldChange, -log10(resLFC_corrected$padj),
+cols <- densCols(res_corrected$log2FoldChange, -log10(res_corrected$padj),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
-plot(x= resLFC_corrected$log2FoldChange, 
+plot(x= res_corrected$log2FoldChange, 
      y = -log10(res_corrected$padj), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
@@ -218,40 +209,39 @@ plot(x= resLFC_corrected$log2FoldChange,
      ylab="-log10(adjusted p-value)",
      xlim=c(-1,1),
      ylim=c(0,5),
-     pch=resLFC_corrected$pch, cex=0.4)
-gn.selected <- abs(resLFC_corrected$log2FoldChange) >.4 & resLFC_corrected$padj < .05
-text(resLFC_corrected$log2FoldChange[gn.selected],
-     -log10(resLFC_corrected$pvalue)[gn.selected],
-     lab=rownames(resLFC_corrected)[gn.selected ], cex=0.6)
+     pch=res_corrected$pch, cex=0.4)
+gn.selected <- abs(res_corrected$log2FoldChange) >.4 & res_corrected$padj < .05
+text(res_corrected$log2FoldChange[gn.selected],
+     -log10(res_corrected$pvalue)[gn.selected],
+     lab=rownames(res_corrected)[gn.selected ], cex=0.6)
 
 #Volcano plot for not corrected analysis.
-cols <- densCols(resLFC$log2FoldChange, -log10(resLFC$padj),
+cols <- densCols(res$log2FoldChange, -log10(res$padj),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
 
-plot(x= resLFC$log2FoldChange, 
-     y = -log10(resLFC$padj), 
+plot(x= res$log2FoldChange, 
+     y = -log10(res$padj), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
      ylab="-log10(adjusted p-value)",
      xlim=c(-1,1),
      ylim=c(0,5),
-     pch=resLFC$pch, cex=0.4)
-gn.selected <- abs(resLFC$log2FoldChange) >.4 & resLFC$padj < .05
-text(resLFC$log2FoldChange[gn.selected],
-     -log10(resLFC$padj)[gn.selected],
-     lab=rownames(resLFC)[gn.selected ], cex=0.6)
+     pch=res$pch, cex=0.4)
+gn.selected <- abs(res$log2FoldChange) >.4 & res$padj < .05
+text(res$log2FoldChange[gn.selected],
+     -log10(res$padj)[gn.selected],
+     lab=rownames(res)[gn.selected ], cex=0.6)
 
 mito_dds <- DESeqDataSetFromMatrix(raw_count_genes,
                                         colData = col_data,
                                         design = ~ Day + CAR)
 mito_dds <- DESeq(mito_dds)
-mito_res <-results(mito_dds, name="CAR_ON_vs_OFF"
-                       ,independentFiltering=FALSE)
-mito_resLFC <- lfcShrink(mito_dds, coef="CAR_ON_vs_OFF", type="apeglm")
+mito_res <-results(mito_dds, name="CAR_ON_vs_OFF")
+mito_resLFC <- lfcShrink(mito_dds, "CAR_ON_vs_OFF")
 mito_vsd <- varianceStabilizingTransformation(mito_dds) ###mdp-seq script
-mito_resOrdered <- mito_resLFC[order(abs(mito_resLFC$padj)),]
+mito_resOrdered <- mito_res[order(abs(mito_res$padj)),]
 mito_top <- head(mito_resOrdered, 30)
 
 coloring <- encompass_table %>% group_by (mitogene)
@@ -269,7 +259,7 @@ plot(x= mito_resLFC$log2FoldChange,
      xlim=c(-1,1),
      ylim=c(0,10),
      pch=mito_resLFC$pch, cex=0.4)
-gn.selected <- abs(mito_resLFC$log2FoldChange) >.05 & mito_resLFC$padj < .3
+gn.selected <- abs(mito_resLFC$log2FoldChange) >.05 & mito_res$padj < .3
 text(mito_resLFC$log2FoldChange[gn.selected],
      -log10(mito_resLFC$padj)[gn.selected],
      lab=rownames(mito_resLFC)[gn.selected ], cex=0.6)
@@ -280,3 +270,10 @@ raw_count_genes["MT-CO1",]
 res_corrected["Peptide241C",]
 res["Peptide241C",]
 mito_resOrdered["MT-CO1",]
+
+corrected_counts["Peptide32B",]
+mdp_counts["Peptide32B",]
+raw_count_genes["MT-CO2",]
+res_corrected["Peptide32B",]
+res["Peptide32B",]
+mito_res["MT-CO2",]

@@ -121,16 +121,15 @@ mitogene_dds <- DESeqDataSetFromMatrix(mitogene_count_matrix,
                                    design = ~ donor + status)
 mitogene_dds <- DESeq(mitogene_dds)
 mitogene_res <-results(mitogene_dds, name="status_tumor_vs_normal")
-mitogene_resLFC <- lfcShrink(mitogene_dds, coef="status_tumor_vs_normal", type="apeglm")
 mitogene_vsd <- varianceStabilizingTransformation(mitogene_dds) ###mdp-seq script
-mitogene_resOrdered <- mitogene_resLFC[order(abs(mitogene_resLFC$padj)),]
+mitogene_resOrdered <- mitogene_res[order(abs(mitogene_res$padj)),]
 mitogene_top <- head(mitogene_resOrdered, 30)
 
 cols <- densCols(mitogene_res$log2FoldChange, -log10(mitogene_res$padj),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
 plot(x= mitogene_res$log2FoldChange, 
-     y = -log10(mitogene_resLFC$padj), 
+     y = -log10(mitogene_res$padj), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
@@ -138,15 +137,15 @@ plot(x= mitogene_res$log2FoldChange,
      xlim=c(-.5,.5),
      ylim=c(0,.5),
      pch=mitogene_res$pch, cex=0.4)
-gn.selected <- abs(mitogene_resLFC$log2FoldChange) >.05 & mitogene_resLFC$padj < .5
+gn.selected <- abs(mitogene_res$log2FoldChange) >.05 & mitogene_res$padj < .5
 text(mitogene_res$log2FoldChange[gn.selected],
      -log10(mitogene_res$padj)[gn.selected],
      lab=rownames(mitogene_res)[gn.selected ], cex=0.6)
 
 encompass_table <- generateEncompassTable(mdp_gtf,mitogene_gtf)
-keep_mitogenes <- c("MT-RNR1","MT-RNR2", "MT-ND1","MT-ND2","MT-CO1","MT-CO2","MT-ATP8",
-                    "MT-ATP6","MT-CO3","MT-ND3","MT-ND4L","MT-ND4","MT-ND5","MT-ND6","MY-CYB")
-encompass_table <- encompass_table[encompass_table$mitogene %in% keep_mitogenes,]
+#keep_mitogenes <- c("MT-RNR1","MT-RNR2", "MT-ND1","MT-ND2","MT-CO1","MT-CO2","MT-ATP8",
+#                    "MT-ATP6","MT-CO3","MT-ND3","MT-ND4L","MT-ND4","MT-ND5","MT-ND6","MY-CYB")
+#encompass_table <- encompass_table[encompass_table$mitogene %in% keep_mitogenes,]
 background_table <- determineBackgroundSignal(mitogene_count_matrix)
 corrected_counts <- data.matrix(performBackgroundCorrection(background_table,mdp_counts,encompass_table))
 
@@ -156,9 +155,8 @@ mdp_dds <- DESeqDataSetFromMatrix(mdp_counts,
                               design = ~ donor + status)
 mdp_dds <- DESeq(mdp_dds)
 mdp_res <-results(mdp_dds, name="status_tumor_vs_normal")
-mdp_resLFC <- lfcShrink(mdp_dds, coef="status_tumor_vs_normal", type="ashr")
 mdp_vsd <- varianceStabilizingTransformation(mdp_dds) ###mdp-seq script
-mdp_resOrdered <- mdp_resLFC[order(abs(mdp_resLFC$padj)),]
+mdp_resOrdered <- mdp_res[order(abs(mdp_res$padj)),]
 mdp_top <- head(mdp_resOrdered, 30)
 mdp_resOrdered["Peptide173C",]
 
@@ -168,19 +166,10 @@ mdp_dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
                                   design = ~ donor + status)
 mdp_dds_corrected <- DESeq(mdp_dds_corrected)
 mdp_res_corrected <-results(mdp_dds_corrected, name="status_tumor_vs_normal")
-mdp_resLFC_corrected <- lfcShrink(mdp_dds_corrected, coef="status_tumor_vs_normal", type="ashr")
 mdp_vsd_corrected <- varianceStabilizingTransformation(mdp_dds_corrected) ###mdp-seq script
-mdp_resOrdered_corrected <- mdp_resLFC_corrected[order(abs(mdp_resLFC_corrected$padj)),]
+mdp_resOrdered_corrected <- mdp_res_corrected[order(abs(mdp_res_corrected$padj)),]
 mdp_top_corrected <- head(mdp_resOrdered_corrected, 30)
 mdp_resOrdered_corrected["Peptide192C",]
-
-head(mdp_resOrdered,10)
-corrected_counts["Peptide53D",]
-mdp_counts["Peptide53D",]
-raw_count_genes["MT-RNR2",]
-mdp_res_corrected["Peptide53D",]
-mdp_res["Peptide53D",]
-mitogene_resOrdered["MT-RNR2",]
 
 plotPCA(mdp_vsd, "status") +
   theme_classic()+
@@ -242,7 +231,7 @@ text(mdp_res$log2FoldChange[gn.selected],
      lab=rownames(mdp_res)[gn.selected ], cex=0.6)
 
 #playtime
-head(mdp_resOrdered,10)
+head(mdp_resOrdered_corrected,15)
 corrected_counts["Peptide53D",]
 mdp_counts["Peptide53D",]
 mdp_res_corrected["Peptide53D",]
@@ -322,3 +311,9 @@ plotCounts(mdp_dds_corrected, "Peptide53D", intgroup=c("status"), returnData=TRU
   ylab("Normalized Count")+
   scale_x_discrete(labels= c("Day 11", "Day 15"))+
   theme_minimal()
+
+corrected_counts["Peptide176C",]
+mdp_counts["Peptide176C",]
+mdp_res_corrected["Peptide176C",]
+mdp_res["Peptide176C",]
+mitogene_resOrdered["MT-RNR2",]
