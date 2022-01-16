@@ -101,7 +101,7 @@ res_corrected<-results(dds_corrected, name="CAR_ON_vs_OFF"
                        ,independentFiltering=FALSE)
 resLFC_corrected <- lfcShrink(dds_corrected, coef="CAR_ON_vs_OFF", type="apeglm")
 vsd_corrected <- varianceStabilizingTransformation(dds_corrected) ###mdp-seq script
-resOrdered_corrected <- resLFC_corrected[order(abs(resLFC_corrected$padj)),]
+resOrdered_corrected <- res_corrected[order(abs(res_corrected$padj)),]
 top_corrected <- head(resOrdered_corrected, 30)
 #14A = humanin
 #9A = MOTSC
@@ -111,11 +111,11 @@ top_corrected <- head(resOrdered_corrected, 30)
 
 #write.csv(res, "shadel_results.csv")
 #res <- read.csv('shadel_results.csv')
-corrected_counts["Peptide39A",]
-mdp_counts["Peptide39A",]
-res_corrected["Peptide39A",]
-res["Peptide39A",]
-raw_count_genes["MT-CO1",]
+corrected_counts["Peptide241C",]
+mdp_counts["Peptide241C",]
+res_corrected["Peptide241C",]
+res["Peptide241C",]
+mito_res["MT-CO1",]
 
 #results <- as.data.frame(res)
 
@@ -129,7 +129,7 @@ resLFC <- lfcShrink(dds, coef="CAR_ON_vs_OFF", type="apeglm")
 vsd <- varianceStabilizingTransformation(dds) ###mdp-seq script
 resOrdered <- resLFC[order(abs(resLFC$padj)),]
 top <- head(resOrdered, 30)
-resOrdered["Peptide140B",]
+resOrdered["Peptide52A",]
 
 #PCa plot not corrected
 plotPCA(vsd, "CAR") +
@@ -267,12 +267,16 @@ plot(x= mito_resLFC$log2FoldChange,
      xlab="Effect size: log2(fold-change)",
      ylab="-log10(adjusted p-value)",
      xlim=c(-1,1),
-     ylim=c(0,5),
+     ylim=c(0,10),
      pch=mito_resLFC$pch, cex=0.4)
 gn.selected <- abs(mito_resLFC$log2FoldChange) >.05 & mito_resLFC$padj < .3
 text(mito_resLFC$log2FoldChange[gn.selected],
      -log10(mito_resLFC$padj)[gn.selected],
      lab=rownames(mito_resLFC)[gn.selected ], cex=0.6)
 
-res["Peptide27A",]
-res_corrected["Peptide27A",]
+corrected_counts["Peptide241C",]
+mdp_counts["Peptide241C",]
+raw_count_genes["MT-CO1",]
+res_corrected["Peptide241C",]
+res["Peptide241C",]
+mito_resOrdered["MT-CO1",]

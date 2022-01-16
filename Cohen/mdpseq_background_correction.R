@@ -97,14 +97,14 @@ generateEncompassTable <- function(mdp_gtf, mitochondrial_gtf) {
         overlap <- (mdp_e - mito_s) / (mdp_e - mdp_s)
         encompass_table <- encompass_table %>% add_row(mdp = mdp_db[mdp_row, "mdp_id"],
                                     mitogene = mitogene_db[mito_row, "mitogene_name"],
-                                    perc_overlap = overlap, proportion=((overlap*(mdp_size+read_length))/mito_size))
+                                    perc_overlap = overlap, proportion=(((overlap*mdp_size)+read_length)/mito_size))
       } 
       if (mdp_s > mito_s &
           mdp_s < mito_e & mdp_e > mito_s & mdp_e > mito_e) {
         overlap <- (mito_e - mdp_s) / (mdp_e - mdp_s)
         encompass_table <- encompass_table %>% add_row(mdp = mdp_db[mdp_row, "mdp_id"],
                                     mitogene = mitogene_db[mito_row, "mitogene_name"],
-                                    perc_overlap = overlap,proportion=((overlap*(mdp_size+read_length))/mito_size))
+                                    perc_overlap = overlap,proportion=(((overlap*mdp_size)+read_length)/mito_size))
       } 
       if (mdp_s > mito_s &
           mdp_s < mito_e & mdp_e > mito_s & mdp_e < mito_e) {
@@ -113,7 +113,7 @@ generateEncompassTable <- function(mdp_gtf, mitochondrial_gtf) {
           add_row(mdp = mdp_db[mdp_row, "mdp_id"],
                   mitogene = mitogene_db[mito_row, "mitogene_name"],
                   perc_overlap = overlap,
-                  proportion = (overlap*(mdp_size+read_length))/mito_size)
+                  proportion = ((overlap*mdp_size)+read_length)/mito_size)
       } 
     }
   }
@@ -168,16 +168,19 @@ performBackgroundCorrection <- function(background_table,mdp_counts,encompass_ta
       } 
     }
     if(length(corres_mitogene) != 0) {
-      for (mdp_col in 2:length(mdp_counts[mdp_row,])) {
+      for (mdp_col in 1:length(mdp_counts[mdp_row,])) {
         initial_mdp_count <- mdp_counts[mdp_row, 1]
         mdp_count <- mdp_counts[mdp_row,mdp_col]
         background_factor <- background_table[corres_mitogene,mdp_col]
         corrected_mdp_count <- mdp_count - (background_factor*(corres_proportion)) * initial_mdp_count
         mdp_counts[mdp_row,mdp_col] <- corrected_mdp_count
+        if(mdp_counts[mdp_row,mdp_col] < 0) {
+          mdp_counts[mdp_row,mdp_col] <- 0
+        }
       }
     }
   }
-  for (mdp_col in 2:ncol(mdp_counts)) {
+  for (mdp_col in 1:ncol(mdp_counts)) {
     mdp_counts[,mdp_col] <- as.integer(mdp_counts[,mdp_col])
   }
   return(mdp_counts)
