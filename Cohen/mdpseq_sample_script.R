@@ -1,5 +1,5 @@
 #MDPSeq code on constitutively vs. non-constitutively active CARs.
-#Based Control code provided by Brendan Miller.
+#Based off code provided by Brendan Miller.
 
 #Loading in libraries.
 library("BiocManager")
@@ -32,10 +32,13 @@ library(ggrepel)
 setwd("/home/atom/Desktop/AgingProjects/Cohen/")
 source("mdpseq_background_correction.R")
 
+setwd("/home/atom/Desktop/AgingProjects/Useful Scripts/")
+source("generally_useful.R")
+
 #Loading in data.
 setwd("/home/atom/Desktop/Data")
-list_of_bams <- c("D11Control.fastq.subread.BAM", "D11ON.fastq.subread.BAM",
-                  "D15Control.fastq.subread.BAM","D15ON.fastq.subread.BAM")
+list_of_bams <- c("D11OFF.fastq.subread.BAM", "D11ON.fastq.subread.BAM",
+                  "D15OFF.fastq.subread.BAM","D15ON.fastq.subread.BAM")
 sampleTable<-read.csv("samples.csv")
 sampleTable <- sampleTable[3:6,]
 bamfiles<-BamFileList(list_of_bams, yieldSize = 2000000)
@@ -97,7 +100,7 @@ dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
                               colData = col_data,
                               design = ~ Day + CAR)
 dds_corrected <- DESeq(dds_corrected, betaPrior=FALSE)
-res_corrected<-results(dds_corrected, name="CAR_ON_vs_Control")
+res_corrected<-results(dds_corrected, name="CAR_ON_vs_OFF")
 vsd_corrected <- varianceStabilizingTransformation(dds_corrected) ###mdp-seq script
 resOrdered_corrected <- res_corrected[order(abs(res_corrected$pvalue)),]
 top_corrected <- head(resOrdered_corrected, 30)
@@ -116,7 +119,7 @@ dds <- DESeqDataSetFromMatrix(mdp_counts,
                                         colData = col_data,
                                         design = ~ Day + CAR)
 dds <- DESeq(dds)
-res <-results(dds, name="CAR_ON_vs_Control")
+res <-results(dds, name="CAR_ON_vs_OFF")
 vsd <- varianceStabilizingTransformation(dds) ###mdp-seq script
 resOrdered <- res[order(abs(res$pvalue)),]
 top <- head(resOrdered, 30)
@@ -239,8 +242,8 @@ mito_dds <- DESeqDataSetFromMatrix(raw_count_genes,
                                         colData = col_data,
                                         design = ~ Day + CAR)
 mito_dds <- DESeq(mito_dds)
-mito_res <-results(mito_dds, name="CAR_ON_vs_Control")
-mito_resLFC <- lfcShrink(mito_dds, "CAR_ON_vs_Control")
+mito_res <-results(mito_dds, name="CAR_ON_vs_OFF")
+mito_resLFC <- lfcShrink(mito_dds, "CAR_ON_vs_OFF")
 mito_vsd <- varianceStabilizingTransformation(mito_dds) ###mdp-seq script
 mito_resOrdered <- mito_res[order(abs(mito_res$pvalue)),]
 mito_top <- head(mito_resOrdered, 30)
