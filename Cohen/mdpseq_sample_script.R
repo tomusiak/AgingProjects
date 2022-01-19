@@ -61,7 +61,7 @@ ebg <- exonsBy(txdb, by="gene")
 #saveRDS(se, "mito_se.rds")
 se <- readRDS("mito_se.rds")
 mdp_counts <- assays(se)$counts
-rownames(mdp_counts) <- sub('.', '', rownames(mdp_counts))
+rownames(mdp_counts) <- sub('.Peptide', '', rownames(mdp_counts))
 mdp_counts <- mdp_counts[c(-593,-595),]
 keep <- rowSums((mdp_counts)) >= 200 #Removes genes with low counts.
 mdp_counts<- mdp_counts[keep,]
@@ -99,7 +99,7 @@ dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
 dds_corrected <- DESeq(dds_corrected, betaPrior=FALSE)
 res_corrected<-results(dds_corrected, name="CAR_ON_vs_OFF")
 vsd_corrected <- varianceStabilizingTransformation(dds_corrected) ###mdp-seq script
-resOrdered_corrected <- res_corrected[order(abs(res_corrected$padj)),]
+resOrdered_corrected <- res_corrected[order(abs(res_corrected$pvalue)),]
 top_corrected <- head(resOrdered_corrected, 30)
 #14A = humanin
 #9A = MOTSC
@@ -118,9 +118,9 @@ dds <- DESeqDataSetFromMatrix(mdp_counts,
 dds <- DESeq(dds)
 res <-results(dds, name="CAR_ON_vs_OFF")
 vsd <- varianceStabilizingTransformation(dds) ###mdp-seq script
-resOrdered <- res[order(abs(res$padj)),]
+resOrdered <- res[order(abs(res$pvalue)),]
 top <- head(resOrdered, 30)
-resOrdered["Peptide52A",]
+resOrdered["52A",]
 
 #PCa plot not corrected
 plotPCA(vsd, "CAR") +
@@ -176,10 +176,10 @@ plotPCA(vsd_corrected, "CAR") +
         axis.text.y=element_text(size=15, face="bold", colour = "black"))
 
 #Count plotting for not-corrected analysis
-plotCounts(dds, "Peptide32B", intgroup=c("CAR"), returnData=TRUE) %>% 
+plotCounts(dds, "32B", intgroup=c("CAR"), returnData=TRUE) %>% 
   ggplot(aes(CAR, count)) + geom_boxplot(aes(color=CAR), lwd = 1.5) + 
   geom_point(aes(color=CAR),size=3, color = "grey") +
-  # geom_signif(annotation="pAdj<0.15", textsize = 5.5,
+  # geom_signif(annotation="pvalue<0.15", textsize = 5.5,
   #             y_position=4.76, xmin=1, xmax=4, tip_length = 0.1, size = 1, fontface="bold", color="black") +
   scale_y_log10() + ggtitle("Transcript Differences Between Perma-On CAR and Perma-Off CAR") + 
   ylab("Normalized Count")+
@@ -187,10 +187,10 @@ plotCounts(dds, "Peptide32B", intgroup=c("CAR"), returnData=TRUE) %>%
   theme_minimal()
 
 #Count plotting for corrected analysis
-plotCounts(dds_corrected, "Peptide32B", intgroup=c("CAR"), returnData=TRUE) %>% 
+plotCounts(dds_corrected, "32B", intgroup=c("CAR"), returnData=TRUE) %>% 
   ggplot(aes(CAR, count)) + geom_boxplot(aes(color=CAR), lwd = 1.5) + 
   geom_point(aes(color=CAR),size=3, color = "grey") +
-  # geom_signif(annotation="pAdj<0.15", textsize = 5.5,
+  # geom_signif(annotation="pvalue<0.15", textsize = 5.5,
   #             y_position=4.76, xmin=1, xmax=4, tip_length = 0.1, size = 1, fontface="bold", color="black") +
   scale_y_log10() + ggtitle("Transcript Differences Between Perma-On CAR and Perma-Off CAR") + 
   ylab("Normalized Count")+
@@ -198,42 +198,43 @@ plotCounts(dds_corrected, "Peptide32B", intgroup=c("CAR"), returnData=TRUE) %>%
   theme_minimal()
 
 #Volcano plot for corrected analysis
-cols <- densCols(res_corrected$log2FoldChange, -log10(res_corrected$padj),
+cols <- densCols(res_corrected$log2FoldChange, -log10(res_corrected$pvalue),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
 plot(x= res_corrected$log2FoldChange, 
-     y = -log10(res_corrected$padj), 
+     y = -log10(res_corrected$pvalue), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
      ylab="-log10(adjusted p-value)",
-     xlim=c(-1,1),
-     ylim=c(0,5),
+     xlim=c(-2,2),
+     ylim=c(0,10),
      pch=res_corrected$pch, cex=0.4)
-gn.selected <- abs(res_corrected$log2FoldChange) >.4 & res_corrected$padj < .05
+gn.selected <- abs(res_corrected$log2FoldChange) >.35 & res_corrected$pvalue < .05
 text(res_corrected$log2FoldChange[gn.selected],
      -log10(res_corrected$pvalue)[gn.selected],
      lab=rownames(res_corrected)[gn.selected ], cex=0.6)
 
 #Volcano plot for not corrected analysis.
-cols <- densCols(res$log2FoldChange, -log10(res$padj),
+cols <- densCols(res$log2FoldChange, -log10(res$pvalue),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
 
 plot(x= res$log2FoldChange, 
-     y = -log10(res$padj), 
+     y = -log10(res$pvalue), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
      ylab="-log10(adjusted p-value)",
-     xlim=c(-1,1),
-     ylim=c(0,5),
+     xlim=c(-2,2),
+     ylim=c(0,10),
      pch=res$pch, cex=0.4)
-gn.selected <- abs(res$log2FoldChange) >.4 & res$padj < .05
+gn.selected <- abs(res$log2FoldChange) >.35 & res$pvalue < .05
 text(res$log2FoldChange[gn.selected],
-     -log10(res$padj)[gn.selected],
+     -log10(res$pvalue)[gn.selected],
      lab=rownames(res)[gn.selected ], cex=0.6)
 
+raw_count_genes <-raw_count_genes[rownames(raw_count_genes) %in% keep_mitogenes,]
 mito_dds <- DESeqDataSetFromMatrix(raw_count_genes,
                                         colData = col_data,
                                         design = ~ Day + CAR)
@@ -241,39 +242,46 @@ mito_dds <- DESeq(mito_dds)
 mito_res <-results(mito_dds, name="CAR_ON_vs_OFF")
 mito_resLFC <- lfcShrink(mito_dds, "CAR_ON_vs_OFF")
 mito_vsd <- varianceStabilizingTransformation(mito_dds) ###mdp-seq script
-mito_resOrdered <- mito_res[order(abs(mito_res$padj)),]
+mito_resOrdered <- mito_res[order(abs(mito_res$pvalue)),]
 mito_top <- head(mito_resOrdered, 30)
 
 coloring <- encompass_table %>% group_by (mitogene)
 
 #Volcano plot for not corrected analysis.
-cols <- densCols(mito_resLFC$log2FoldChange, -log10(mito_resLFC$padj),
+cols <- densCols(mito_res$log2FoldChange, -log10(mito_res$pvalue),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
-plot(x= mito_resLFC$log2FoldChange, 
-     y = -log10(mito_resLFC$padj), 
+plot(x= mito_res$log2FoldChange, 
+     y = -log10(mito_res$pvalue), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
      ylab="-log10(adjusted p-value)",
-     xlim=c(-1,1),
+     xlim=c(-2,2),
      ylim=c(0,10),
      pch=mito_resLFC$pch, cex=0.4)
-gn.selected <- abs(mito_resLFC$log2FoldChange) >.05 & mito_res$padj < .3
-text(mito_resLFC$log2FoldChange[gn.selected],
-     -log10(mito_resLFC$padj)[gn.selected],
-     lab=rownames(mito_resLFC)[gn.selected ], cex=0.6)
+gn.selected <- abs(mito_resLFC$log2FoldChange) >.2 & mito_res$pvalue < .05
+text(mito_res$log2FoldChange[gn.selected],
+     -log10(mito_res$pvalue)[gn.selected],
+     lab=rownames(mito_res)[gn.selected ], cex=0.6)
 
-corrected_counts["Peptide241C",]
-mdp_counts["Peptide241C",]
+corrected_counts["241C",]
+mdp_counts["241C",]
 raw_count_genes["MT-CO1",]
-res_corrected["Peptide241C",]
-res["Peptide241C",]
+res_corrected["241C",]
+res["241C",]
 mito_resOrdered["MT-CO1",]
 
-corrected_counts["Peptide32B",]
-mdp_counts["Peptide32B",]
+corrected_counts["32B",]
+mdp_counts["32B",]
 raw_count_genes["MT-CO2",]
-res_corrected["Peptide32B",]
-res["Peptide32B",]
+res_corrected["32B",]
+res["32B",]
 mito_res["MT-CO2",]
+
+corrected_counts["106D",]
+mdp_counts["106D",]
+raw_count_genes["MT-CO3",]
+res_corrected["106D",]
+res["106D",]
+mito_res["MT-CO3",]

@@ -2,9 +2,11 @@
 library(tidyr)
 library(tidyverse)
 
-read_length <- 200
+read_length <- 150
 
-generateEncompassTable <- function(mdp_gtf, mitochondrial_gtf) {
+generateEncompassTable <- function(gtf_mdp, gtf_mitochondrial) {
+  mdp_gtf <- gtf_mdp
+  mitogene_gtf <- gtf_mitochondrial
   #Pre-processing MDP gtf.
   colnames(mdp_gtf) <-
     c("chr",
@@ -17,7 +19,7 @@ generateEncompassTable <- function(mdp_gtf, mitochondrial_gtf) {
       "idc4",
       "gene")
   mdp_gtf <- separate(mdp_gtf, gene, c("gene", "transcript"), ";")
-  mdp_gtf <- separate(mdp_gtf, gene, c("trash", "mdp_id"), ">")
+  mdp_gtf <- separate(mdp_gtf, gene, c("trash", "mdp_id"), ">Peptide")
   mdp_db <- mdp_gtf[, c("start", "end", "sense", "mdp_id")]
   mdp_db <- mdp_db[-c(62, 425), ]
   
@@ -97,14 +99,14 @@ generateEncompassTable <- function(mdp_gtf, mitochondrial_gtf) {
         overlap <- (mdp_e - mito_s) / (mdp_e - mdp_s)
         encompass_table <- encompass_table %>% add_row(mdp = mdp_db[mdp_row, "mdp_id"],
                                     mitogene = mitogene_db[mito_row, "mitogene_name"],
-                                    perc_overlap = overlap, proportion=(((overlap*mdp_size)+read_length)/mito_size))
+                                    perc_overlap = overlap, proportion=overlap*(((mdp_size)+read_length)/mito_size))
       } 
       if (mdp_s > mito_s &
           mdp_s < mito_e & mdp_e > mito_s & mdp_e > mito_e) {
         overlap <- (mito_e - mdp_s) / (mdp_e - mdp_s)
         encompass_table <- encompass_table %>% add_row(mdp = mdp_db[mdp_row, "mdp_id"],
                                     mitogene = mitogene_db[mito_row, "mitogene_name"],
-                                    perc_overlap = overlap,proportion=(((overlap*mdp_size)+read_length)/mito_size))
+                                    perc_overlap = overlap,proportion=overlap*(((mdp_size)+read_length)/mito_size))
       } 
       if (mdp_s > mito_s &
           mdp_s < mito_e & mdp_e > mito_s & mdp_e < mito_e) {
@@ -113,11 +115,11 @@ generateEncompassTable <- function(mdp_gtf, mitochondrial_gtf) {
           add_row(mdp = mdp_db[mdp_row, "mdp_id"],
                   mitogene = mitogene_db[mito_row, "mitogene_name"],
                   perc_overlap = overlap,
-                  proportion = ((overlap*mdp_size)+read_length)/mito_size)
+                  proportion = overlap*((mdp_size)+read_length)/mito_size)
       } 
     }
   }
-  
+  encompass_table<-encompass_table[!is.na(encompass_table$mdp),]
   for (mdp_row in 1:nrow(encompass_table)) {
     outer_mdp <- encompass_table$mdp[mdp_row]
     outer_overlap <- encompass_table$perc_overlap[mdp_row]
@@ -128,12 +130,18 @@ generateEncompassTable <- function(mdp_gtf, mitochondrial_gtf) {
         if (outer_mdp == inner_mdp) {
           if (outer_overlap > inner_overlap) {
             encompass_table <- encompass_table[-mdp_row_2,]
+            mdp_row_2 <- 1
+            mdp_row <- 1
           }
           if (outer_overlap == inner_overlap) {
             encompass_table <- encompass_table[-mdp_row_2,]
+            mdp_row_2 <- 1
+            mdp_row <- 1
           }
           if (outer_overlap < inner_overlap) {
             encompass_table <- encompass_table[-mdp_row,]
+            mdp_row_2 <- 1
+            mdp_row <- 1
           }
         }
       }
@@ -149,7 +157,7 @@ determineBackgroundSignal <- function(mito_counts) {
   mito_counts$average <- average
   for (mito_column in 1:(ncol(mito_counts)-1)) {
       mito_counts[,mito_column] <- (mito_counts[,mito_column] - mito_counts[,ncol(mito_counts)]) /
-        (mito_counts[,ncol(mito_counts)])
+        (2*(mito_counts[,ncol(mito_counts)]))
   }
   mito_counts <- mito_counts[,-ncol(mito_counts)]
   return (mito_counts)
@@ -161,7 +169,7 @@ performBackgroundCorrection <- function(background_table,mdp_counts,encompass_ta
     mdp <- mdp_names[mdp_row]
     corres_mitogene <- encompass_table$mitogene[encompass_table$mdp==mdp]
     corres_overlap <- encompass_table$perc_overlap[encompass_table$mdp==mdp]
-    corres_proportion <- 1-encompass_table$proportion[encompass_table$mdp==mdp]
+    corres_proportion <- 1-(encompass_table$proportion[encompass_table$mdp==mdp])
     if (length(corres_proportion) != 0) {
       if (corres_proportion < 0) {
         corres_proportion <- 0

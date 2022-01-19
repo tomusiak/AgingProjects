@@ -1,3 +1,6 @@
+keep_mitogenes <- c("MT-RNR1","MT-RNR2", "MT-ND1","MT-ND2","MT-CO1","MT-CO2","MT-ATP8",
+                    "MT-ATP6","MT-CO3","MT-ND3","MT-ND4L","MT-ND4","MT-ND5","MT-ND6","MY-CYB")
+
 summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
                       conf.interval=.95, .drop=TRUE, removeOutliers=F, logt=F) {
   length2 <- function (x, na.rm=FALSE) {
@@ -94,7 +97,7 @@ ebg <- exonsBy(txdb, by="gene")
 #saveRDS(se_cancer, "mdp_se_cancer.rds")
 se_cancer <- readRDS("mdp_se_cancer.rds")
 mdp_counts <- assays(se_cancer)$counts
-rownames(mdp_counts) <- sub('.', '', rownames(mdp_counts))
+rownames(mdp_counts) <- sub('.Peptide', '', rownames(mdp_counts))
 mdp_counts <- mdp_counts[c(-593,-595),]
 keep <- rowSums((mdp_counts)) >= 200 #Removes genes with low counts.
 mdp_counts<- mdp_counts[keep,1:8]
@@ -116,36 +119,35 @@ mitogene_count_matrix <- read.csv("mitogene_count_matrix.csv", row.names=1)[,1:8
 setwd("/home/atom/Desktop/AgingProjects/Cohen/")
 source("mdpseq_background_correction.R")
 
+mitogene_count_matrix <-mitogene_count_matrix[rownames(mitogene_count_matrix) %in% keep_mitogenes,]
 mitogene_dds <- DESeqDataSetFromMatrix(mitogene_count_matrix,
                                    colData = sample_table,
                                    design = ~ donor + status)
 mitogene_dds <- DESeq(mitogene_dds)
 mitogene_res <-results(mitogene_dds, name="status_tumor_vs_normal")
 mitogene_vsd <- varianceStabilizingTransformation(mitogene_dds) ###mdp-seq script
-mitogene_resOrdered <- mitogene_res[order(abs(mitogene_res$padj)),]
+mitogene_resOrdered <- mitogene_res[order(abs(mitogene_res$pvalue)),]
 mitogene_top <- head(mitogene_resOrdered, 30)
 
-cols <- densCols(mitogene_res$log2FoldChange, -log10(mitogene_res$padj),
+cols <- densCols(mitogene_res$log2FoldChange, -log10(mitogene_res$pvalue),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
 plot(x= mitogene_res$log2FoldChange, 
-     y = -log10(mitogene_res$padj), 
+     y = -log10(mitogene_res$pvalue), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
      ylab="-log10(adjusted p-value)",
-     xlim=c(-.5,.5),
-     ylim=c(0,.5),
+     xlim=c(-2,2),
+     ylim=c(0,10),
      pch=mitogene_res$pch, cex=0.4)
-gn.selected <- abs(mitogene_res$log2FoldChange) >.05 & mitogene_res$padj < .5
+gn.selected <- abs(mitogene_res$log2FoldChange) >.2 & mitogene_res$pvalue < .05
 text(mitogene_res$log2FoldChange[gn.selected],
-     -log10(mitogene_res$padj)[gn.selected],
+     -log10(mitogene_res$pvalue)[gn.selected],
      lab=rownames(mitogene_res)[gn.selected ], cex=0.6)
 
 encompass_table <- generateEncompassTable(mdp_gtf,mitogene_gtf)
-#keep_mitogenes <- c("MT-RNR1","MT-RNR2", "MT-ND1","MT-ND2","MT-CO1","MT-CO2","MT-ATP8",
-#                    "MT-ATP6","MT-CO3","MT-ND3","MT-ND4L","MT-ND4","MT-ND5","MT-ND6","MY-CYB")
-#encompass_table <- encompass_table[encompass_table$mitogene %in% keep_mitogenes,]
+encompass_table <- encompass_table[encompass_table$mitogene %in% keep_mitogenes,]
 background_table <- determineBackgroundSignal(mitogene_count_matrix)
 corrected_counts <- data.matrix(performBackgroundCorrection(background_table,mdp_counts,encompass_table))
 
@@ -156,9 +158,9 @@ mdp_dds <- DESeqDataSetFromMatrix(mdp_counts,
 mdp_dds <- DESeq(mdp_dds)
 mdp_res <-results(mdp_dds, name="status_tumor_vs_normal")
 mdp_vsd <- varianceStabilizingTransformation(mdp_dds) ###mdp-seq script
-mdp_resOrdered <- mdp_res[order(abs(mdp_res$padj)),]
+mdp_resOrdered <- mdp_res[order(abs(mdp_res$pvalue)),]
 mdp_top <- head(mdp_resOrdered, 30)
-mdp_resOrdered["Peptide173C",]
+mdp_resOrdered["173C",]
 
 #corrected
 mdp_dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
@@ -167,9 +169,9 @@ mdp_dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
 mdp_dds_corrected <- DESeq(mdp_dds_corrected)
 mdp_res_corrected <-results(mdp_dds_corrected, name="status_tumor_vs_normal")
 mdp_vsd_corrected <- varianceStabilizingTransformation(mdp_dds_corrected) ###mdp-seq script
-mdp_resOrdered_corrected <- mdp_res_corrected[order(abs(mdp_res_corrected$padj)),]
+mdp_resOrdered_corrected <- mdp_res_corrected[order(abs(mdp_res_corrected$pvalue)),]
 mdp_top_corrected <- head(mdp_resOrdered_corrected, 30)
-mdp_resOrdered_corrected["Peptide192C",]
+mdp_resOrdered_corrected["192C",]
 
 plotPCA(mdp_vsd, "status") +
   theme_classic()+
@@ -196,11 +198,11 @@ plotPCA(mdp_vsd, "status") +
         axis.text.x=element_text(size=15, face="bold", color="black"),
         axis.text.y=element_text(size=15, face="bold", colour = "black"))
 
-cols <- densCols(mdp_res_corrected$log2FoldChange, -log10(mdp_res_corrected$padj),
+cols <- densCols(mdp_res_corrected$log2FoldChange, -log10(mdp_res_corrected$pvalue),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
 plot(x= mdp_res_corrected$log2FoldChange, 
-     y = -log10(mdp_res_corrected$padj), 
+     y = -log10(mdp_res_corrected$pvalue), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
@@ -208,16 +210,16 @@ plot(x= mdp_res_corrected$log2FoldChange,
      xlim=c(-2,2),
      ylim=c(0,10),
      pch=mdp_res_corrected$pch, cex=0.4)
-gn.selected <- abs(mdp_res_corrected$log2FoldChange) >.4 & mdp_res_corrected$padj < .05
+gn.selected <- abs(mdp_res_corrected$log2FoldChange) >.5 & mdp_res_corrected$pvalue < .05
 text(mdp_res_corrected$log2FoldChange[gn.selected],
-     -log10(mdp_res_corrected$padj)[gn.selected],
+     -log10(mdp_res_corrected$pvalue)[gn.selected],
      lab=rownames(mdp_res_corrected)[gn.selected ], cex=0.6)
 
-cols <- densCols(mdp_res$log2FoldChange, -log10(mdp_res$padj),
+cols <- densCols(mdp_res$log2FoldChange, -log10(mdp_res$pvalue),
                  nbin=25, bandwidth=1,
                  colramp = colorRampPalette(brewer.pal(5, "Reds")))
 plot(x= mdp_res$log2FoldChange, 
-     y = -log10(mdp_res$padj), 
+     y = -log10(mdp_res$pvalue), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
@@ -225,23 +227,23 @@ plot(x= mdp_res$log2FoldChange,
      xlim=c(-2,2),
      ylim=c(0,10),
      pch=mdp_res$pch, cex=0.4)
-gn.selected <- abs(mdp_res$log2FoldChange) >.4 & mdp_res$padj < .05
+gn.selected <- abs(mdp_res$log2FoldChange) >.5 & mdp_res$pvalue < .05
 text(mdp_res$log2FoldChange[gn.selected],
-     -log10(mdp_res$padj)[gn.selected],
+     -log10(mdp_res$pvalue)[gn.selected],
      lab=rownames(mdp_res)[gn.selected ], cex=0.6)
 
 #playtime
 head(mdp_resOrdered_corrected,15)
-corrected_counts["Peptide53D",]
-mdp_counts["Peptide53D",]
-mdp_res_corrected["Peptide53D",]
-mdp_res["Peptide53D",]
+corrected_counts["53D",]
+mdp_counts["53D",]
+mdp_res_corrected["53D",]
+mdp_res["53D",]
 mitogene_resOrdered["MT-RNR2",]
 rnr2_counts <- data.frame(mitogene_count_matrix["MT-RNR2",] %>% t())
 rnr2_counts$status <- c("normal","tumor","normal","tumor","normal","tumor","normal","tumor")
-peptide_counts <- data.frame(mdp_counts["Peptide53D",])
+peptide_counts <- data.frame(mdp_counts["53D",])
 peptide_counts$status <- c("normal","tumor","normal","tumor","normal","tumor","normal","tumor")
-peptide_counts_corrected <- data.frame(corrected_counts["Peptide53D",])
+peptide_counts_corrected <- data.frame(corrected_counts["53D",])
 peptide_counts_corrected$status <- c("normal","tumor","normal","tumor","normal","tumor","normal","tumor")
 rnr2_counts$MT.RNR2 <- rnr2_counts$MT.RNR2/mean(rnr2_counts$MT.RNR2)
 colnames(peptide_counts) <- c("counts","status")
@@ -249,8 +251,8 @@ colnames(peptide_counts_corrected) <- c("counts","status")
 peptide_counts$counts <- peptide_counts$counts/mean(peptide_counts$counts)
 peptide_counts_corrected$counts <- peptide_counts_corrected$counts/mean(peptide_counts_corrected$counts)
 rnr2_summary <- summarySE(rnr2_counts,"MT.RNR2", "status")
-peptide_summary <- summarySE(peptide_counts,"counts", "status")
-peptide_corrected_summary<- summarySE(peptide_counts_corrected,"counts", "status")
+peptide_counts_summary <- summarySE(peptide_counts,"counts", "status")
+peptide_counts_corrected_summary<- summarySE(peptide_counts_corrected,"counts", "status")
 
 ggplot(rnr2_summary, aes(x=status, y=MT.RNR2)) +
   geom_bar(stat="identity", color="black", position=position_dodge()) +
@@ -262,7 +264,7 @@ ggplot(rnr2_summary, aes(x=status, y=MT.RNR2)) +
        fill="SAbGal High or Low") +
   scale_fill_manual(values=c("pink","firebrick4"))
 
-ggplot(peptide_summary, aes(x=status, y=counts)) +
+ggplot(peptide_counts_summary, aes(x=status, y=counts)) +
   ylim(0,1.5) +
   geom_bar(stat="identity", color="black", position=position_dodge()) +
   geom_errorbar(aes(ymin=counts-se,ymax=counts+se),position = position_dodge(width = .9),width=.2) + 
@@ -272,7 +274,7 @@ ggplot(peptide_summary, aes(x=status, y=counts)) +
        fill="SAbGal High or Low") +
   scale_fill_manual(values=c("pink","firebrick4"))
 
-ggplot(peptide_corrected_summary, aes(x=status, y=counts)) +
+ggplot(peptide_counts_corrected_summary, aes(x=status, y=counts)) +
   ylim(0,1.5) +
   geom_bar(stat="identity", color="black", position=position_dodge()) +
   geom_errorbar(aes(ymin=counts-se,ymax=counts+se),position = position_dodge(width = .9),width=.2) + 
@@ -285,35 +287,56 @@ ggplot(peptide_corrected_summary, aes(x=status, y=counts)) +
 plotCounts(mitogene_dds, "MT-RNR2", intgroup=c("status"), returnData=TRUE) %>% 
   ggplot(aes(status, count)) + geom_boxplot(aes(color=status), lwd = 1.5) + 
   geom_point(aes(color=status),size=3, color = "grey") +
-  # geom_signif(annotation="pAdj<0.15", textsize = 5.5,
+  # geom_signif(annotation="pvalue<0.15", textsize = 5.5,
   #             y_position=4.76, xmin=1, xmax=4, tip_length = 0.1, size = 1, fontface="bold", color="black") +
   scale_y_log10() + ggtitle("Transcript Differences Between Perma-On CAR and Perma-Off CAR") + 
   ylab("Normalized Count")+
   scale_x_discrete(labels= c("Day 11", "Day 15"))+
   theme_minimal()
 
-plotCounts(mdp_dds, "Peptide53D", intgroup=c("status"), returnData=TRUE) %>% 
+plotCounts(mdp_dds, "53D", intgroup=c("status"), returnData=TRUE) %>% 
   ggplot(aes(status, count)) + geom_boxplot(aes(color=status), lwd = 1.5) + 
   geom_point(aes(color=status),size=3, color = "grey") +
-  # geom_signif(annotation="pAdj<0.15", textsize = 5.5,
+  # geom_signif(annotation="pvalue<0.15", textsize = 5.5,
   #             y_position=4.76, xmin=1, xmax=4, tip_length = 0.1, size = 1, fontface="bold", color="black") +
   scale_y_log10() + ggtitle("Transcript Differences Between Perma-On CAR and Perma-Off CAR") + 
   ylab("Normalized Count")+
   scale_x_discrete(labels= c("Day 11", "Day 15"))+
   theme_minimal()
 
-plotCounts(mdp_dds_corrected, "Peptide53D", intgroup=c("status"), returnData=TRUE) %>% 
+plotCounts(mdp_dds_corrected, "53D", intgroup=c("status"), returnData=TRUE) %>% 
   ggplot(aes(status, count)) + geom_boxplot(aes(color=status), lwd = 1.5) + 
   geom_point(aes(color=status),size=3, color = "grey") +
-  # geom_signif(annotation="pAdj<0.15", textsize = 5.5,
+  # geom_signif(annotation="pvalue<0.15", textsize = 5.5,
   #             y_position=4.76, xmin=1, xmax=4, tip_length = 0.1, size = 1, fontface="bold", color="black") +
   scale_y_log10() + ggtitle("Transcript Differences Between Perma-On CAR and Perma-Off CAR") + 
   ylab("Normalized Count")+
   scale_x_discrete(labels= c("Day 11", "Day 15"))+
   theme_minimal()
 
-corrected_counts["Peptide176C",]
-mdp_counts["Peptide176C",]
-mdp_res_corrected["Peptide176C",]
-mdp_res["Peptide176C",]
+corrected_counts["176C",]
+mdp_counts["176C",]
+mdp_res_corrected["176C",]
+mdp_res["176C",]
+mitogene_resOrdered["MT-RNR2",]
+
+corrected_counts["51D",]
+mdp_counts["51D",]
+mitogene_count_matrix["MT-RNR2",]
+mdp_res_corrected["51D",]
+mdp_res["51D",]
+mitogene_resOrdered["MT-RNR2",]
+
+corrected_counts["36A",]
+mdp_counts["36A",]
+mitogene_count_matrix["MT-CO1",]
+mdp_res_corrected["36A",]
+mdp_res["36A",]
+mitogene_resOrdered["MT-CO1",]
+
+corrected_counts["53D",]
+mdp_counts["53D",]
+mitogene_count_matrix["MT-RNR2",]
+mdp_res_corrected["53D",]
+mdp_res["53D",]
 mitogene_resOrdered["MT-RNR2",]
