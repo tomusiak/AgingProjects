@@ -159,7 +159,7 @@ mdp_dds <- DESeq(mdp_dds)
 mdp_res <-results(mdp_dds, name="status_tumor_vs_normal")
 mdp_vsd <- varianceStabilizingTransformation(mdp_dds) ###mdp-seq script
 mdp_resOrdered <- mdp_res[order(abs(mdp_res$pvalue)),]
-mdp_top <- head(mdp_resOrdered, 30)
+mdp_top <- head(mdp_resOrdered, 10)
 mdp_resOrdered["173C",]
 
 #corrected
@@ -170,7 +170,7 @@ mdp_dds_corrected <- DESeq(mdp_dds_corrected)
 mdp_res_corrected <-results(mdp_dds_corrected, name="status_tumor_vs_normal")
 mdp_vsd_corrected <- varianceStabilizingTransformation(mdp_dds_corrected) ###mdp-seq script
 mdp_resOrdered_corrected <- mdp_res_corrected[order(abs(mdp_res_corrected$pvalue)),]
-mdp_top_corrected <- head(mdp_resOrdered_corrected, 30)
+mdp_top_corrected <- head(mdp_resOrdered_corrected, 10)
 mdp_resOrdered_corrected["192C",]
 
 plotPCA(mdp_vsd, "status") +
@@ -339,4 +339,10 @@ mdp_counts["53D",]
 mitogene_count_matrix["MT-RNR2",]
 mdp_res_corrected["53D",]
 mdp_res["53D",]
+mitogene_resOrdered["MT-RNR2",]
+
+corrected_counts["144B",]
+mdp_counts["144B",]
+mdp_res_corrected["144B",]
+mdp_res["144B",]
 mitogene_resOrdered["MT-RNR2",]
