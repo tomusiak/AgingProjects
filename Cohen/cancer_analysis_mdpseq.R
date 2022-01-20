@@ -1,5 +1,5 @@
-keep_mitogenes <- c("MT-RNR1","MT-RNR2", "MT-ND1","MT-ND2","MT-CO1","MT-CO2","MT-ATP8",
-                    "MT-ATP6","MT-CO3","MT-ND3","MT-ND4L","MT-ND4","MT-ND5","MT-ND6","MY-CYB")
+keep_mitogenes <- c("RNR1","RNR2", "ND1","ND2","CO1","CO2","ATP8",
+                    "ATP6","CO3","ND3","ND4L","ND4","ND5","ND6","CYB")
 
 library("BiocManager")
 library("S4Vectors")
@@ -86,8 +86,9 @@ mitogene_count_matrix <- read.csv("mitogene_count_matrix.csv", row.names=1)[,1:8
 
 setwd("/home/atom/Desktop/AgingProjects/Cohen/")
 source("mdpseq_background_correction.R")
-
+rownames(mitogene_count_matrix) <- sub('MT-', '', rownames(mitogene_count_matrix))
 mitogene_count_matrix <-mitogene_count_matrix[rownames(mitogene_count_matrix) %in% keep_mitogenes,]
+
 mitogene_dds <- DESeqDataSetFromMatrix(mitogene_count_matrix,
                                    colData = sample_table,
                                    design = ~ donor + status)
@@ -177,7 +178,7 @@ plot(x= mdp_res_corrected$log2FoldChange,
      ylab="-log10(adjusted p-value)",
      xlim=c(-2,2),
      ylim=c(0,10),
-     pch=mdp_res_corrected$pch, cex=0.4)
+     pch=mdp_res_corrected$pch, cex=1)
 gn.selected <- abs(mdp_res_corrected$log2FoldChange) >.5 & mdp_res_corrected$pvalue < .05
 text(mdp_res_corrected$log2FoldChange[gn.selected],
      -log10(mdp_res_corrected$pvalue)[gn.selected],
@@ -311,6 +312,8 @@ mitogene_resOrdered["MT-RNR2",]
 
 corrected_counts["144B",]
 mdp_counts["144B",]
-mdp_res_corrected["144B",]
-mdp_res["144B",]
+mdp_res_corrected["140B",]
+mdp_res["140B",]
 mitogene_resOrdered["MT-RNR2",]
+
+

@@ -54,7 +54,7 @@ mitogene_gtf <-
   )
 
 # Annotating and aligning. Saving & loading optional - summarizeOverlaps() can take time.
-ebg <- exonsBy(txdb, by="gene")
+#ebg <- exonsBy(txdb, by="gene")
 #se <- summarizeOverlaps(features=ebg, reads=list_of_bams,
 #                        mode="Union",
 #                        singleEnd=TRUE,
@@ -275,11 +275,12 @@ res_corrected["241C",]
 res["241C",]
 mito_resOrdered["CO1",]
 
-corrected_counts["32B",]
-mdp_counts["32B",]
+corrected_counts["144B",]
+mdp_counts["140B",]
 raw_count_genes["CO2",]
-res_corrected["32B",]
-res["32B",]
+res_corrected["140B",]
+rownames(res_corrected) %in% rownames(mdp_counts)
+res["140B",]
 mito_res["CO2",]
 
 corrected_counts["106D",]
@@ -301,7 +302,7 @@ plot(x= res$log2FoldChange,
      ylab="-log10(p-value)",
      xlim=c(-2,2),
      ylim=c(0,10),
-     pch=res$pch, cex=0.4)
+     pch=res$pch, cex=1)
 gn.selected <- rownames(res)=="241C" | rownames(res)=="32B"
 text(res$log2FoldChange[gn.selected],
      -log10(res$pvalue)[gn.selected],
@@ -384,7 +385,7 @@ plot(x= res_corrected$log2FoldChange,
      ylab="-log10(p-value)",
      xlim=c(-2,2),
      ylim=c(0,10),
-     pch=res_corrected$pch, cex=0.4)
+     pch=res_corrected$pch, cex=1)
 gn.selected <- rownames(res_corrected)=="241C" | rownames(res_corrected)=="32B"
 text(res_corrected$log2FoldChange[gn.selected],
      -log10(res_corrected$pvalue)[gn.selected],
