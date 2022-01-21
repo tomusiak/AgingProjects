@@ -275,18 +275,18 @@ res_corrected["241C",]
 res["241C",]
 mito_resOrdered["CO1",]
 
-corrected_counts["144B",]
-mdp_counts["140B",]
+corrected_counts["32B",]
+mdp_counts["32B",]
 raw_count_genes["CO2",]
-res_corrected["140B",]
+res_corrected["32B",]
 rownames(res_corrected) %in% rownames(mdp_counts)
-res["140B",]
+res["32B",]
 mito_res["CO2",]
 
 corrected_counts["106D",]
 mdp_counts["106D",]
 raw_count_genes["CO3",]
-res_corrected["120D",]
+res_corrected["106D",]
 res["106D",]
 mito_res["CO3",]
 
@@ -365,7 +365,7 @@ ggplot(co1_summary, aes(x=status, y=CO1)) +
        y="Normalized Counts") +
   scale_fill_manual(values=c("red"))
 
-ggplot(peptide_counts_summary, aes(x=status, y=counts)) +
+ggplot(peptide_counts_corrected_summary, aes(x=status, y=counts)) +
   geom_bar(stat="identity", color="black", position=position_dodge(), fill="magenta") +
   ylim(0,2) +
   geom_errorbar(aes(ymin=counts-se,ymax=counts+se),position = position_dodge(width = .9),width=.2) + 

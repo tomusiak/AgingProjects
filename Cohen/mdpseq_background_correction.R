@@ -157,7 +157,7 @@ determineBackgroundSignal <- function(mito_counts) {
   mito_counts$average <- average
   for (mito_column in 1:(ncol(mito_counts)-1)) {
       mito_counts[,mito_column] <- (mito_counts[,mito_column] - mito_counts[,ncol(mito_counts)]) /
-        (2*(mito_counts[,ncol(mito_counts)]))
+        ((mito_counts[,ncol(mito_counts)]))
   }
   mito_counts <- mito_counts[,-ncol(mito_counts)]
   return (mito_counts)
@@ -166,6 +166,7 @@ determineBackgroundSignal <- function(mito_counts) {
 performBackgroundCorrection <- function(background_table,mdp_counts,encompass_table) {
   mdp_names <- rownames(mdp_counts)
   for (mdp_row in 1:nrow(mdp_counts)) {
+    average_mdp <- mean(mdp_counts[mdp_row,])
     mdp <- mdp_names[mdp_row]
     corres_mitogene <- encompass_table$mitogene[encompass_table$mdp==mdp]
     corres_overlap <- encompass_table$perc_overlap[encompass_table$mdp==mdp]
@@ -177,10 +178,9 @@ performBackgroundCorrection <- function(background_table,mdp_counts,encompass_ta
     }
     if(length(corres_mitogene) != 0) {
       for (mdp_col in 1:length(mdp_counts[mdp_row,])) {
-        initial_mdp_count <- mdp_counts[mdp_row, 1]
         mdp_count <- mdp_counts[mdp_row,mdp_col]
         background_factor <- background_table[corres_mitogene,mdp_col]
-        corrected_mdp_count <- mdp_count - (background_factor*(corres_proportion)) * initial_mdp_count
+        corrected_mdp_count <- mdp_count - (background_factor*(corres_proportion)) * average_mdp
         mdp_counts[mdp_row,mdp_col] <- corrected_mdp_count
         if(mdp_counts[mdp_row,mdp_col] < 0) {
           mdp_counts[mdp_row,mdp_col] <- 0

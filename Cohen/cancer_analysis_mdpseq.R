@@ -253,7 +253,7 @@ ggplot(peptide_counts_corrected_summary, aes(x=status, y=counts)) +
        fill="SAbGal High or Low") +
   scale_fill_manual(values=c("pink","firebrick4"))
 
-plotCounts(mitogene_dds, "MT-RNR2", intgroup=c("status"), returnData=TRUE) %>% 
+plotCounts(mitogene_dds, "RNR2", intgroup=c("status"), returnData=TRUE) %>% 
   ggplot(aes(status, count)) + geom_boxplot(aes(color=status), lwd = 1.5) + 
   geom_point(aes(color=status),size=3, color = "grey") +
   # geom_signif(annotation="pvalue<0.15", textsize = 5.5,
@@ -289,31 +289,31 @@ mdp_res_corrected["176C",]
 mdp_res["176C",]
 mitogene_resOrdered["MT-RNR2",]
 
-corrected_counts["51D",]
-mdp_counts["51D",]
-mitogene_count_matrix["MT-RNR2",]
-mdp_res_corrected["51D",]
-mdp_res["51D",]
-mitogene_resOrdered["MT-RNR2",]
+corrected_counts["82C",]
+mdp_counts["82C",]
+mitogene_count_matrix["RNR2",]
+mdp_res_corrected["82C",]
+mdp_res["82C",]
+mitogene_resOrdered["RNR2",]
 
 corrected_counts["36A",]
 mdp_counts["36A",]
 mitogene_count_matrix["MT-CO1",]
 mdp_res_corrected["36A",]
 mdp_res["36A",]
-mitogene_resOrdered["MT-CO1",]
+mitogene_resOrdered["CO1",]
 
 corrected_counts["53D",]
 mdp_counts["53D",]
 mitogene_count_matrix["MT-RNR2",]
 mdp_res_corrected["53D",]
 mdp_res["53D",]
-mitogene_resOrdered["MT-RNR2",]
+mitogene_resOrdered["RNR2",]
 
-corrected_counts["144B",]
-mdp_counts["144B",]
+corrected_counts["140B",]
+mdp_counts["140B",]
 mdp_res_corrected["140B",]
 mdp_res["140B",]
-mitogene_resOrdered["MT-RNR2",]
+mitogene_resOrdered["RNR2",]
 
 
