@@ -33,9 +33,42 @@ ggplot(data=summary, aes(x=type, y=diff, group=1)) +
   geom_line()+ 
   geom_point() +
   theme_classic() +
-  ylim(-18,18) +
+  ylim(-23,23) +
   theme(text = element_text(size = 15)) +
   geom_hline(yintercept = 0,linetype="dotted") +
   geom_errorbar(aes(ymin=diff-se, ymax=diff+se), width=.1) +
   labs(x="CD8+ T Cell Subset",y="Age - Predicted Age", title="CD8+ T Cell Subset Differences Between
        Clock Age and Chronological Age") 
+
+young_subset <- subset_data[subset_data$age <= 65,]
+old_subset <- subset_data[subset_data$age > 65,]
+
+summary_young <- summarySE(young_subset,"diff", "type")
+summary_young$type <- c("Central Memory","Effector Memory","Naive","TEMRA")
+summary_young$type <- factor(summary_young$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
+
+ggplot(data=summary_young, aes(x=type, y=diff, group=1)) +
+  geom_line()+ 
+  geom_point() +
+  theme_classic() +
+  ylim(-23,23) +
+  theme(text = element_text(size = 15)) +
+  geom_hline(yintercept = 0,linetype="dotted") +
+  geom_errorbar(aes(ymin=diff-se, ymax=diff+se), width=.1) +
+  labs(x="CD8+ T Cell Subset",y="Age - Predicted Age", title="CD8+ T Cell Subset Differences Between
+       Clock Age and Chronological Age - < 65 years old") 
+
+summary_old <- summarySE(old_subset,"diff", "type")
+summary_old$type <- c("Central Memory","Effector Memory","Naive","TEMRA")
+summary_old$type <- factor(summary_old$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
+
+ggplot(data=summary_old, aes(x=type, y=diff, group=1)) +
+  geom_line()+ 
+  geom_point() +
+  theme_classic() +
+  ylim(-23,23) +
+  theme(text = element_text(size = 15)) +
+  geom_hline(yintercept = 0,linetype="dotted") +
+  geom_errorbar(aes(ymin=diff-se, ymax=diff+se), width=.1) +
+  labs(x="CD8+ T Cell Subset",y="Age - Predicted Age", title="CD8+ T Cell Subset Differences Between
+       Clock Age and Chronological Age - >65 years old") 
