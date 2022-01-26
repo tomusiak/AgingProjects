@@ -15,6 +15,8 @@ library(GOfuncR)
 library(readr)
 library(plotrix)
 library("Mus.musculus")
+library(minfi)
+library(umap)
 
 #Loading in data.
 load("./data/NormalizedData/all_probes_sesame_normalized.Rdata")

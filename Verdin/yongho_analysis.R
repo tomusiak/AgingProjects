@@ -29,13 +29,13 @@ library(msigdbr)
 library(circlize)
 library(ComplexHeatmap)
 
-setwd("/home/atom/Desktop/Data/Yong-Ho/BAMs") #Sets directory.
+setwd("/home/atom/Desktop/Data/Yong-Ho") #Sets directory.
 BAMs <- list.files(pattern = "\\.BAM$") #Acquires all BAM files in directory.
 #raw_counts <- featureCounts(BAMs,annot.inbuilt="hg38",isPairedEnd=TRUE,nthreads=5) #Count matrix generation.
 #raw_count_matrix <- raw_counts$counts #Pulls matrix.
 #write.csv(raw_count_matrix,"yongho_counts_raw.csv") #Writes count matrix for easier future loading.
 #Read count matrix below.
-raw_count_matrix <- read.csv("~/Desktop/Data/Yong-Ho/BAMs/yongho_counts_raw.csv", row.names=1) 
+raw_count_matrix <- read.csv("/home/atom/Desktop/Data/Yong-Ho/yongho_counts_raw.csv", row.names=1) 
 keep <- rowSums((raw_count_matrix)) >= 50 #Removes genes with low counts.
 raw_count_matrix <- raw_count_matrix[keep,]
 yongho_metadata <- read_csv("~/Desktop/Data/Yong-Ho/yongho_metadata.csv") #Pulls metadata.
@@ -57,9 +57,9 @@ gene_list <- rownames(raw_count_matrix) #Acquires full list of genes.
 #id_to_name_mapping <- getBM(attributes = c("entrezgene_id","hgnc_symbol"), 
 #                            filters = "entrezgene_id", values = gene_list,
 #                            mart=useMart(biomart="ensembl", dataset="hsapiens_gene_ensembl"))
-#write.csv(id_to_name_mapping,"id_to_name_mapping.csv")
+write.csv(id_to_name_mapping,"id_to_name_mapping.csv")
 #Reads in mapping of NCBI gene IDs to HGNC gene symbols.
-id_to_name_mapping <- read.csv("~/Desktop/Data/Yong-Ho/BAMs/id_to_name_mapping.csv", row.names=1)
+id_to_name_mapping <- read.csv("~/Desktop/Data/Yong-Ho/id_to_name_mapping.csv", row.names=1)
 matrix_ids <- rownames(raw_count_matrix)
 matched_positions <- match(matrix_ids,id_to_name_mapping$entrezgene_id) #Finds valid matches in table.
 matched_symbols <- id_to_name_mapping$hgnc_symbol[matched_positions]#Finds position of valid match.
@@ -264,7 +264,7 @@ CD4CM_dds <- DESeqDataSetFromMatrix(CD4CM_counts,
                                     colData = CD4CM_metadata,
                                     design = ~ age_sabgal)
 CD4CM_dds <- DESeq(CD4CM_dds)
-cd4CMsabgal_res <- results(CD4CM_dds, contrast=c("sabgal_high_or_low","high","low"))
+cd4CMsabgal_res <- results(CD4CM_dds)
 cd4CMsabgal_resLFC <- lfcShrink(CD4CM_dds, res = cd4CMsabgal_res, contrast = "sabgal_high_or_low",type="ashr")
 plotMA(cd4CMsabgal_resLFC, ylim=c(-2,2))
 cd4CMsabgal_resOrdered <- cd4CMsabgal_resLFC[order(cd4CMsabgal_resLFC$padj),]
@@ -292,8 +292,7 @@ CD8CM_counts <- raw_count_matrix[,CD8CM_samples ]
 CD8CM_metadata <-  yongho_metadata[CD8CM_samples,]
 CD8CM_dds <- DESeqDataSetFromMatrix(CD8CM_counts,
                                     colData = CD8CM_metadata,
-                                    design = ~ young_or_aged + sabgal_high_or_low +
-                                      sex + age + pooled)
+                                    design = ~  sabgal_high_or_low)
 CD8CM_dds <- DESeq(CD8CM_dds)
 cd8CMsabgal_res <- results(CD8CM_dds, contrast=c("sabgal_high_or_low","high","low"))
 cd8CMsabgal_resLFC <- lfcShrink(CD8CM_dds, res = cd8CMsabgal_res, contrast = "sabgal_high_or_low",type="ashr")
