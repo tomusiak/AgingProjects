@@ -2,7 +2,7 @@ library(stringr)
 
 #ripped this from someone on the internet
 getSummary <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
-                      conf.interval=.95, .drop=TRUE, removeOutliers=F, logt=F) {
+                       conf.interval=.95, .drop=TRUE, removeOutliers=F, logt=F) {
   length2 <- function (x, na.rm=FALSE) {
     if (na.rm) sum(!is.na(x))
     else       length(x)
@@ -47,17 +47,20 @@ makeBAMS <- function(directory) {
 
 getCountsMitochondrial <- function(bam_list,paired_end) {
   mitogene_counts <- featureCounts(bam_list,annot.ext="~/Desktop/Data/mitochondria_db.gtf",
-                               isGTFAnnotationFile=TRUE,nthreads=5) #Count matrix generation
+                                   isGTFAnnotationFile=TRUE,nthreads=5) #Count matrix generation
   mitogene_count_matrix <- mitogene_counts$counts
   rownames(mitogene_count_matrix) <- c("MT-TF", "MT-RNR1", "MT-TV", "MT-RNR2", "MT-TL1",
-                                 "MT-ND1", "MT-TI", "MT-TQ", "MT-TM", "MT-ND2",
-                                 "MT-TW", "MT-TA", "MT-TN", "MT-TC","MT-TY",
-                                 "MT-CO1", "MT-TS","MT-TD", "MT-CO2","MT-TK",
-                                 "MT-ATP8","MT-ATP6","MT-CO3", "MT-TG", "MT-ND3",
-                                 "MT-TR","MT-ND4L","MT-ND4","MT-TH","MT-TS2",
-                                 "MT-TL2","MT-ND5","MT-ND6","MT-TE","MT-CYB",
-                               "MT-TT","MT-TP")
+                                       "MT-ND1", "MT-TI", "MT-TQ", "MT-TM", "MT-ND2",
+                                       "MT-TW", "MT-TA", "MT-TN", "MT-TC","MT-TY",
+                                       "MT-CO1", "MT-TS","MT-TD", "MT-CO2","MT-TK",
+                                       "MT-ATP8","MT-ATP6","MT-CO3", "MT-TG", "MT-ND3",
+                                       "MT-TR","MT-ND4L","MT-ND4","MT-TH","MT-TS2",
+                                       "MT-TL2","MT-ND5","MT-ND6","MT-TE","MT-CYB",
+                                       "MT-TT","MT-TP")
   write.csv(mitogene_count_matrix,"mitogene_count_matrix.csv") #Writes count matrix for easier future loading.
+  for (file in bam_list) {
+    unlink(file)
+  }
   return(mitogene_count_matrix)
 }
 
@@ -84,5 +87,8 @@ getCountsMDP <- function(bam_list,paired_end) {
   keep <- rowSums((mdp_counts)) >= 200 #Removes genes with low counts.
   mdp_counts<- mdp_counts[keep,]
   write.csv(mdp_counts,"raw_counts_mdps.csv")
+  for (file in bam_list) {
+    unlink(file)
+  }
   return(mdp_counts)
 }
