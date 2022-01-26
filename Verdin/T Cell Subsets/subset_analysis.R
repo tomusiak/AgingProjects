@@ -39,7 +39,7 @@ all_data$type <- factor(all_data$type, levels=c("naive", "central_memory", "effe
 subset_data <- all_data[all_data$sabgal_sample==FALSE,]
 subset_data$diff <- subset_data$DNAmAge-subset_data$age
 
-summary <- summarySE(subset_data,"diff", "type")
+summary <- getSummary(subset_data,"diff", "type")
 summary$type <- c("Central Memory","Effector Memory","Naive","TEMRA")
 summary$type <- factor(summary$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
 
@@ -65,7 +65,7 @@ ggplot(data=summary, aes(x=type, y=diff, group=1)) +
 young_subset <- subset_data[subset_data$age <= 65,]
 old_subset <- subset_data[subset_data$age > 65,]
 
-summary_young <- summarySE(young_subset,"diff", "type")
+summary_young <- getSummary(young_subset,"diff", "type")
 summary_young$type <- c("Central Memory","Effector Memory","Naive","TEMRA")
 summary_young$type <- factor(summary_young$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
 
@@ -80,7 +80,7 @@ ggplot(data=summary_young, aes(x=type, y=diff, group=1)) +
   labs(x="CD8+ T Cell Subset",y="Predicted Age - Age", title="CD8+ T Cell Subset Differences Between
        Clock Age and Chronological Age - < 65 years old") 
 
-summary_old <- summarySE(old_subset,"diff", "type")
+summary_old <- getSummary(old_subset,"diff", "type")
 summary_old$type <- c("Central Memory","Effector Memory","Naive","TEMRA")
 summary_old$type <- factor(summary_old$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
 

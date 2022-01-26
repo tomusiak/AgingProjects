@@ -434,7 +434,7 @@ ggplot(interesting_gene_with_sabgal_cd4, aes(x=sabgal_high_or_low, y=count,fill=
                                           y="Counts",fill="Central Memory (CM) \n or Terminal + \n Effector Memory (TE)")
 
 #Summarization function cribbed from Goldfar Lab
-summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+getSummary <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
                       conf.interval=.95, .drop=TRUE, removeOutliers=F, logt=F) {
   length2 <- function (x, na.rm=FALSE) {
     if (na.rm) sum(!is.na(x))
@@ -471,7 +471,7 @@ count_data <- trial %>% t()
 data_complete <- data.frame(count_data ) %>%
   tibble::rownames_to_column("id") %>%
   dplyr::inner_join(yongho_metadata, by = "id")
-data_summary <- summarySE(data_complete,"KLRG1",c("young_or_aged","sabgal_high_or_low"))
+data_summary <- getSummary(data_complete,"KLRG1",c("young_or_aged","sabgal_high_or_low"))
 CD8CM_counts["KLRG1",]
 ggplot(data_summary, aes(x=young_or_aged, y=KLRG1, fill=sabgal_high_or_low)) +
   geom_bar(stat="identity", color="black", position=position_dodge()) +
@@ -839,20 +839,20 @@ cd8CMsabgal_resLFC$combo <- abs((cd8CMsabgal_resLFC$inv_change**5 * cd8CMsabgal_
 cols[cd8CMsabgal_resLFC$padj ==0] <- "purple"
 cd8CMsabgal_resLFC$pch <- 19
 cd8CMsabgal_resLFC$pch[cd8CMsabgal_resLFC$padj ==0] <- 6
-plot(x= cd8CMsabgal_resLFC$log2FoldChange, 
-     y = -log10(cd8CMsabgal_resLFC$padj), 
+plot(x= cd8TEsabgal_resLFC$log2FoldChange, 
+     y = -log10(cd8TEsabgal_resLFC$padj), 
      col=cols, panel.first=grid(),
      main="Volcano plot", 
      xlab="Effect size: log2(fold-change)",
      ylab="-log10(adjusted p-value)",
-     xlim=c(-5,5),
+     xlim=c(-15,15),
      ylim=c(0,8),
-     pch=cd8CMsabgal_resLFC$pch, cex=0.4)
+     pch=cd8TEsabgal_resLFC$pch, cex=0.4)
 alpha <- 0.00001
-gn.selected <- abs(cd8CMsabgal_resLFC$log2FoldChange) >2 & cd8CMsabgal_resLFC$padj < .05
-text(cd8CMsabgal_resLFC$log2FoldChange[gn.selected],
-     -log10(cd8CMsabgal_resLFC$padj)[gn.selected],
-     lab=rownames(cd8CMsabgal_resLFC)[gn.selected ], cex=0.6)
+gn.selected <- abs(cd8TEsabgal_resLFC$log2FoldChange) >2 & cd8TEsabgal_resLFC$padj < .05
+text(cd8TEsabgal_resLFC$log2FoldChange[gn.selected],
+     -log10(cd8TEsabgal_resLFC$padj)[gn.selected],
+     lab=rownames(cd8TEsabgal_resLFC)[gn.selected ], cex=0.6)
 cd8sabgal_resOrdered <- cd8CMsabgal_resLFC[order(cd8CMsabgal_resLFC$padj),]
 "CD68" %in% rownames(head(cd8sabgal_resOrdered,500))
 cd8sabgal_resOrdered["CD16",]
