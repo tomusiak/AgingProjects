@@ -57,6 +57,7 @@ getCountsMitochondrial <- function(bam_list,paired_end) {
                                        "MT-TR","MT-ND4L","MT-ND4","MT-TH","MT-TS2",
                                        "MT-TL2","MT-ND5","MT-ND6","MT-TE","MT-CYB",
                                        "MT-TT","MT-TP")
+  rownames(mitogene_count_matrix) <- sub('MT-', '', rownames(mitogene_count_matrix))
   write.csv(mitogene_count_matrix,"mitogene_count_matrix.csv") #Writes count matrix for easier future loading.
   for (file in bam_list) {
     unlink(file)
@@ -65,7 +66,7 @@ getCountsMitochondrial <- function(bam_list,paired_end) {
 }
 
 getCountsMDP <- function(bam_list,paired_end) {
-  gtffile <- file.path(getwd(),"/home/atom/Desktop/Data/mdp_atg_noATC.gtf")
+  gtffile <- file.path("/home/atom/Desktop/Data/mdp_atg_noATC.gtf")
   txdb <- makeTxDbFromGFF(gtffile, format = "gtf", circ_seqs = character())
   mitogene_gtf <-
     read.delim(
