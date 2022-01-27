@@ -37,5 +37,5 @@ source("generally_useful.R")
 
 setwd("/home/atom/Desktop/Data/stefan2019")
 bam_list <- makeBAMS(".")
-mitogene_counts <- getCountsMitochondrial(list_of_bams,FALSE)
-mdp_counts <- getCountsMDP(list_of_bams,FALSE)
+mitogene_counts <- getCountsMitochondrial(bam_list,FALSE)
+mdp_counts <- getCountsMDP(bam_list,FALSE)
