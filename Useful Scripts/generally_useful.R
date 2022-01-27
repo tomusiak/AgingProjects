@@ -79,7 +79,7 @@ getCountsMDP <- function(bam_list,paired_end) {
                           fragments=FALSE,
                           inter.feature=FALSE) ###this will count each)
   saveRDS(se, "mdp_se.rds")
-  mdp_counts <- assays(se_cancer)$counts
+  mdp_counts <- assays(se)$counts
   rownames(mdp_counts) <- sub('.Peptide', '', rownames(mdp_counts))
   mdp_counts <- mdp_counts[c(-593,-595),]
   keep <- rowSums((mdp_counts)) >= 200 #Removes genes with low counts.

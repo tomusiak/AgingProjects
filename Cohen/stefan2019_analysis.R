@@ -68,3 +68,52 @@ gn.selected <- abs(mitogene_res$log2FoldChange) >.5 & mitogene_res$padj < .05
 text(mitogene_res$log2FoldChange[gn.selected],
      -log10(mitogene_res$padj)[gn.selected],
      lab=rownames(mitogene_res)[gn.selected ], cex=0.6)
+
+mitogene_gtf <-
+  read.delim(
+    "/home/atom/Desktop/Data/mitochondria_db.gtf",
+    header = FALSE,
+    comment.char = "#"
+  )
+mdp_gtf <-
+  read.delim("/home/atom/Desktop/Data/mdp_atg_noATC.gtf", header = FALSE)
+
+encompass_table <- generateEncompassTable(mdp_gtf,mitogene_gtf)
+encompass_table <- encompass_table[encompass_table$mitogene %in% keep_mitogenes,]
+background_table <- determineBackgroundSignal(mitogene_count_matrix)
+corrected_counts <- data.matrix(performBackgroundCorrection(background_table,mdp_counts,encompass_table))
+
+mdp_dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
+                                            colData = sample_sheet,
+                                            design = ~ donor + ifna)
+mdp_dds_corrected <- DESeq(mdp_dds_corrected)
+mdp_res_corrected <-results(mdp_dds_corrected)
+mdp_vsd_corrected <- varianceStabilizingTransformation(mdp_dds_corrected) ###mdp-seq script
+mdp_resOrdered_corrected <- mdp_res_corrected[order(abs(mdp_res_corrected$padj)),]
+mdp_top_corrected <- head(mdp_resOrdered_corrected, 10)
+
+cols <- densCols(mdp_res_corrected$log2FoldChange, -log10(mdp_res_corrected$padj),
+                 nbin=25, bandwidth=1,
+                 colramp = colorRampPalette(brewer.pal(5, "Reds")))
+plot(x= mdp_res_corrected$log2FoldChange, 
+     y = -log10(mdp_res_corrected$padj), 
+     col=cols, panel.first=grid(),
+     main="Volcano plot", 
+     xlab="Effect size: log2(fold-change)",
+     ylab="-log10(adjusted p-value)",
+     xlim=c(-3,3),
+     ylim=c(0,20),
+     pch=mdp_res_corrected$pch, cex=0.4)
+gn.selected <- abs(mdp_res_corrected$log2FoldChange) >.75 & mdp_res_corrected$padj < .05
+text(mdp_res_corrected$log2FoldChange[gn.selected],
+     -log10(mdp_res_corrected$padj)[gn.selected],
+     lab=rownames(mdp_res_corrected)[gn.selected ], cex=0.6)
+
+mdp_dds_uncorrected <- DESeqDataSetFromMatrix(mdp_counts,
+                                            colData = sample_sheet,
+                                            design = ~ donor + ifna)
+mdp_dds_uncorrected <- DESeq(mdp_dds_uncorrected)
+mdp_res_uncorrected <-results(mdp_dds_uncorrected)
+mdp_vsd_uncorrected <- varianceStabilizingTransformation(mdp_dds_uncorrected) ###mdp-seq script
+mdp_resOrdered_uncorrected <- mdp_res_uncorrected[order(abs(mdp_res_uncorrected$padj)),]
+mdp_top_uncorrected <- head(mdp_resOrdered_uncorrected, 10)
