@@ -41,7 +41,7 @@ makeBAMS <- function(directory) {
           nthreads = 4)
     unlink(fastq)
   }
-  bam_list <- list.files(path=".",pattern="*.BAM",all.files=TRUE,full.names=FALSE)
+  bam_list <- list.files(path=".",pattern="*.BAM$",all.files=TRUE,full.names=FALSE)
   return (bam_list)
 }
 

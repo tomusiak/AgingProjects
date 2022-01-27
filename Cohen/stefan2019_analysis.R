@@ -36,4 +36,6 @@ setwd("/home/atom/Desktop/AgingProjects/Useful Scripts/")
 source("generally_useful.R")
 
 setwd("/home/atom/Desktop/Data/stefan2019")
-list_of_bams <- makeBAMS(".")
+bam_list <- makeBAMS(".")
+mitogene_counts <- getCountsMitochondrial(list_of_bams,FALSE)
+mdp_counts <- getCountsMDP(list_of_bams,FALSE)
