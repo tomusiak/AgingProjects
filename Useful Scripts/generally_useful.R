@@ -59,9 +59,6 @@ getCountsMitochondrial <- function(bam_list,paired_end) {
                                        "MT-TT","MT-TP")
   rownames(mitogene_count_matrix) <- sub('MT-', '', rownames(mitogene_count_matrix))
   write.csv(mitogene_count_matrix,"mitogene_count_matrix.csv") #Writes count matrix for easier future loading.
-  for (file in bam_list) {
-    unlink(file)
-  }
   return(mitogene_count_matrix)
 }
 
@@ -88,8 +85,11 @@ getCountsMDP <- function(bam_list,paired_end) {
   keep <- rowSums((mdp_counts)) >= 200 #Removes genes with low counts.
   mdp_counts<- mdp_counts[keep,]
   write.csv(mdp_counts,"raw_counts_mdps.csv")
-  for (file in bam_list) {
-    unlink(file)
-  }
   return(mdp_counts)
+}
+
+deleteBAMs <- function(bam_list) {
+  for (bam in bam_list) {
+    unlink(bam)
+  }
 }
