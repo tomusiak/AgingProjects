@@ -96,32 +96,34 @@ ggplot(data=summary_old, aes(x=type, y=diff, group=1)) +
        Clock Age and Chronological Age - >65 years old") 
 
 
-percent_meth <- readRDS("./ResultsClock/rgset.RDS")
-colData(percent_meth)$Sample_Well
-MsetEx <- preprocessIllumina(percent_meth)
-GMsetEx <- mapToGenome(MsetEx)
-qc <- minfiQC(GMsetEx, fixOutliers = TRUE, verbose = TRUE)
-GMsetEx <- qc$object
-ratio <- ratioConvert(GMsetEx)
-beta_values <- getBeta(ratio)
-beta_values <- data.frame(na.omit(beta_values))
-colnames(beta_values) <- colData(percent_meth)$Sample_Well
-beta_values<-beta_values[,all_data$SampleID]
+#percent_meth <- readRDS("./ResultsClock/rgset.RDS")
+#colData(percent_meth)$Sample_Well
+#MsetEx <- preprocessIllumina(percent_meth)
+#GMsetEx <- mapToGenome(MsetEx)
+#qc <- minfiQC(GMsetEx, fixOutliers = TRUE, verbose = TRUE)
+#GMsetEx <- qc$object
+#ratio <- ratioConvert(GMsetEx)
+#beta_values <- getBeta(ratio)
+#beta_values <- data.frame(na.omit(beta_values))
+#colnames(beta_values) <- colData(percent_meth)$Sample_Well
+#beta_values<-beta_values[,all_data$SampleID]
 
-plotQC(qc$qc)
+#plotQC(qc$qc)
 
-all_data$old <- all_data$age >65
+#all_data$old <- all_data$age >65
 
-annotations <- read.delim("~/Desktop/Data/subset_data/EPIC.hg38.manifest.tsv")
-matched_positions <- match(rownames(beta_values),annotations$probeID) #Finds valid matches in table.
-matched_symbols <- annotations$gene[matched_positions]
-beta_values$gene <- matched_symbols
-beta_values <- beta_values[!is.na(beta_values$gene),]
-rownames(beta_values) <- make.names(beta_values$gene,unique=TRUE)
-beta_values <- beta_values[,1:31]
+#annotations <- read.delim("~/Desktop/Data/subset_data/EPIC.hg38.manifest.tsv")
+#matched_positions <- match(rownames(beta_values),annotations$probeID) #Finds valid matches in table.
+#matched_symbols <- annotations$gene[matched_positions]
+#beta_values$gene <- matched_symbols
+#beta_values <- beta_values[!is.na(beta_values$gene),]
+#rownames(beta_values) <- make.names(beta_values$gene,unique=TRUE)
+#beta_values <- beta_values[,1:31]
 
 #ditch the sabgal samples
-beta_values <- beta_values[all_data$sabgal_sample==FALSE,]
+#beta_values <- beta_values[all_data$sabgal_sample==FALSE,]
+
+beta_values <- read.csv("~/Desktop/Data/subset_data/beta_values.csv", row.names=1)
 
 corSample=cor(beta_values,use = "p")
 hierSample=hclust(as.dist(1-corSample), method="a")
@@ -150,18 +152,19 @@ diff_exp <-topTable(fit.reduced,coef=3,number=1000000)
 diff_exp[order(diff_exp$logFC),]
 diff_exp[order(diff_exp$logFC, decreasing=TRUE),]
 
-cols <- densCols(diff_exp$logFC, -log10(diff_exp$adj.P.Val),
-                 nbin=25, bandwidth=1,
-                 colramp = colorRampPalette(brewer.pal(5, "Reds")))
-plot(x= diff_exp$logFC, 
-     y = -log10(diff_exp$adj.P.Val), 
-     col=cols, panel.first=grid(),
-     main="Volcano plot of KO vs. WT mice DNA methylation levels at a CpG site", 
-     xlim=c(-1,1),
-     ylim=c(0,50),
-     xlab="Effect size: log2(fold-change)",
-     ylab="-log10(adjusted p-value)",
-     cex=0.6)
+diff_exp$color=factor(case_when(diff_exp$adj.P.Val < .05 & abs(diff_exp$logFC) >= .6 ~ "purple",
+                                           (diff_exp$adj.P.Val < .05 & abs(diff_exp$logFC) < .6) ~ "red",
+                                           (diff_exp$adj.P.Val > .05 & abs(diff_exp$logFC) >= .6) ~ "blue",
+                                           (diff_exp$adj.P.Val > .05 & abs(diff_exp$logFC) < .6) ~ "gray"))
+diff_exp$delabel <- NA
+diff_exp$delabel[diff_exp$color=="purple"] <- rownames(diff_exp)[diff_exp$color=="purple"]
+ggplot(data=diff_exp, aes(x=logFC, y=-log10(adj.P.Val), color=color)) + 
+  geom_point() +
+  xlim(-1,1) + ylim(0,20) +
+  theme_classic(base_size=18)  +
+  geom_hline(yintercept = 1.2,linetype="dotted") +
+  scale_colour_identity() +
+  labs(title="Volcano Plot - TEMRA vs. Naive")
 
 #let's imagine it all as a time course experiment
 ages <- factor(all_data$age,c(30,60,34,70,73,29,77))

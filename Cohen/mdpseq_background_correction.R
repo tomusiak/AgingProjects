@@ -166,7 +166,7 @@ determineBackgroundSignal <- function(mito_counts) {
 performBackgroundCorrection <- function(background_table,mdp_counts,encompass_table) {
   mdp_names <- rownames(mdp_counts)
   for (mdp_row in 1:nrow(mdp_counts)) {
-    average_mdp <- mean(mdp_counts[mdp_row,])
+    average_mdp <- rowMeans(mdp_counts[mdp_row,])
     mdp <- mdp_names[mdp_row]
     corres_mitogene <- encompass_table$mitogene[encompass_table$mdp==mdp]
     corres_overlap <- encompass_table$perc_overlap[encompass_table$mdp==mdp]
