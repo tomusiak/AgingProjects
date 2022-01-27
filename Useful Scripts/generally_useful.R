@@ -35,11 +35,11 @@ getSummary <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
 
 makeBAMS <- function(directory) {
   fastq_list <- list.files(path=".",pattern="*.fastq",all.files=TRUE,full.names=FALSE)
-  for (file in fastq_list) {
+  for (fastq in fastq_list) {
     align(index="/home/atom/Desktop/Data/reference_index",readfile1=file,
-          output_file=paste(c(str_sub(file,1,nchar(file)-6),".BAM"),collapse=""),
+          output_file=paste(c(str_sub(fastq,1,nchar(fastq)-6),".BAM"),collapse=""),
           nthreads = 4)
-    unlink(file)
+    unlink(fastq)
   }
   bam_list <- list.files(path=".",pattern="*.BAM",all.files=TRUE,full.names=FALSE)
   return (bam_list)

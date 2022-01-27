@@ -36,4 +36,4 @@ setwd("/home/atom/Desktop/AgingProjects/Useful Scripts/")
 source("generally_useful.R")
 
 setwd("/home/atom/Desktop/Data/stefan2019")
-makeBAMS(".")
+list_of_bams <- makeBAMS(".")
