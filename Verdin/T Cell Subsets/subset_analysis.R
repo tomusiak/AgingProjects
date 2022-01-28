@@ -24,6 +24,7 @@ library(splines)
 library(gam)
 require(clusterExperiment)
 library(stringr)
+library(tidyr)
 
 
 clock_data <- read.csv("~/Desktop/Data/subset_data/clock_data.csv")
@@ -40,7 +41,7 @@ subset_data <- all_data[all_data$sabgal_sample==FALSE,]
 subset_data$diff <- subset_data$DNAmAge-subset_data$age
 
 summary <- getSummary(subset_data,"diff", "type")
-summary$type <- c("Central Memory","Effector Memory","Naive","TEMRA")
+summary$type <- c("Naive","Central Memory","Effector Memory","TEMRA")
 summary$type <- factor(summary$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
 
 ggplot(data=all_data, aes(x=as.factor(final_dna), y=meanAbsDifferenceSampleVSgoldstandard, group=1)) +
@@ -62,8 +63,8 @@ ggplot(data=summary, aes(x=type, y=diff, group=1)) +
   labs(x="CD8+ T Cell Subset",y="Predicted Age - Age", title="CD8+ T Cell Subset Differences Between
        Clock Age and Chronological Age") 
 
-young_subset <- subset_data[subset_data$age <= 65,]
-old_subset <- subset_data[subset_data$age > 65,]
+young_subset <- subset_data[subset_data$age <= 50,]
+old_subset <- subset_data[subset_data$age > 50,]
 
 summary_young <- getSummary(young_subset,"diff", "type")
 summary_young$type <- c("Central Memory","Effector Memory","Naive","TEMRA")
@@ -78,7 +79,7 @@ ggplot(data=summary_young, aes(x=type, y=diff, group=1)) +
   geom_hline(yintercept = 0,linetype="dotted") +
   geom_errorbar(aes(ymin=diff-se, ymax=diff+se), width=.1) +
   labs(x="CD8+ T Cell Subset",y="Predicted Age - Age", title="CD8+ T Cell Subset Differences Between
-       Clock Age and Chronological Age - < 65 years old") 
+       Clock Age and Chronological Age - < 50 years old") 
 
 summary_old <- getSummary(old_subset,"diff", "type")
 summary_old$type <- c("Central Memory","Effector Memory","Naive","TEMRA")
@@ -93,8 +94,27 @@ ggplot(data=summary_old, aes(x=type, y=diff, group=1)) +
   geom_hline(yintercept = 0,linetype="dotted") +
   geom_errorbar(aes(ymin=diff-se, ymax=diff+se), width=.1) +
   labs(x="CD8+ T Cell Subset",y="Predicted Age - Age", title="CD8+ T Cell Subset Differences Between
-       Clock Age and Chronological Age - >65 years old") 
+       Clock Age and Chronological Age - >50 years old") 
 
+ggplot(data=summary_young, aes(x=type, y=diff, group=1)) +
+  geom_line()+ 
+  geom_point() +
+  theme_classic() +
+  ylim(-23,23) +
+  theme(text = element_text(size = 15)) +
+  geom_hline(yintercept = 0,linetype="dotted") +
+  geom_errorbar(aes(ymin=diff-se, ymax=diff+se), width=.1) +
+  labs(x="CD8+ T Cell Subset",y="Predicted Age - Age", title="CD8+ T Cell Subset Differences Between
+       Clock Age and Chronological Age - < 65 years old") 
+
+ge, y=DNAmAge, color=type)) +
+  geom_point() +
+  theme_classic() +
+  xlim(10,80) + ylim(10,80) +
+  theme(text = element_text(size = 15)) +
+  geom_abline(linetype="dotted") +
+  geom_hline(yintercept = 0,linetype="dotted") +
+  labs(x="Donor Age",y="Predicted Age", title="Age vs. Predicted Age Per Donor") 
 
 #percent_meth <- readRDS("./ResultsClock/rgset.RDS")
 #colData(percent_meth)$Sample_Well
@@ -115,27 +135,23 @@ ggplot(data=summary_old, aes(x=type, y=diff, group=1)) +
 #annotations <- read.delim("~/Desktop/Data/subset_data/EPIC.hg38.manifest.tsv")
 #matched_positions <- match(rownames(beta_values),annotations$probeID) #Finds valid matches in table.
 #matched_symbols <- annotations$gene[matched_positions]
+#cpg_data <- beta_values
+#write.csv(cpg_data,"cpg_data.csv")
 #beta_values$gene <- matched_symbols
 #beta_values <- beta_values[!is.na(beta_values$gene),]
+#cpg_data <- cpg_data[!is.na(beta_values$gene),]
+#mapping <- cbind(cpg_data,beta_values)
+#mapping$row_name <- make.names(beta_values$gene,unique=TRUE)
 #rownames(beta_values) <- make.names(beta_values$gene,unique=TRUE)
 #beta_values <- beta_values[,1:31]
-
+#beginning_positions <- match(mapping$cpg,annotations$probeID)
+#mapping$begin <- annotations$CpG_beg[beginning_positions]
+#mapping$end <- annotations$CpG_end[beginning_positions]
 #ditch the sabgal samples
 #beta_values <- beta_values[all_data$sabgal_sample==FALSE,]
-
+#write.csv(mapping,"mapping.csv")
+mapping <- read.csv("mapping.csv")
 beta_values <- read.csv("~/Desktop/Data/subset_data/beta_values.csv", row.names=1)
-
-corSample=cor(beta_values,use = "p")
-hierSample=hclust(as.dist(1-corSample), method="a")
-branch1=cutreeStatic(hierSample,.03,minSize=2)
-all_data$ClusteringBranch=branch1
-all_data$CellColor= labels2colors(all_data$type)
-all_data$ClusteringColor=matchLabels(labels2colors(branch1), as.character(all_data$CellColor) )
-datColors=data.frame(branch= all_data$ClusteringColor,
-                     CellType=all_data$CellColor, 
-                     Donor = labels2colors(all_data$donor),
-                     Older65 = labels2colors(all_data$old)) 
-plotDendroAndColors(hierSample, colors=datColors)
 
 #limma differential methylation analysis
 celltype_group <- factor(all_data$type,levels=c("naive","central_memory","effector_memory","temra"))
@@ -143,12 +159,12 @@ donor_group <- factor(all_data$donor,levels=c("R45690","R45740","R45553","R45804
                                               "R45741","R45805"))
 sabgal_sample <- factor(all_data$sabgal_sample,levels=c("TRUE","FALSE"))
 old_group <- factor(all_data$old,levels=c(TRUE,FALSE))
-design <- model.matrix(~celltype_group + old_group  + donor_group)
+design <- model.matrix(~0 + donor_group + celltype_group)
 
 fit.reduced <- lmFit(beta_values,design)
 fit.reduced <- eBayes(fit.reduced, robust=TRUE)
 summary(decideTests(fit.reduced))
-diff_exp <-topTable(fit.reduced,coef=3,number=1000000)
+diff_exp <-topTable(fit.reduced,coef=10,number=1000000)
 diff_exp[order(diff_exp$logFC),]
 diff_exp[order(diff_exp$logFC, decreasing=TRUE),]
 
@@ -166,18 +182,6 @@ ggplot(data=diff_exp, aes(x=logFC, y=-log10(adj.P.Val), color=color)) +
   scale_colour_identity() +
   labs(title="Volcano Plot - TEMRA vs. Naive")
 
-#let's imagine it all as a time course experiment
-ages <- factor(all_data$age,c(30,60,34,70,73,29,77))
-design <- model.matrix(~0+ages)
-colnames(design) <- c("a30","a60","a34","a70","a73","a29","a77")
-fit <- lmFit(beta_values, design)
-cont.wt <- makeContrasts(
- "a73-a30","a60-a30",
- levels=design)
-fit2 <- contrasts.fit(fit, cont.wt)
-fit2 <- eBayes(fit2)
-topTable(fit2, adjust="BH")
- 
 beta_rotated <- t(beta_values)
 umap <- umap(beta_rotated)
 umap_plot_df <- data.frame(umap$layout) %>%
@@ -211,7 +215,7 @@ gam.pval <- apply(Y, 1, function(z){
   p
 })
 
-topgenes <- names(sort(gam.pval, decreasing = FALSE))[1:200]  
+topgenes <- names(sort(gam.pval, decreasing = FALSE))[1:150]  
 heatdata <- as.matrix(beta_values[rownames(beta_values) %in% topgenes, order(t, na.last = NA)])
 heatclus <- umap_plot_df$type[order(t, na.last = NA)]
 ce <- ClusterExperiment(heatdata, heatclus, transformation = log1p)
@@ -279,7 +283,7 @@ all_data$TOX3 <- TOX3
 ggplot(all_data,aes(x=type,y=TOX3)) + 
   theme_classic() +
   ylim(0,1) +
-  labs(x="CD8 Cell Subtype", y="UMAP Component 1",title="UMAP Component 1 Tracks Cell Lineage") +
+  labs(x="CD8 Cell Subtype", y="% Methylated",title="UMAP Component 1 Tracks Cell Lineage") +
   geom_point()
 
 #Let's look at FAS
@@ -289,7 +293,7 @@ all_data$FAS <- FAS
 ggplot(all_data,aes(x=type,y=FAS)) + 
   theme_classic() +
   ylim(0,1) +
-  labs(x="CD8 Cell Subtype", y="UMAP Component 1",title="UMAP Component 1 Tracks Cell Lineage") +
+  labs(x="CD8 Cell Subtype", y="% Methylated",title="FAS decreases in DNA methylation as differentiation proceeds") +
   geom_point()
 
 #Let's look at CD28
@@ -299,7 +303,7 @@ all_data$CD28 <- CD28
 ggplot(all_data,aes(x=type,y=CD28)) + 
   theme_classic() +
   ylim(0,1) +
-  labs(x="CD8 Cell Subtype", y="UMAP Component 1",title="UMAP Component 1 Tracks Cell Lineage") +
+  labs(x="CD8 Cell Subtype", y="% Methylated",title="CD28 increases in DNA methylation as differentiation proceeds") +
   geom_point()
 
 #Let's look at LAG3
@@ -379,3 +383,57 @@ write.csv(gsub("\\..*","",rownames(Y_down)),"more_exp_in_temra.csv")
 
 Y_up <- Y[(Y$A1 > Y$A3) & (rownames(Y) %in% topgenes),]
 write.csv(gsub("\\..*","",rownames(Y_up)),"more_exp_in_naive.csv")
+
+#Let's focus on HDAC4 specifically.
+all_hdac4 <- diff_exp[rownames(diff_exp)[str_detect(rownames(diff_exp), "HDAC4")],]
+all_hdac4$site <- rownames(all_hdac4)
+match_starts <- match(rownames(all_hdac4),mapping$row_name)
+all_hdac4$start <-mapping$begin[match_starts]-239233056
+all_hdac4$position <- case_when(all_hdac4$start < 0 ~ "upstream",
+                                all_hdac4$start > 0 & all_hdac4$start < 10000 ~ "in gene",
+                                all_hdac4$start > 10000 ~ "downstream")
+ggplot(all_hdac4,aes(x=(start),y=logFC,color=position) ) +
+  theme_classic() + geom_bar(stat="identity",position=position_dodge(width=50),size=1.2) +
+  xlab("Position Relative to HDAC4 ATG") +
+  ylim(-1,1) + xlim(-10000,10000) +
+  geom_vline(xintercept=0,linetype="dotted") + geom_vline(xintercept=9000,linetype="dotted") +
+  geom_hline(yintercept=0) +
+  ylab("DNAm logFC") +
+  theme(text = element_text(size = 12))    +
+  ggtitle("HDAC4 Upstream Region Shows Differential Methylation Patterns between TEMRA and Naive Cells")
+
+#Let's focus on DNMT3A specifically.
+all_DNMT3A <- diff_exp[rownames(diff_exp)[str_detect(rownames(diff_exp), "DNMT3A")],]
+all_DNMT3A$site <- rownames(all_DNMT3A)
+match_starts <- match(rownames(all_DNMT3A),mapping$row_name)
+all_DNMT3A$start <-mapping$begin[match_starts]-25342590
+all_DNMT3A$position <- case_when(all_DNMT3A$start < 0 ~ "upstream",
+                                 all_DNMT3A$start > 0 & all_DNMT3A$start < 10000 ~ "in gene",
+                                 all_DNMT3A$start > 10000 ~ "downstream")
+ggplot(all_DNMT3A,aes(x=(start),y=logFC,color=position) ) +
+  theme_classic() + geom_bar(stat="identity",position=position_dodge(width=50),size=1.2) +
+  xlab("Position Relative to DNMT3A ATG") +
+  ylim(-1,1) + xlim(-10000,10000) +
+  geom_vline(xintercept=0,linetype="dotted") +
+  geom_hline(yintercept=0) +
+  ylab("DNAm logFC") +
+  theme(text = element_text(size = 12))    +
+  ggtitle("DNMT3A Upstream Region Shows Differential Methylation Patterns between TEMRA and Naive Cells")
+
+#Let's focus on TET2 specifically.
+CD28 <- diff_exp[rownames(diff_exp)[str_detect(rownames(diff_exp), "CD28")],]
+CD28$site <- rownames(CD28)
+match_starts <- match(rownames(CD28),mapping$row_name)
+CD28$start <-mapping$begin[match_starts]-203706509
+CD28$position <- case_when(CD28$start < 0 ~ "upstream",
+                           CD28$start > 0 & CD28$start < 10000 ~ "in gene",
+                           CD28$start > 10000 ~ "downstream")
+ggplot(CD28,aes(x=(start),y=logFC,color=position) ) +
+  theme_classic() + geom_bar(stat="identity",position=position_dodge(width=50),size=1.2) +
+  xlab("Position Relative to CD28 ATG") +
+  ylim(-1,1) + xlim(-10000,10000) +
+  geom_vline(xintercept=0,linetype="dotted") +
+  geom_hline(yintercept=0) +
+  ylab("DNAm logFC") +
+  theme(text = element_text(size = 12))    +
+  ggtitle("CD28 Upstream Region Shows Differential Methylation Patterns between TEMRA and Naive Cells")

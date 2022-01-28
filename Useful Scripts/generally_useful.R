@@ -33,13 +33,30 @@ getSummary <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
   return(datac)
 }
 
-makeBAMS <- function(directory) {
+makeBAMS <- function(directory,paired_end) {
   fastq_list <- list.files(path=".",pattern="*.fastq",all.files=TRUE,full.names=FALSE)
-  for (fastq in fastq_list) {
-    align(index="/home/atom/Desktop/Data/reference_index",readfile1=fastq,
-          output_file=paste(c(str_sub(fastq,1,nchar(fastq)-6),".BAM"),collapse=""),
-          nthreads = 4)
-    unlink(fastq)
+  if (!paired_end) {
+    for (fastq in 1:length(fastq_list)) {
+        read_1 <- fastq_list[fastq]
+        align(index="/home/atom/Desktop/Data/reference_index",readfile1=read_1,
+              output_file=paste(c(str_sub(fastq,1,nchar(fastq)-6),".BAM"),collapse=""),
+              nthreads = 4)
+        unlink(read_1)
+    }
+  }
+  if (paired_end) {
+    list_of_indices <- rep(c(1,0),length(fastq_list)/2)
+    for (fastq in 1:length(fastq_list)) {
+      if(list_of_indices[fastq] == 1) {
+        read_1 <- fastq_list[fastq]
+        read_2 <- fastq_list[fastq+1]
+        align(index="/home/atom/Desktop/Data/reference_index",readfile1=read_1,readfile2=read_2,
+              output_file=paste(c(str_sub(fastq,1,nchar(fastq)-6),".BAM"),collapse=""),
+              nthreads = 4)
+        #unlink(read_1)
+        #unlink(read_2)
+      }
+    }
   }
   bam_list <- list.files(path=".",pattern="*.BAM$",all.files=TRUE,full.names=FALSE)
   return (bam_list)

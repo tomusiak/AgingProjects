@@ -3,16 +3,7 @@ keep_mitogenes <- c("RNR1","RNR2", "ND1","ND2","CO1","CO2","ATP8",
 
 library("BiocManager")
 library("S4Vectors")
-library("IRanges")
-library("GenomeInfoDb")
-library("GenomicRanges")
-library("BiocGenerics")
-library("BiocParallel")
-library("XVector")
 library("Biostrings")
-library("Rsamtools")
-library("matrixStats")
-library("DelayedArray")
 library("SummarizedExperiment")
 library("GenomicAlignments")
 library("BiocParallel")
@@ -21,12 +12,10 @@ library("Biobase")
 library("AnnotationDbi")
 library("GenomicFeatures")
 library(dplyr)
-library("pheatmap")
 library(ggplot2)
 library("RColorBrewer")
 library(Rsubread)
 library(ggrepel)
-library(umap)
 
 #Loading in auxiliary code.
 setwd("/home/atom/Desktop/AgingProjects/Cohen/")
@@ -38,7 +27,7 @@ source("generally_useful.R")
 setwd("/home/atom/Desktop/Data/stefan2019")
 sample_sheet <- read.csv("sample_sheet.csv")
 sample_sheet$donor <- as.factor(sample_sheet$donor)
-bam_list <- makeBAMS(".")
+#bam_list <- makeBAMS(".",FALSE)
 #mitogene_counts <- getCountsMitochondrial(bam_list,FALSE)
 #mdp_counts <- getCountsMDP(bam_list,FALSE)
 mdp_counts <- read.csv("~/Desktop/Data/stefan2019/raw_counts_mdps.csv", row.names=1)
@@ -82,7 +71,7 @@ mdp_gtf <-
 encompass_table <- generateEncompassTable(mdp_gtf,mitogene_gtf)
 encompass_table <- encompass_table[encompass_table$mitogene %in% keep_mitogenes,]
 background_table <- determineBackgroundSignal(mitogene_count_matrix)
-corrected_counts <- data.matrix(performBackgroundCorrection(background_table,mdp_counts,encompass_table))
+corrected_counts <- data.frame(performBackgroundCorrection(background_table,mdp_counts,encompass_table))
 
 
 
@@ -91,6 +80,7 @@ mdp_dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
                                             design = ~ donor + ifna)
 mdp_dds_corrected <- DESeq(mdp_dds_corrected)
 mdp_res_corrected <-data.frame(results(mdp_dds_corrected))
+mdp_res_corrected <- mdp_res_corrected[!is.na(mdp_res_corrected$padj),]
 mdp_vsd_corrected <- varianceStabilizingTransformation(mdp_dds_corrected) ###mdp-seq script
 mdp_resOrdered_corrected <- mdp_res_corrected[order(abs(mdp_res_corrected$padj)),]
 mdp_top_corrected <- head(mdp_resOrdered_corrected, 10)

@@ -94,6 +94,7 @@ generateEncompassTable <- function(gtf_mdp, gtf_mitochondrial) {
            mdp_s > mito_e & mdp_e > mito_s & mdp_e > mito_e)) {
         next;
       }
+      #overlaps early
       if (mdp_s < mito_s &
           mdp_s < mito_e & mdp_e > mito_s & mdp_e < mito_e) {
         overlap <- (mdp_e - mito_s) / (mdp_e - mdp_s)
@@ -101,6 +102,7 @@ generateEncompassTable <- function(gtf_mdp, gtf_mitochondrial) {
                                     mitogene = mitogene_db[mito_row, "mitogene_name"],
                                     perc_overlap = overlap, proportion=overlap*(((mdp_size)+read_length)/mito_size))
       } 
+      #overlaps tail
       if (mdp_s > mito_s &
           mdp_s < mito_e & mdp_e > mito_s & mdp_e > mito_e) {
         overlap <- (mito_e - mdp_s) / (mdp_e - mdp_s)
@@ -120,36 +122,25 @@ generateEncompassTable <- function(gtf_mdp, gtf_mitochondrial) {
     }
   }
   encompass_table<-encompass_table[!is.na(encompass_table$mdp),]
-  for (mdp_row in 1:nrow(encompass_table)) {
-    outer_mdp <- encompass_table$mdp[mdp_row]
-    outer_overlap <- encompass_table$perc_overlap[mdp_row]
-    for (mdp_row_2 in mdp_row+1:nrow(encompass_table)) {
-      inner_mdp <- encompass_table$mdp[mdp_row_2]
-      inner_overlap <- encompass_table$perc_overlap[mdp_row_2]
-      if (!is.na(inner_mdp)) {
-        if (outer_mdp == inner_mdp) {
-          if (outer_overlap > inner_overlap) {
-            encompass_table <- encompass_table[-mdp_row_2,]
-            mdp_row_2 <- 1
-            mdp_row <- 1
-          }
-          if (outer_overlap == inner_overlap) {
-            encompass_table <- encompass_table[-mdp_row_2,]
-            mdp_row_2 <- 1
-            mdp_row <- 1
-          }
-          if (outer_overlap < inner_overlap) {
-            encompass_table <- encompass_table[-mdp_row,]
-            mdp_row_2 <- 1
-            mdp_row <- 1
-          }
-        }
-      }
+  encompass_table_new <- data.frame(matrix(ncol = 4, nrow = 0))
+  colnames(encompass_table_new) <- c("mdp", "mitogene", "perc_overlap","proportion")
+  encompass_table_new$mdp <- as.character(encompass_table_new$mdp)
+  encompass_table_new$mitogene <- as.character(encompass_table_new$mitogene)
+  encompass_table_new$perc_overlap <-
+    as.double(encompass_table_new$perc_overlap)
+  encompass_table_new$proportion <-
+    as.double(encompass_table_new$proportion)
+  for (mdp_row in 1:nrow(mdp_db)) {
+    mdp <- mdp_db[mdp_row,"mdp_id"]
+    encompassing_mdps <- encompass_table[encompass_table$mdp == mdp,]
+    if (nrow(encompassing_mdps)!=0) {
+      encompassing_mdps <- encompassing_mdps[order(encompassing_mdps$proportion,decreasing=FALSE),]
+      first_mdp <- encompassing_mdps[1,]
+      encompass_table_new <- rbind(encompass_table_new,first_mdp)
     }
   }
-  
   #Spitting out the data.
-  return (encompass_table)
+  return (encompass_table_new)
 }
 
 determineBackgroundSignal <- function(mito_counts) {
