@@ -67,8 +67,8 @@ young_subset <- subset_data[subset_data$age <= 50,]
 old_subset <- subset_data[subset_data$age > 50,]
 
 summary_young <- getSummary(young_subset,"diff", "type")
-summary_young$type <- c("Central Memory","Effector Memory","Naive","TEMRA")
-summary_young$type <- factor(summary_young$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
+summary_young$type <-  c("Naive","Central Memory","Effector Memory","TEMRA")
+summary_young$type <-factor(summary$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
 
 ggplot(data=summary_young, aes(x=type, y=diff, group=1)) +
   geom_line()+ 
@@ -82,8 +82,8 @@ ggplot(data=summary_young, aes(x=type, y=diff, group=1)) +
        Clock Age and Chronological Age - < 50 years old") 
 
 summary_old <- getSummary(old_subset,"diff", "type")
-summary_old$type <- c("Central Memory","Effector Memory","Naive","TEMRA")
-summary_old$type <- factor(summary_old$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
+summary_old$type <- c("Naive","Central Memory","Effector Memory","TEMRA")
+summary_old$type <- factor(summary$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
 
 ggplot(data=summary_old, aes(x=type, y=diff, group=1)) +
   geom_line()+ 
@@ -96,18 +96,7 @@ ggplot(data=summary_old, aes(x=type, y=diff, group=1)) +
   labs(x="CD8+ T Cell Subset",y="Predicted Age - Age", title="CD8+ T Cell Subset Differences Between
        Clock Age and Chronological Age - >50 years old") 
 
-ggplot(data=summary_young, aes(x=type, y=diff, group=1)) +
-  geom_line()+ 
-  geom_point() +
-  theme_classic() +
-  ylim(-23,23) +
-  theme(text = element_text(size = 15)) +
-  geom_hline(yintercept = 0,linetype="dotted") +
-  geom_errorbar(aes(ymin=diff-se, ymax=diff+se), width=.1) +
-  labs(x="CD8+ T Cell Subset",y="Predicted Age - Age", title="CD8+ T Cell Subset Differences Between
-       Clock Age and Chronological Age - < 65 years old") 
-
-ge, y=DNAmAge, color=type)) +
+ggplot(data=subset_data,aes(x=age, y=DNAmAge, color=type)) +
   geom_point() +
   theme_classic() +
   xlim(10,80) + ylim(10,80) +
@@ -152,6 +141,7 @@ ge, y=DNAmAge, color=type)) +
 #write.csv(mapping,"mapping.csv")
 mapping <- read.csv("mapping.csv")
 beta_values <- read.csv("~/Desktop/Data/subset_data/beta_values.csv", row.names=1)
+beta_values <- beta_values[,colnames(beta_values) %in% all_data$SampleID]
 
 #limma differential methylation analysis
 celltype_group <- factor(all_data$type,levels=c("naive","central_memory","effector_memory","temra"))
@@ -395,7 +385,7 @@ all_hdac4$position <- case_when(all_hdac4$start < 0 ~ "upstream",
 ggplot(all_hdac4,aes(x=(start),y=logFC,color=position) ) +
   theme_classic() + geom_bar(stat="identity",position=position_dodge(width=50),size=1.2) +
   xlab("Position Relative to HDAC4 ATG") +
-  ylim(-1,1) + xlim(-10000,10000) +
+  ylim(-1,1) + xlim(-7500,4000) +
   geom_vline(xintercept=0,linetype="dotted") + geom_vline(xintercept=9000,linetype="dotted") +
   geom_hline(yintercept=0) +
   ylab("DNAm logFC") +
@@ -413,7 +403,7 @@ all_DNMT3A$position <- case_when(all_DNMT3A$start < 0 ~ "upstream",
 ggplot(all_DNMT3A,aes(x=(start),y=logFC,color=position) ) +
   theme_classic() + geom_bar(stat="identity",position=position_dodge(width=50),size=1.2) +
   xlab("Position Relative to DNMT3A ATG") +
-  ylim(-1,1) + xlim(-10000,10000) +
+  ylim(-1,1) + xlim(-7500,4000) +
   geom_vline(xintercept=0,linetype="dotted") +
   geom_hline(yintercept=0) +
   ylab("DNAm logFC") +
@@ -431,7 +421,7 @@ CD28$position <- case_when(CD28$start < 0 ~ "upstream",
 ggplot(CD28,aes(x=(start),y=logFC,color=position) ) +
   theme_classic() + geom_bar(stat="identity",position=position_dodge(width=50),size=1.2) +
   xlab("Position Relative to CD28 ATG") +
-  ylim(-1,1) + xlim(-10000,10000) +
+  ylim(-1,1) + xlim(-75000,4000) +
   geom_vline(xintercept=0,linetype="dotted") +
   geom_hline(yintercept=0) +
   ylab("DNAm logFC") +
