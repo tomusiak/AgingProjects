@@ -365,7 +365,7 @@ ggplot(all_data,aes(x=type,y=GZMB)) +
   ylim(0,1) +
   labs(x="CD8 Cell Subtype", y="UMAP Component 1",title="UMAP Component 1 Tracks Cell Lineage") +
   geom_point()
-
+  
 beta_values["IL7R",]
 Y["HAVCR2",]
 Y_down <- Y[(Y$A1 < Y$A3) & (rownames(Y) %in% topgenes),]

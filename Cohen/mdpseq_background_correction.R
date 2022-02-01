@@ -139,6 +139,7 @@ generateEncompassTable <- function(gtf_mdp, gtf_mitochondrial) {
       encompass_table_new <- rbind(encompass_table_new,first_mdp)
     }
   }
+  encompass_table_new <- drop_na(encompass_table_new)
   #Spitting out the data.
   return (encompass_table_new)
 }

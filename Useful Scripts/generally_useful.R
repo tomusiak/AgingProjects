@@ -37,11 +37,10 @@ makeBAMS <- function(directory,paired_end) {
   fastq_list <- list.files(path=".",pattern="*.fastq",all.files=TRUE,full.names=FALSE)
   if (!paired_end) {
     for (fastq in 1:length(fastq_list)) {
-        read_1 <- fastq_list[fastq]
-        align(index="/home/atom/Desktop/Data/reference_index",readfile1=read_1,
-              output_file=paste(c(str_sub(fastq,1,nchar(fastq)-6),".BAM"),collapse=""),
-              nthreads = 4)
-        unlink(read_1)
+      read_1 <- fastq_list[fastq]
+      align(index="/home/atom/Desktop/Data/reference_index",readfile1=read_1,
+            output_file=paste(c(str_sub(read_1,1,nchar(read_1)-6),".BAM"),collapse=""),
+            nthreads = 4)
     }
   }
   if (paired_end) {
@@ -51,10 +50,8 @@ makeBAMS <- function(directory,paired_end) {
         read_1 <- fastq_list[fastq]
         read_2 <- fastq_list[fastq+1]
         align(index="/home/atom/Desktop/Data/reference_index",readfile1=read_1,readfile2=read_2,
-              output_file=paste(c(str_sub(fastq,1,nchar(fastq)-6),".BAM"),collapse=""),
+              output_file=paste(c(str_sub(read_1,1,nchar(read_1)-6),".BAM"),collapse=""),
               nthreads = 4)
-        #unlink(read_1)
-        #unlink(read_2)
       }
     }
   }
@@ -108,5 +105,12 @@ getCountsMDP <- function(bam_list,paired_end) {
 deleteBAMs <- function(bam_list) {
   for (bam in bam_list) {
     unlink(bam)
+  }
+}
+
+deleteFASTQs <- function() {
+  fastq_list <- list.files(path=".",pattern="*.fastq",all.files=TRUE,full.names=FALSE)
+  for (fastq in fastq_list) {
+    unlink(fastq)
   }
 }
