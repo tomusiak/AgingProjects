@@ -25,14 +25,16 @@ library(gam)
 require(clusterExperiment)
 library(stringr)
 library(tidyr)
+library(rstatix)
+library(ggpubr)
 
 
 clock_data <- read.csv("~/Desktop/Data/subset_data/clock_data.csv")
 subset_metadata <- read.csv("~/Desktop/Data/subset_data/subset_metadata.csv")
 
 #D3 was obviously mishandled, removing from dataset...
-clock_data <- clock_data[clock_data$SampleID!="D3"]
-subset_metadata <- subset_metadata[subset_metadata$SampleID != "D3",]
+#clock_data <- clock_data[clock_data$SampleID!="D3"]
+#subset_metadata <- subset_metadata[subset_metadata$SampleID != "D3",]
 
 all_data <- merge(clock_data,subset_metadata)
 all_data$type <- as.character(all_data$type)
@@ -43,6 +45,28 @@ subset_data$diff <- subset_data$DNAmAge-subset_data$age
 summary <- getSummary(subset_data,"diff", "type")
 summary$type <- c("Naive","Central Memory","Effector Memory","TEMRA")
 summary$type <- factor(summary$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
+
+#subset ages
+naive_data <- subset_data[subset_data$type == "naive",]
+cm_data <- subset_data[subset_data$type == "central_memory",]
+em_data <- subset_data[subset_data$type == "effector_memory",]
+temra_data <- subset_data[subset_data$type == "temra",]
+
+em_data$donor
+temra_data$donor
+#t tests
+t.test(cm_data$DNAmAge,temra_data$DNAmAge,paired=TRUE)
+t_test_data <- data.frame(subset_data[subset_data$donor != "R45553",])
+t_test_data <- t_test_data[c("DNAmAge","type","donor")]
+t_test_data$type <- as.factor(t_test_data$type)
+t_test_data$donor <- as.factor(t_test_data$donor)
+test <- t_test_data %>% pairwise_t_test(DNAmAge ~ type, paired=TRUE,correction="bonferroni")  %>%
+                                                          select(-df, -statistic, -p)
+paired.t.test(t_test_data)
+res.aov <- t_test_data %>% anova_test(DNAmAge ~ type)
+res.aov
+
+(subset_data[subset_data$donor != "R45553",] %>% group_by(donor))$donor
 
 ggplot(data=all_data, aes(x=as.factor(final_dna), y=meanAbsDifferenceSampleVSgoldstandard, group=1)) +
   geom_point() +
@@ -104,6 +128,14 @@ ggplot(data=subset_data,aes(x=age, y=DNAmAge, color=type)) +
   geom_abline(linetype="dotted") +
   geom_hline(yintercept = 0,linetype="dotted") +
   labs(x="Donor Age",y="Predicted Age", title="Age vs. Predicted Age Per Donor") 
+
+#t test
+young_test <- young_subset %>% pairwise_t_test(DNAmAge ~ type, paired=TRUE,correction="bonferroni")  %>%
+  select(-df, -statistic, -p)
+
+old_test <- old_subset %>% pairwise_t_test(DNAmAge ~ type, paired=TRUE,correction="bonferroni")  %>%
+  select(-df, -statistic, -p)
+
 
 #percent_meth <- readRDS("./ResultsClock/rgset.RDS")
 #colData(percent_meth)$Sample_Well
