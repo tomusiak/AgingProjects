@@ -23,24 +23,27 @@ source("mdpseq_background_correction.R")
 
 setwd("/home/atom/Desktop/AgingProjects/Useful Scripts/")
 source("generally_useful.R")
+setwd("/home/atom/Desktop/Data/nagate2020")
+bam_list <- makeBAMS(".",FALSE)
+mitogene_counts <- getCountsMitochondrial(bam_list,FALSE)
+mdp_counts <- getCountsMDP(bam_list,FALSE)
+write.csv(mitogene_counts,"mitogene_counts.csv")
+write.csv(mdp_counts,"mdp_counts.csv")
 
-setwd("/home/atom/Desktop/Data/sun2022")
-#bam_list <- makeBAMS(".",FALSE)
-#mitogene_counts <- getCountsMitochondrial(bam_list,FALSE)
-#mdp_counts <- getCountsMDP(bam_list,FALSE)
-#write.csv(mitogene_counts,"mitogene_counts.csv")
-#write.csv(mdp_counts,"mdp_counts.csv")
+deleteFASTQs()
+deleteBAMs()
 
 mdp_counts <- read.csv("mdp_counts.csv", row.names=1)
 mitogene_counts <- read.csv("mitogene_counts.csv",row.names=1)
-sun_samplesheet <- read.csv("sun_samplesheet.csv")
-colnames(mdp_counts) <- sun_samplesheet$sample
-colnames(mitogene_counts) <- sun_samplesheet$sample
-sun_samplesheet$diagnosis <- as.factor(sun_samplesheet$diagnosis)
+clarke_samplesheet <- read.csv("clarke_samplesheet.csv")
+colnames(mdp_counts) <- clarke_samplesheet$sample
+colnames(mitogene_counts) <- clarke_samplesheet$sample
+clarke_samplesheet$tumor_resident <- as.factor(clarke_samplesheet$tumor_resident)
+clarke_samplesheet$donor<- as.factor(clarke_samplesheet$donor)
 
 mitogene_dds <- DESeqDataSetFromMatrix(mitogene_counts,
-                                       colData = sun_samplesheet,
-                                       design = ~ diagnosis)
+                                       colData = clarke_samplesheet,
+                                       design = ~ donor + tumor_resident)
 mitogene_dds <- DESeq(mitogene_dds)
 mitogene_res <-data.frame(results(mitogene_dds))
 mitogene_vsd <- varianceStabilizingTransformation(mitogene_dds) ###mdp-seq script
@@ -54,14 +57,14 @@ mitogene_res$delabel <- NA
 mitogene_res$delabel[mitogene_res$color=="purple"] <- rownames(mitogene_res)[mitogene_res$color=="purple"]
 ggplot(data=mitogene_res, aes(x=log2FoldChange, y=-log10(padj), color=color, label=delabel)) + 
   geom_point() +
-  xlim(-4,4) + ylim(0,22) +
+  xlim(-3,3) + ylim(0,22) +
   theme_classic(base_size=18)  +
   geom_hline(yintercept = 1.2,linetype="dotted") +
   geom_text(nudge_x=.15) +
   scale_colour_identity() +
   geom_vline(xintercept = .6,linetype="dotted") +
   geom_vline(xintercept = -.6,linetype="dotted") +
-  labs(title="MitoGene Volcano Plot for IFNa-treated Human T Cells")
+  labs(title="MitoGene Volcano Plot for Lung Cancer- Resident T Cells")
 
 mitogene_gtf <-
   read.delim(
@@ -78,8 +81,8 @@ background_table <- determineBackgroundSignal(mitogene_counts)
 corrected_counts <- data.frame(performBackgroundCorrection(background_table,mdp_counts,encompass_table))
 
 mdp_dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
-                                            colData = sun_samplesheet,
-                                            design = ~ diagnosis)
+                                            colData = clarke_samplesheet,
+                                            design = ~ donor + tumor_resident)
 mdp_dds_corrected <- DESeq(mdp_dds_corrected)
 mdp_res_corrected <-data.frame(results(mdp_dds_corrected))
 mdp_res_corrected <- mdp_res_corrected[!is.na(mdp_res_corrected$padj),]
@@ -101,11 +104,11 @@ ggplot(data=mdp_res_corrected, aes(x=log2FoldChange, y=-log10(padj), color=color
   geom_vline(xintercept = -.6,linetype="dotted") +
   geom_text(nudge_x=.2) +
   scale_colour_identity() +
-  labs(title="MDPSeq Volcano Plot for Leukemia")
+  labs(title="MDPSeq Volcano Plot for Lung Cancer T Cells")
 
 mdp_dds_uncorrected <- DESeqDataSetFromMatrix(mdp_counts,
-                                              colData = sun_samplesheet,
-                                              design = ~ diagnosis)
+                                              colData = clarke_samplesheet,
+                                              design = ~ tumor_resident)
 mdp_dds_uncorrected <- DESeq(mdp_dds_uncorrected)
 mdp_res_uncorrected <-data.frame(results(mdp_dds_uncorrected))
 mdp_res_uncorrected <- mdp_res_uncorrected[!is.na(mdp_res_uncorrected$padj),]
@@ -127,4 +130,4 @@ ggplot(data=mdp_res_uncorrected, aes(x=log2FoldChange, y=-log10(padj), color=col
   geom_vline(xintercept = -.6,linetype="dotted") +
   geom_text(nudge_x=.2) +
   scale_colour_identity() +
-  labs(title="MDPSeq Volcano Plot for Leukemia - Uncorrected")
+  labs(title="MDPSeq Volcano Plot for Lung Cancer T Cells- Uncorrected")

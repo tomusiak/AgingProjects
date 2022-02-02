@@ -68,7 +68,7 @@ mdp_counts <- assays(se_cancer)$counts
 rownames(mdp_counts) <- sub('.Peptide', '', rownames(mdp_counts))
 mdp_counts <- mdp_counts[c(-593,-595),]
 keep <- rowSums((mdp_counts)) >= 200 #Removes genes with low counts.
-mdp_counts<- mdp_counts[keep,1:8]
+mdp_counts<- data.frame(mdp_counts[keep,1:8])
 
 #mitogene_counts <- featureCounts(bams,annot.ext="~/Desktop/Data/mitochondria_db.gtf",
 #                             isGTFAnnotationFile=TRUE,nthreads=5) #Count matrix generation
@@ -136,7 +136,7 @@ mdp_dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
                                   colData = sample_table,
                                   design = ~ donor + status)
 mdp_dds_corrected <- DESeq(mdp_dds_corrected)
-mdp_res_corrected <-results(mdp_dds_corrected, name="status_tumor_vs_normal")
+mdp_res_corrected <-data.frame(results(mdp_dds_corrected, name="status_tumor_vs_normal"))
 mdp_vsd_corrected <- varianceStabilizingTransformation(mdp_dds_corrected) ###mdp-seq script
 mdp_resOrdered_corrected <- mdp_res_corrected[order(abs(mdp_res_corrected$pvalue)),]
 mdp_top_corrected <- head(mdp_resOrdered_corrected, 10)
@@ -167,22 +167,22 @@ plotPCA(mdp_vsd, "status") +
         axis.text.x=element_text(size=15, face="bold", color="black"),
         axis.text.y=element_text(size=15, face="bold", colour = "black"))
 
-cols <- densCols(mdp_res_corrected$log2FoldChange, -log10(mdp_res_corrected$pvalue),
-                 nbin=25, bandwidth=1,
-                 colramp = colorRampPalette(brewer.pal(5, "Reds")))
-plot(x= mdp_res_corrected$log2FoldChange, 
-     y = -log10(mdp_res_corrected$pvalue), 
-     col=cols, panel.first=grid(),
-     main="Volcano plot", 
-     xlab="Effect size: log2(fold-change)",
-     ylab="-log10(adjusted p-value)",
-     xlim=c(-2,2),
-     ylim=c(0,10),
-     pch=mdp_res_corrected$pch, cex=1)
-gn.selected <- abs(mdp_res_corrected$log2FoldChange) >.5 & mdp_res_corrected$pvalue < .05
-text(mdp_res_corrected$log2FoldChange[gn.selected],
-     -log10(mdp_res_corrected$pvalue)[gn.selected],
-     lab=rownames(mdp_res_corrected)[gn.selected ], cex=0.6)
+mdp_res_corrected$color=factor(case_when(mdp_res_corrected$padj < .05 & abs(mdp_res_corrected$log2FoldChange) >= .60 ~ "purple",
+                                         (mdp_res_corrected$padj < .05 & abs(mdp_res_corrected$log2FoldChange) < .60) ~ "red",
+                                         (mdp_res_corrected$padj >= .05 & abs(mdp_res_corrected$log2FoldChange) >= .60) ~ "blue",
+                                         (mdp_res_corrected$padj >= .05 & abs(mdp_res_corrected$log2FoldChange) < .60) ~ "gray"))
+mdp_res_corrected$delabel <- NA
+mdp_res_corrected$delabel[mdp_res_corrected$color=="purple"] <- rownames(mdp_res_corrected)[mdp_res_corrected$color=="purple"]
+ggplot(data=mdp_res_corrected, aes(x=log2FoldChange, y=-log10(padj), color=color, label=delabel)) + 
+  geom_point() +
+  xlim(-4,4) + ylim(0,22) +
+  theme_classic(base_size=18)  +
+  geom_hline(yintercept = 1.2,linetype="dotted") +
+  geom_vline(xintercept = .6,linetype="dotted") +
+  geom_vline(xintercept = -.6,linetype="dotted") +
+  geom_text(nudge_x=.2) +
+  scale_colour_identity() +
+  labs(title="MDPSeq Volcano Plot for Thyroid Cancer Cells")
 
 cols <- densCols(mdp_res$log2FoldChange, -log10(mdp_res$pvalue),
                  nbin=25, bandwidth=1,

@@ -67,7 +67,7 @@ mdp_counts <- assays(se)$counts
 rownames(mdp_counts) <- sub('.Peptide', '', rownames(mdp_counts))
 mdp_counts <- mdp_counts[c(-593,-595),]
 keep <- rowSums((mdp_counts)) >= 200 #Removes genes with low counts.
-mdp_counts<- mdp_counts[keep,]
+mdp_counts<- data.frame(mdp_counts[keep,])
 
 #gene_counts <- featureCounts(list_of_bams,annot.ext="~/Desktop/Data/mitochondria_db.gtf",
 #                             isGTFAnnotationFile=TRUE,nthreads=5) #Count matrix generation
@@ -100,7 +100,7 @@ dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
                               colData = col_data,
                               design = ~ Day + CAR)
 dds_corrected <- DESeq(dds_corrected, betaPrior=FALSE)
-res_corrected<-results(dds_corrected, name="CAR_ON_vs_OFF")
+res_corrected<-data.frame(results(dds_corrected, name="CAR_ON_vs_OFF"))
 vsd_corrected <- varianceStabilizingTransformation(dds_corrected) ###mdp-seq script
 resOrdered_corrected <- res_corrected[order(abs(res_corrected$pvalue)),]
 top_corrected <- head(resOrdered_corrected, 30)
@@ -201,22 +201,22 @@ plotCounts(dds_corrected, "32B", intgroup=c("CAR"), returnData=TRUE) %>%
   theme_minimal()
 
 #Volcano plot for corrected analysis
-cols <- densCols(res_corrected$log2FoldChange, -log10(res_corrected$pvalue),
-                 nbin=25, bandwidth=1,
-                 colramp = colorRampPalette(brewer.pal(5, "Reds")))
-plot(x= res_corrected$log2FoldChange, 
-     y = -log10(res_corrected$pvalue), 
-     col=cols, panel.first=grid(),
-     main="Volcano plot", 
-     xlab="Effect size: log2(fold-change)",
-     ylab="-log10(adjusted p-value)",
-     xlim=c(-2,2),
-     ylim=c(0,10),
-     pch=res_corrected$pch, cex=0.4)
-gn.selected <- abs(res_corrected$log2FoldChange) >.35 & res_corrected$pvalue < .05
-text(res_corrected$log2FoldChange[gn.selected],
-     -log10(res_corrected$pvalue)[gn.selected],
-     lab=rownames(res_corrected)[gn.selected ], cex=0.6)
+res_corrected$color=factor(case_when(res_corrected$padj < .05 & abs(res_corrected$log2FoldChange) >= .60 ~ "purple",
+                                         (res_corrected$padj < .05 & abs(res_corrected$log2FoldChange) < .60) ~ "red",
+                                         (res_corrected$padj >= .05 & abs(res_corrected$log2FoldChange) >= .60) ~ "blue",
+                                         (res_corrected$padj >= .05 & abs(res_corrected$log2FoldChange) < .60) ~ "gray"))
+res_corrected$delabel <- NA
+res_corrected$delabel[res_corrected$color=="purple"] <- rownames(res_corrected)[res_corrected$color=="purple"]
+ggplot(data=res_corrected, aes(x=log2FoldChange, y=-log10(padj), color=color, label=delabel)) + 
+  geom_point() +
+  xlim(-4,4) + ylim(0,22) +
+  theme_classic(base_size=18)  +
+  geom_hline(yintercept = 1.2,linetype="dotted") +
+  geom_vline(xintercept = .6,linetype="dotted") +
+  geom_vline(xintercept = -.6,linetype="dotted") +
+  geom_text(nudge_x=.2) +
+  scale_colour_identity() +
+  labs(title="MDPSeq Volcano Plot for Exhausted CAR-Ts - Corrected")
 
 #Volcano plot for not corrected analysis.
 cols <- densCols(res$log2FoldChange, -log10(res$pvalue),
