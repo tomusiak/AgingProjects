@@ -30,20 +30,20 @@ mdp_counts <- getCountsMDP(bam_list,FALSE)
 write.csv(mitogene_counts,"mitogene_counts.csv")
 write.csv(mdp_counts,"mdp_counts.csv")
 
-deleteFASTQs()
-deleteBAMs()
+#deleteFASTQs()
+#deleteBAMs()
 
 mdp_counts <- read.csv("mdp_counts.csv", row.names=1)
 mitogene_counts <- read.csv("mitogene_counts.csv",row.names=1)
-clarke_samplesheet <- read.csv("clarke_samplesheet.csv")
-colnames(mdp_counts) <- clarke_samplesheet$sample
-colnames(mitogene_counts) <- clarke_samplesheet$sample
-clarke_samplesheet$tumor_resident <- as.factor(clarke_samplesheet$tumor_resident)
-clarke_samplesheet$donor<- as.factor(clarke_samplesheet$donor)
+nagate_samplesheet <- read.csv("nagate_samplesheet.csv")
+colnames(mdp_counts) <- nagate_samplesheet$sample
+colnames(mitogene_counts) <- nagate_samplesheet$sample
+nagate_samplesheet$tumor_resident <- as.factor(nagate_samplesheet$tumor_resident)
+nagate_samplesheet$donor<- as.factor(nagate_samplesheet$donor)
 
 mitogene_dds <- DESeqDataSetFromMatrix(mitogene_counts,
-                                       colData = clarke_samplesheet,
-                                       design = ~ donor + tumor_resident)
+                                       colData = nagate_samplesheet,
+                                       design = ~ patient + leukemia)
 mitogene_dds <- DESeq(mitogene_dds)
 mitogene_res <-data.frame(results(mitogene_dds))
 mitogene_vsd <- varianceStabilizingTransformation(mitogene_dds) ###mdp-seq script
@@ -81,8 +81,8 @@ background_table <- determineBackgroundSignal(mitogene_counts)
 corrected_counts <- data.frame(performBackgroundCorrection(background_table,mdp_counts,encompass_table))
 
 mdp_dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
-                                            colData = clarke_samplesheet,
-                                            design = ~ donor + tumor_resident)
+                                            colData = nagate_samplesheet,
+                                            design = ~ patient + leukemia)
 mdp_dds_corrected <- DESeq(mdp_dds_corrected)
 mdp_res_corrected <-data.frame(results(mdp_dds_corrected))
 mdp_res_corrected <- mdp_res_corrected[!is.na(mdp_res_corrected$padj),]
@@ -107,7 +107,7 @@ ggplot(data=mdp_res_corrected, aes(x=log2FoldChange, y=-log10(padj), color=color
   labs(title="MDPSeq Volcano Plot for Lung Cancer T Cells")
 
 mdp_dds_uncorrected <- DESeqDataSetFromMatrix(mdp_counts,
-                                              colData = clarke_samplesheet,
+                                              colData = nagate_samplesheet,
                                               design = ~ tumor_resident)
 mdp_dds_uncorrected <- DESeq(mdp_dds_uncorrected)
 mdp_res_uncorrected <-data.frame(results(mdp_dds_uncorrected))

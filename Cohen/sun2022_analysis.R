@@ -57,7 +57,7 @@ ggplot(data=mitogene_res, aes(x=log2FoldChange, y=-log10(padj), color=color, lab
   xlim(-4,4) + ylim(0,22) +
   theme_classic(base_size=18)  +
   geom_hline(yintercept = 1.2,linetype="dotted") +
-  geom_text(nudge_x=.15) +
+  geom_text(nudge_x=.20) +
   scale_colour_identity() +
   geom_vline(xintercept = .6,linetype="dotted") +
   geom_vline(xintercept = -.6,linetype="dotted") +
