@@ -102,7 +102,8 @@ getCountsMDP <- function(bam_list,paired_end) {
   return(mdp_counts)
 }
 
-deleteBAMs <- function(bam_list) {
+deleteBAMs <- function() {
+  bam_list <- list.files(path=".",pattern="*.BAM",all.files=TRUE,full.names=FALSE)
   for (bam in bam_list) {
     unlink(bam)
   }
