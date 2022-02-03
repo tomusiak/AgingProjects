@@ -5,7 +5,7 @@ library("BiocManager")
 library("S4Vectors")
 library("Biostrings")
 library("SummarizedExperiment")
-library("GenomicAlignments")
+library("GenomicAlignments"0)
 library("BiocParallel")
 library("DESeq2")
 library("Biobase")
@@ -38,8 +38,8 @@ mitogene_counts <- read.csv("mitogene_counts.csv",row.names=1)
 nagate_samplesheet <- read.csv("nagate_samplesheet.csv")
 colnames(mdp_counts) <- nagate_samplesheet$sample
 colnames(mitogene_counts) <- nagate_samplesheet$sample
-nagate_samplesheet$tumor_resident <- as.factor(nagate_samplesheet$tumor_resident)
-nagate_samplesheet$donor<- as.factor(nagate_samplesheet$donor)
+nagate_samplesheet$leukemia <- as.factor(nagate_samplesheet$leukemia)
+nagate_samplesheet$patient<- as.factor(nagate_samplesheet$patient)
 
 mitogene_dds <- DESeqDataSetFromMatrix(mitogene_counts,
                                        colData = nagate_samplesheet,
@@ -104,11 +104,11 @@ ggplot(data=mdp_res_corrected, aes(x=log2FoldChange, y=-log10(padj), color=color
   geom_vline(xintercept = -.6,linetype="dotted") +
   geom_text(nudge_x=.2) +
   scale_colour_identity() +
-  labs(title="MDPSeq Volcano Plot for Lung Cancer T Cells")
+  labs(title="MDPSeq Volcano Plot for (Nagate) Leukemia PBMCs")
 
 mdp_dds_uncorrected <- DESeqDataSetFromMatrix(mdp_counts,
                                               colData = nagate_samplesheet,
-                                              design = ~ tumor_resident)
+                                              design = ~ patient + leukemia)
 mdp_dds_uncorrected <- DESeq(mdp_dds_uncorrected)
 mdp_res_uncorrected <-data.frame(results(mdp_dds_uncorrected))
 mdp_res_uncorrected <- mdp_res_uncorrected[!is.na(mdp_res_uncorrected$padj),]
@@ -130,4 +130,4 @@ ggplot(data=mdp_res_uncorrected, aes(x=log2FoldChange, y=-log10(padj), color=col
   geom_vline(xintercept = -.6,linetype="dotted") +
   geom_text(nudge_x=.2) +
   scale_colour_identity() +
-  labs(title="MDPSeq Volcano Plot for Lung Cancer T Cells- Uncorrected")
+  labs(title="MDPSeq Volcano Plot for (Nagate) Leukemia PBMCs- Uncorrected")
