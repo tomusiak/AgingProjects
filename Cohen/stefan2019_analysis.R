@@ -93,14 +93,14 @@ mdp_res_corrected$delabel[mdp_res_corrected$color=="purple"] <- rownames(mdp_res
 mdp_res_corrected <- mdp_res_corrected[mdp_res_corrected$log2FoldChange>-.6,]
 ggplot(data=mdp_res_corrected, aes(x=log2FoldChange, y=-log10(padj), color=color, label=delabel)) + 
         geom_point() +
-        xlim(-4,4) + ylim(0,22) +
+        xlim(-3,3) + ylim(0,22) +
         theme_classic(base_size=18)  +
         geom_hline(yintercept = 1.2,linetype="dotted") +
         geom_vline(xintercept = .6,linetype="dotted") +
         geom_vline(xintercept = -.6,linetype="dotted") +
-        geom_text(nudge_x=.2) +
+        geom_text(nudge_x=.15) +
         scale_colour_identity() +
-        labs(title="MDPSeq Volcano Plot for IFNa-treated Human T Cells")
+        labs(title="MDPSeq Volcano Plot for IFNa-treated Human Pancreatic B Cells")
 
 mdp_dds_uncorrected <- DESeqDataSetFromMatrix(mdp_counts,
                                             colData = sample_sheet,
@@ -119,7 +119,7 @@ mdp_res_uncorrected$delabel <- NA
 mdp_res_uncorrected$delabel[mdp_res_uncorrected$color=="purple"] <- rownames(mdp_res_uncorrected)[mdp_res_uncorrected$color=="purple"]
 ggplot(data=mdp_res_uncorrected, aes(x=log2FoldChange, y=-log10(padj), color=color, label=delabel)) + 
         geom_point() +
-        xlim(-4,4) + ylim(0,22) +
+        xlim(-3,3) + ylim(0,22) +
         theme_classic(base_size=18)  +
         geom_hline(yintercept = 1.2,linetype="dotted") +
         geom_vline(xintercept = .6,linetype="dotted") +
@@ -127,17 +127,4 @@ ggplot(data=mdp_res_uncorrected, aes(x=log2FoldChange, y=-log10(padj), color=col
         geom_text(nudge_x=.15) +
         scale_colour_identity() +
         labs(title="MDPSeq Volcano Plot for IFNa-treated Human T Cells - Uncorrected")
-
-#mess w/ mass spec data
-ms_database <- read.csv("~/Desktop/Data/ms_database.csv", comment.char="#")
-top_results <- mdp_res_corrected[mdp_res_corrected$padj < .1 & abs(mdp_res_corrected$log2FoldChange>.6),]
-top_results$peptide <- rownames(top_results)
-ms_database$mdp_id <- gsub(">Peptide", "", ms_database$peptide)
-joined_database <- merge(ms_database,top_results)
-
-top_hits_stefan <- top_results
-
-top_hits_stefan
-top_hits_sun
-top_hits_nagate
 
