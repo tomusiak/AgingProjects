@@ -5,7 +5,7 @@ library("BiocManager")
 library("S4Vectors")
 library("Biostrings")
 library("SummarizedExperiment")
-library("GenomicAlignments"0)
+library("GenomicAlignments")
 library("BiocParallel")
 library("DESeq2")
 library("Biobase")
@@ -24,11 +24,11 @@ source("mdpseq_background_correction.R")
 setwd("/home/atom/Desktop/AgingProjects/Useful Scripts/")
 source("generally_useful.R")
 setwd("/home/atom/Desktop/Data/nagate2020")
-bam_list <- makeBAMS(".",FALSE)
-mitogene_counts <- getCountsMitochondrial(bam_list,FALSE)
-mdp_counts <- getCountsMDP(bam_list,FALSE)
-write.csv(mitogene_counts,"mitogene_counts.csv")
-write.csv(mdp_counts,"mdp_counts.csv")
+#bam_list <- makeBAMS(".",FALSE)
+#mitogene_counts <- getCountsMitochondrial(bam_list,FALSE)
+#mdp_counts <- getCountsMDP(bam_list,FALSE)
+#write.csv(mitogene_counts,"mitogene_counts.csv")
+#write.csv(mdp_counts,"mdp_counts.csv")
 
 #deleteFASTQs()
 #deleteBAMs()
@@ -131,3 +131,12 @@ ggplot(data=mdp_res_uncorrected, aes(x=log2FoldChange, y=-log10(padj), color=col
   geom_text(nudge_x=.2) +
   scale_colour_identity() +
   labs(title="MDPSeq Volcano Plot for (Nagate) Leukemia PBMCs- Uncorrected")
+
+#mess w/ mass spec data
+ms_database <- read.csv("~/Desktop/Data/ms_database.csv", comment.char="#")
+top_results <- mdp_res_corrected[mdp_res_corrected$padj < .1 & abs(mdp_res_corrected$log2FoldChange>.6),]
+top_results$peptide <- rownames(top_results)
+ms_database$mdp_id <- gsub(">Peptide", "", ms_database$peptide)
+joined_database <- merge(ms_database,top_results)
+
+top_hits_nagate <- top_results

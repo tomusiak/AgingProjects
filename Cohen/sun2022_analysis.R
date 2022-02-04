@@ -16,6 +16,7 @@ library(ggplot2)
 library("RColorBrewer")
 library(Rsubread)
 library(ggrepel)
+library(circlize)
 
 #Loading in auxiliary code.
 setwd("/home/atom/Desktop/AgingProjects/Cohen/")
@@ -128,3 +129,106 @@ ggplot(data=mdp_res_uncorrected, aes(x=log2FoldChange, y=-log10(padj), color=col
   geom_text(nudge_x=.2) +
   scale_colour_identity() +
   labs(title="MDPSeq Volcano Plot for Leukemia - Uncorrected")
+
+#let's try this pizza plot thing - partially Brendan's code.
+#Pre-processing MDP gtf.
+colnames(mdp_gtf) <-
+  c("chr",
+    "idc",
+    "idc2",
+    "start",
+    "end",
+    "idc3",
+    "sense",
+    "idc4",
+    "gene")
+mdp_gtf <- separate(mdp_gtf, gene, c("gene", "transcript"), ";")
+mdp_gtf <- separate(mdp_gtf, gene, c("trash", "mdp_id"), ">Peptide")
+mdp_db <- mdp_gtf[, c("start", "end", "sense", "mdp_id")]
+mdp_db <- mdp_db[-c(62, 425), ]
+
+pval <- 0.5
+h <- 0.05
+borderCol = "gray"
+
+top_results <- mdp_res_corrected[mdp_res_corrected$padj < .05 & abs(mdp_res_corrected$log2FoldChange)>.1,]
+top_results$mdp_id <- rownames(top_results) 
+list_of_genes <- data.frame(mdp_id = top_results$mdp_id[order(top_results$padj)], 
+                          fold = top_results$log2FoldChange[order(top_results$padj)]) %>%
+  arrange(fold)
+positions <- match(list_of_genes$mdp_id,mdp_db$mdp_id)
+positional_table <- merge(drop_na(mdp_db[positions,]),list_of_genes)
+
+positives_fold <- list_of_genes$fold[list_of_genes$fold > 0] %>%
+  round(2)
+positives_name <- list_of_genes$mdp_id[list_of_genes$fold > 0]
+
+negatives_fold <- list_of_genes$fold[list_of_genes$fold < 0] %>%
+  round(2)
+negatives_name <- list_of_genes$mdp_id[list_of_genes$fold < 0]
+
+list_of_colors_neg <- colorRampPalette(c("dodgerblue", "yellow"))
+list_of_colors_neg <- list_of_colors_neg(length(negatives_name))
+list_of_colors_pos <- colorRampPalette(c("yellow", "firebrick"))
+list_of_colors_pos <- list_of_colors_pos(length(positives_name))
+
+positives <- data.frame(positives_name,positives_fold,list_of_colors_pos)
+negatives <- data.frame(negatives_name,negatives_fold,list_of_colors_neg)
+
+positives_position <- match(positives$positives_name,positional_table$mdp_id)
+negatives_position <- match(negatives$negatives_name,positional_table$mdp_id)
+
+positional_table$color <- NULL
+positional_table$color[positives_position] <- positives$list_of_colors_pos
+positional_table$color[negatives_position] <- negatives$list_of_colors_neg
+
+colors_pos <- data.frame(positives_fold, list_of_colors_pos)
+colors_neg <- data.frame(negatives_fold, list_of_colors_neg)
+plot(c(-1, 1), c(-1, 1), type = "n", axes = FALSE, ann = FALSE, asp = 1)
+draw.sector(0, 360, rou1 = 0.98, rou2 = 0.97, col = "black")
+
+pos <- 0
+for (gene in 1:nrow(positional_table)){
+  if(gene > 2){
+    if(positional_table$start[gene] > positional_table$end[gene-1]){
+      pos <- 0
+    }  
+    if(positional_table$start[gene] < positional_table$end[gene-1]){
+      pos <- (pos + 1)
+    }
+  }
+  color <- positional_table$color[gene]
+  draw.sector(((positional_table$end[gene]+4300) * 0.021727322), ((positional_table$start[gene]+4300) * 0.021727322),
+              col = color, border = borderCol, rou1 = 0.97 - (pos*h), rou2 = (0.97-h) - (pos*h))
+}
+
+#These sectors represent the genes
+draw.sector(((577 + 4300) * 0.021727322), ((-546 + 4300) * 0.021727322 ), col = "white", border = "black", rou1 = 1.04, rou2 =1)
+draw.sector(((647 + 4300) * 0.021727322), ((1601 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+draw.sector(((1674 + 4300) * 0.021727322), ((3229 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+draw.sector(((3307 + 4300) * 0.021727322), ((4262 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+draw.sector(((4470 + 4300) * 0.021727322), ((5511 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+draw.sector(((5904 + 4300) * 0.021727322), ((7445 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+draw.sector(((7586 + 4300) * 0.021727322), ((8295 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+draw.sector(((8364 + 4300) * 0.021727322), ((9207 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+draw.sector(((9207 + 4300) * 0.021727322), ((9990 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+draw.sector(((10059 + 4300) * 0.021727322), ((10404 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+draw.sector(((10470 + 4300) * 0.021727322), ((12138 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+draw.sector(((12336 + 4300) * 0.021727322), ((14149 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+draw.sector(((14149 + 4300) * 0.021727322), ((14673 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+draw.sector(((14747 + 4300) * 0.021727322), ((15887 + 4300) * 0.021727322 ), col = "white", clock.wise = FALSE, border = "black", rou1 = 1.04, rou2 = 1)
+
+lgd_ = rep(NA, 11)
+lgd_[c(1,6,11)] = c(round(min(negatives_fold),2),0,round(max(positives_fold),2))
+legend(x = 1.2, y = 0.5,
+       legend = lgd_,
+       fill = colorRampPalette(colors = c('dodgerblue','yellow','red'))(11),
+       border = NA,
+       y.intersp = 0.5,
+       cex = 1.5, text.font = 2)
+
+#mess w/ mass spec data
+ms_database <- read.csv("~/Desktop/Data/ms_database.csv", comment.char="#")
+ms_database$mdp_id <- gsub(">Peptide", "", ms_database$peptide)
+joined_database <- merge(ms_database,top_results)
+top_hits_sun <- top_results
