@@ -478,5 +478,5 @@ ggplot(data=clock_changes, aes(x=logFC, y=-log10(adj.P.Val), color=color,label=d
   geom_hline(yintercept = 1.2,linetype="dotted") +
   geom_text(nudge_y=.2) +
   scale_colour_identity() +
-  labs(title="Volcano Plot - TEMRA vs. Naive (Clock CpGs only!)")
+  labs(title="Volcano Plot Across Differentiation")
 head(clock_changes)
