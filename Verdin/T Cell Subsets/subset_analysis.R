@@ -6,6 +6,7 @@ source("generally_useful.R")
 setwd("/home/atom/Desktop/Data/subset_data") #Sets directory.
 
 #Libraries to import.
+library("cgageR")
 library(WGCNA)
 library(missMethyl)
 library(limma)
@@ -33,8 +34,8 @@ clock_data <- read.csv("~/Desktop/Data/subset_data/clock_data.csv")
 subset_metadata <- read.csv("~/Desktop/Data/subset_data/subset_metadata.csv")
 
 #D3 was obviously mishandled, removing from dataset...
-#clock_data <- clock_data[clock_data$SampleID!="D3"]
-#subset_metadata <- subset_metadata[subset_metadata$SampleID != "D3",]
+clock_data <- clock_data[clock_data$SampleID!="D3"]
+subset_metadata <- subset_metadata[subset_metadata$SampleID != "D3",]
 
 all_data <- merge(clock_data,subset_metadata)
 all_data$type <- as.character(all_data$type)
@@ -63,7 +64,7 @@ t_test_data$donor <- as.factor(t_test_data$donor)
 test <- t_test_data %>% pairwise_t_test(DNAmAge ~ type, paired=TRUE,correction="bonferroni")  %>%
                                                           select(-df, -statistic, -p)
 paired.t.test(t_test_data)
-res.aov <- t_test_data %>% anova_test(DNAmAge ~ type)
+res.aov <- t_test_data %>% anova_test(DNAmAge ~ type) 
 res.aov
 
 (subset_data[subset_data$donor != "R45553",] %>% group_by(donor))$donor
@@ -130,11 +131,7 @@ ggplot(data=subset_data,aes(x=age, y=DNAmAge, color=type)) +
   labs(x="Donor Age",y="Predicted Age", title="Age vs. Predicted Age Per Donor") 
 
 #t test
-young_test <- young_subset %>% pairwise_t_test(DNAmAge ~ type, paired=TRUE,correction="bonferroni")  %>%
-  select(-df, -statistic, -p)
 
-old_test <- old_subset %>% pairwise_t_test(DNAmAge ~ type, paired=TRUE,correction="bonferroni")  %>%
-  select(-df, -statistic, -p)
 
 
 #percent_meth <- readRDS("./ResultsClock/rgset.RDS")
@@ -459,3 +456,27 @@ ggplot(CD28,aes(x=(start),y=logFC,color=position) ) +
   ylab("DNAm logFC") +
   theme(text = element_text(size = 12))    +
   ggtitle("CD28 Upstream Region Shows Differential Methylation Patterns between TEMRA and Naive Cells")
+
+data(HorvathLongCGlist)
+clock_list <- HorvathLongCGlist
+matching_cpgs <- match(clock_list$MR_var,mapping$cpg)
+gene_names <- mapping$row_name[matching_cpgs]
+clock_changes <- na.omit(diff_exp[gene_names,1:6])
+clock_changes <- clock_changes[order(clock_changes$adj.P.Val),]
+clock_changes$color=factor(case_when(clock_changes$adj.P.Val < .05 & abs(clock_changes$logFC) >= .25 ~ "purple",
+                                (clock_changes$adj.P.Val < .05 & abs(clock_changes$logFC) < .25) ~ "red",
+                                (clock_changes$adj.P.Val > .05 & abs(clock_changes$logFC) >= .25) ~ "blue",
+                                (clock_changes$adj.P.Val > .05 & abs(clock_changes$logFC) < .25) ~ "gray"))
+clock_changes$delabel <- NA
+clock_changes$delabel[clock_changes$color=="purple"] <- rownames(clock_changes)[clock_changes$color=="purple"]
+ggplot(data=clock_changes, aes(x=logFC, y=-log10(adj.P.Val), color=color,label=delabel)) + 
+  geom_point() +
+  xlim(-1,1) + ylim(0,12) +
+  theme_classic(base_size=15)  +
+  geom_vline(xintercept=.25,linetype="dotted") +
+  geom_vline(xintercept=-.25,linetype="dotted") +
+  geom_hline(yintercept = 1.2,linetype="dotted") +
+  geom_text(nudge_y=.2) +
+  scale_colour_identity() +
+  labs(title="Volcano Plot - TEMRA vs. Naive (Clock CpGs only!)")
+head(clock_changes)
