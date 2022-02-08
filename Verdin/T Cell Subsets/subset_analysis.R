@@ -130,10 +130,6 @@ ggplot(data=subset_data,aes(x=age, y=DNAmAge, color=type)) +
   geom_hline(yintercept = 0,linetype="dotted") +
   labs(x="Donor Age",y="Predicted Age", title="Age vs. Predicted Age Per Donor") 
 
-#t test
-
-
-
 #percent_meth <- readRDS("./ResultsClock/rgset.RDS")
 #colData(percent_meth)$Sample_Well
 #MsetEx <- preprocessIllumina(percent_meth)
@@ -148,7 +144,7 @@ ggplot(data=subset_data,aes(x=age, y=DNAmAge, color=type)) +
 
 #plotQC(qc$qc)
 
-#all_data$old <- all_data$age >65
+all_data$old <- all_data$age >65
 
 #annotations <- read.delim("~/Desktop/Data/subset_data/EPIC.hg38.manifest.tsv")
 #matched_positions <- match(rownames(beta_values),annotations$probeID) #Finds valid matches in table.
@@ -168,6 +164,11 @@ ggplot(data=subset_data,aes(x=age, y=DNAmAge, color=type)) +
 #ditch the sabgal samples
 #beta_values <- beta_values[all_data$sabgal_sample==FALSE,]
 #write.csv(mapping,"mapping.csv")
+
+#filtering things out
+no_sabgal <- all_data$sabgal_sample == FALSE
+all_data <- all_data[no_sabgal,]
+
 mapping <- read.csv("mapping.csv")
 beta_values <- read.csv("~/Desktop/Data/subset_data/beta_values.csv", row.names=1)
 beta_values <- beta_values[,colnames(beta_values) %in% all_data$SampleID]
@@ -223,7 +224,7 @@ ggplot(umap_plot_df,aes(x=type,y=-X1, color=age)) +
 #messing with pseudotime
 
 Y <- log2(beta_values+ 1)
-var1K <- names(sort(apply(Y, 1, var),decreasing = TRUE))[1:1000]
+var1K <- names(sort(apply(Y, 1, var),decreasing = TRUE))[1:25000]
 Y <- Y[var1K, ]  # only counts for variable genes
 
 t <- -umap_plot_df$X1
@@ -234,7 +235,7 @@ gam.pval <- apply(Y, 1, function(z){
   p
 })
 
-topgenes <- names(sort(gam.pval, decreasing = FALSE))[1:150]  
+topgenes <- names(sort(gam.pval, decreasing = FALSE))[1:250]  
 heatdata <- as.matrix(beta_values[rownames(beta_values) %in% topgenes, order(t, na.last = NA)])
 heatclus <- umap_plot_df$type[order(t, na.last = NA)]
 ce <- ClusterExperiment(heatdata, heatclus, transformation = log1p)
@@ -245,65 +246,6 @@ write.csv(gsub("\\..*","",topgenes),"list.csv")
 Y <- log2(beta_values+ 1)
 var25K <- names(sort(apply(Y, 1, var),decreasing = TRUE))[1:25000]
 Y <- Y[var25K, ]  # only counts for variable genes
-#Let's look at HDAC4
-HDAC4 <- Y[rownames(Y)[str_detect(rownames(Y), "HDAC4")],]
-HDAC4 <- colSums(HDAC4)/nrow(data.frame(HDAC4))
-all_data$HDAC4 <- HDAC4
-ggplot(all_data,aes(x=type,y=HDAC4)) + 
-  theme_classic() +
-  ylim(0,1) +
-  labs(x="CD8 Cell Subtype", y="UMAP Component 1",title="UMAP Component 1 Tracks Cell Lineage") +
-  geom_point()
-
-#Let's look at IFNG
-IFNG <- Y[rownames(Y)[str_detect(rownames(Y), "IFNG")],]
-IFNG <- colSums(IFNG)/nrow(data.frame(IFNG))
-all_data$IFNG <- IFNG
-ggplot(all_data,aes(x=type,y=IFNG)) + 
-  theme_classic() +
-  ylim(0,1) +
-  labs(x="CD8 Cell Subtype", y="UMAP Component 1",title="UMAP Component 1 Tracks Cell Lineage") +
-  geom_point()
-
-#Let's look at CCR2
-CCR2 <- Y[rownames(Y)[str_detect(rownames(Y), "CCR2")],]
-CCR2 <- colSums(CCR2)/nrow(data.frame(CCR2))
-all_data$CCR2 <- CCR2
-ggplot(all_data,aes(x=type,y=CCR2)) + 
-  theme_classic() +
-  ylim(0,1) +
-  labs(x="CD8 Cell Subtype", y="UMAP Component 1",title="UMAP Component 1 Tracks Cell Lineage") +
-  geom_point()
-
-#Let's look at ZBTB38
-ZBTB38 <- Y[rownames(Y)[str_detect(rownames(Y), "ZBTB38")],]
-ZBTB38 <- colSums(ZBTB38)/nrow(data.frame(ZBTB38))
-all_data$ZBTB38 <- ZBTB38
-ggplot(all_data,aes(x=type,y=ZBTB38)) + 
-  theme_classic() +
-  ylim(0,1) +
-  labs(x="CD8 Cell Subtype", y="UMAP Component 1",title="UMAP Component 1 Tracks Cell Lineage") +
-  geom_point()
-
-#Let's look at FLT3
-FLT3 <- Y[rownames(Y)[str_detect(rownames(Y), "FLT3")],]
-FLT3 <- colSums(FLT3)/nrow(data.frame(FLT3))
-all_data$FLT3 <- FLT3
-ggplot(all_data,aes(x=type,y=FLT3)) + 
-  theme_classic() +
-  ylim(0,1) +
-  labs(x="CD8 Cell Subtype", y="UMAP Component 1",title="UMAP Component 1 Tracks Cell Lineage") +
-  geom_point()
-
-#Let's look at TOX3
-TOX3 <- Y[rownames(Y)[str_detect(rownames(Y), "TOX3")],]
-TOX3 <- colSums(TOX3)/nrow(data.frame(TOX3))
-all_data$TOX3 <- TOX3
-ggplot(all_data,aes(x=type,y=TOX3)) + 
-  theme_classic() +
-  ylim(0,1) +
-  labs(x="CD8 Cell Subtype", y="% Methylated",title="UMAP Component 1 Tracks Cell Lineage") +
-  geom_point()
 
 #Let's look at FAS
 FAS <- Y[rownames(Y)[str_detect(rownames(Y), "FAS")],]
