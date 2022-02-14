@@ -91,8 +91,8 @@ m_values <- m_values[order(all_data$type)]
 all_data <- all_data[order(all_data$type),]
 
 #Calculate epigenetic clock acceleration
-all_data$diff <- all_data$Epigenetic.Age..Zhang.-all_data$age
-summary <- getSummary(all_data,"diff", "type")
+all_data$diff <- all_data$IEAA-all_data$age
+summary <- getSummary(all_data,"IEAA", "type")
 summary$type <- c("Naive","Central Memory","Effector Memory","TEMRA")
 summary$type <- factor(summary$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
 
@@ -103,15 +103,14 @@ em_data <- all_data[all_data$type == "effector_memory",]
 temra_data <- all_data[all_data$type == "temra",]
 
 #t tests
-t.test(em_data$Epigenetic.Age..Zhang.,naive_data$Epigenetic.Age..Zhang.,paired=TRUE)
+t.test(em_data$IEAA,naive_data$IEAA,paired=TRUE)
 t_test_data <- data.frame(all_data[all_data$donor != "R45553",])
-t_test_data <- t_test_data[c("Epigenetic.Age..Zhang.","type","donor")]
+t_test_data <- t_test_data[c("IEAA","type","donor")]
 t_test_data$type <- as.factor(t_test_data$type)
 t_test_data$donor <- as.factor(t_test_data$donor)
-test <- t_test_data %>% pairwise_t_test(Epigenetic.Age..Zhang. ~ type, paired=TRUE,correction="bonferroni")  %>%
+test <- t_test_data %>% pairwise_t_test(IEAA ~ type, paired=TRUE,correction="bonferroni")  %>%
                                                           select(-df, -statistic, -p)
-paired.t.test(t_test_data)
-res.aov <- t_test_data %>% anova_test(Epigenetic.Age..Zhang. ~ type) 
+res.aov <- t_test_data %>% anova_test(IEAA ~ type) 
 res.aov
 
 #QC check for DNA quantity
@@ -123,16 +122,16 @@ ggplot(data=all_data, aes(x=as.factor(final_dna), y=meanAbsDifferenceSampleVSgol
   labs(x="Input DNA",y="Difference between Sample and Gold Standard",
        title="QC - Differences between Sample and Gold Standard") 
 
-ggplot(data=summary, aes(x=type, y=diff, group=1)) +
+ggplot(data=summary, aes(x=type, y=IEAA, group=1)) +
   geom_line()+ 
   geom_point() +
   theme_classic() +
-  ylim(-23,23) +
+  ylim(-10,10) +
   theme(text = element_text(size = 15)) +
   geom_hline(yintercept = 0,linetype="dotted") +
-  geom_errorbar(aes(ymin=diff-se, ymax=diff+se), width=.1) +
+  geom_errorbar(aes(ymin=IEAA-se, ymax=IEAA+se), width=.1) +
   labs(x="CD8+ T Cell Subset",y="Predicted Age - Age", title="CD8+ T Cell Subset Differences Between
-       Clock Age and Chronological Age") 
+       Clock Age and Chronological Age (IEAA)") 
 
 young_subset <- all_data[all_data$age <= 50,]
 old_subset <- all_data[all_data$age > 50,]
@@ -171,6 +170,15 @@ ggplot(data=all_data,aes(x=age, y=Epigenetic.Age..Zhang., color=type)) +
   geom_point() +
   theme_classic() +
   xlim(10,80) + ylim(10,80) +
+  theme(text = element_text(size = 15)) +
+  geom_abline(linetype="dotted") +
+  geom_hline(yintercept = 0,linetype="dotted") +
+  labs(x="Donor Age",y="Predicted Age", title="Age vs. Predicted Age Per Donor") 
+
+ggplot(data=all_data,aes(x=age, y=IEAA, color=type)) +
+  geom_point() +
+  theme_classic() +
+  xlim(0,80) + ylim(-10,10) +
   theme(text = element_text(size = 15)) +
   geom_abline(linetype="dotted") +
   geom_hline(yintercept = 0,linetype="dotted") +
