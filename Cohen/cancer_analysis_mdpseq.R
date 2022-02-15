@@ -137,6 +137,8 @@ mdp_dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
                                   design = ~ donor + status)
 mdp_dds_corrected <- DESeq(mdp_dds_corrected)
 mdp_res_corrected <-data.frame(results(mdp_dds_corrected, name="status_tumor_vs_normal"))
+mdp_res_corrected$condition <- "Pancreatic Cancer"
+write.csv(mdp_res_corrected,"PancreaticCancerMDPSeq.csv")
 mdp_vsd_corrected <- varianceStabilizingTransformation(mdp_dds_corrected) ###mdp-seq script
 mdp_resOrdered_corrected <- mdp_res_corrected[order(abs(mdp_res_corrected$pvalue)),]
 mdp_top_corrected <- head(mdp_resOrdered_corrected, 10)

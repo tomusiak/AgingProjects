@@ -81,6 +81,8 @@ mdp_dds_corrected <- DESeqDataSetFromMatrix(corrected_counts,
 mdp_dds_corrected <- DESeq(mdp_dds_corrected)
 mdp_res_corrected <-data.frame(results(mdp_dds_corrected))
 mdp_res_corrected <- mdp_res_corrected[!is.na(mdp_res_corrected$padj),]
+mdp_res_corrected$condition <- "IFNa Treatment"
+write.csv(mdp_res_corrected,"IFNaTraetmentStefanMDPSeq.csv")
 mdp_vsd_corrected <- varianceStabilizingTransformation(mdp_dds_corrected) ###mdp-seq script
 mdp_resOrdered_corrected <- mdp_res_corrected[order(abs(mdp_res_corrected$padj)),]
 mdp_top_corrected <- head(mdp_resOrdered_corrected, 10)
