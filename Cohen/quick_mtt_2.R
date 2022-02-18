@@ -11,6 +11,14 @@ mtt_data <- mtt_data %>% group_by(mdp,concentration_uM) %>% summarize(mean_value
                                                                           sd = sd(value),
                                                                           n = n(),
                                                                           se = sd / sqrt(n))
+mtt_data$mdp <-factor(mtt_data$mdp,levels=c("108C SNP",
+                  "108C WT", 
+                  "63D SNP", 
+                  "63D WT", 
+                  "MOTS_C",
+                  "Doxo-", "Doxo+"))
+
+mtt_data$mdp <- as.factor(mtt_data$mdp)
 
 ggplot(data=mtt_data,aes(x=as.factor(concentration_uM),y=mean_value, fill=mdp)) + 
   geom_bar(stat="identity",position="dodge") +
