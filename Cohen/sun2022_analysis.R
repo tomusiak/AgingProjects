@@ -44,8 +44,8 @@ setwd("/home/atom/Desktop/Data/sun2022")
 
 #Loads in count matrices and metadata. Appropriately converts them to factors and aligns
 # column names.
-mdp_counts <- read.csv("mdp_counts.csv", row.names=1)
-mitogene_counts <- read.csv("mitogene_counts.csv",row.names=1)
+mdp_counts <- data.frame(read.csv("mdp_counts.csv", row.names=1))
+mitogene_counts <- data.frame(read.csv("mitogene_counts.csv",row.names=1))
 sun_samplesheet <- read.csv("sun_samplesheet.csv")
 colnames(mdp_counts) <- sun_samplesheet$sample
 colnames(mitogene_counts) <- sun_samplesheet$sample
@@ -100,7 +100,7 @@ mdp_gtf <-
 encompass_table <- generateEncompassTable(mdp_gtf,mitogene_gtf)
 
 #OPTIONAL: Remove some of the mitochondrial genes. Can be used for excluding tRNAs.
-#encompass_table <- encompass_table[encompass_table$mitogene %in% keep_mitogenes,]
+#encompass_table <- data.frame(encompass_table[encompass_table$mitogene %in% keep_mitogenes,])
 
 #Creates a table using the mitogene count matrix that maps out relative changes in mitogene
 # expression across samples relative to the mean.
