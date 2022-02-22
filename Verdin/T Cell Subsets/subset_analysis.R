@@ -82,7 +82,7 @@ mapping <- read.csv("~/Desktop/Data/subset_data/mapping.csv", row.names=1)
 m_values <- read.csv("~/Desktop/Data/subset_data/m_values.csv", row.names=1)
 
 #Filter out unwanted data from metadata, mapping, and beta values.
-keep <- all_data$SampleID[all_data$Donor != "R45553" & all_data$sabgal_sample == FALSE]
+keep <- all_data$SampleID[all_data$donor != "R45553" & all_data$sabgal_sample == FALSE]
 all_data <- all_data[all_data$SampleID %in% keep,]
 beta_values <- beta_values[,colnames(beta_values) %in% keep]
 beta_values <- beta_values[order(all_data$type)]
@@ -91,8 +91,8 @@ m_values <- m_values[order(all_data$type)]
 all_data <- all_data[order(all_data$type),]
 
 #Calculate epigenetic clock acceleration
-all_data$diff <- all_data$IEAA-all_data$age
-summary <- getSummary(all_data,"IEAA", "type")
+all_data$diff <- all_data$DNAmAge-all_data$age
+summary <- getSummary(all_data,"diff", "type")
 summary$type <- c("Naive","Central Memory","Effector Memory","TEMRA")
 summary$type <- factor(summary$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
 
@@ -122,16 +122,16 @@ ggplot(data=all_data, aes(x=as.factor(final_dna), y=meanAbsDifferenceSampleVSgol
   labs(x="Input DNA",y="Difference between Sample and Gold Standard",
        title="QC - Differences between Sample and Gold Standard") 
 
-ggplot(data=summary, aes(x=type, y=IEAA, group=1)) +
+ggplot(data=summary, aes(x=type, y=diff, group=1)) +
   geom_line()+ 
   geom_point() +
   theme_classic() +
-  ylim(-10,10) +
+  ylim(-20,20) +
   theme(text = element_text(size = 15)) +
   geom_hline(yintercept = 0,linetype="dotted") +
-  geom_errorbar(aes(ymin=IEAA-se, ymax=IEAA+se), width=.1) +
+  geom_errorbar(aes(ymin=diff-se, ymax=diff+se), width=.1) +
   labs(x="CD8+ T Cell Subset",y="Predicted Age - Age", title="CD8+ T Cell Subset Differences Between
-       Clock Age and Chronological Age (IEAA)") 
+       Clock Age and Chronological Age") 
 
 young_subset <- all_data[all_data$age <= 50,]
 old_subset <- all_data[all_data$age > 50,]
@@ -166,7 +166,7 @@ ggplot(data=summary_old, aes(x=type, y=diff, group=1)) +
   labs(x="CD8+ T Cell Subset",y="Predicted Age - Age", title="CD8+ T Cell Subset Differences Between
        Clock Age and Chronological Age - >50 years old") 
 
-ggplot(data=all_data,aes(x=age, y=Epigenetic.Age..Zhang., color=type)) +
+ggplot(data=all_data,aes(x=age, y=DNAmAge, color=type)) +
   geom_point() +
   theme_classic() +
   xlim(10,80) + ylim(10,80) +
@@ -175,28 +175,18 @@ ggplot(data=all_data,aes(x=age, y=Epigenetic.Age..Zhang., color=type)) +
   geom_hline(yintercept = 0,linetype="dotted") +
   labs(x="Donor Age",y="Predicted Age", title="Age vs. Predicted Age Per Donor") 
 
-ggplot(data=all_data,aes(x=age, y=IEAA, color=type)) +
-  geom_point() +
-  theme_classic() +
-  xlim(0,80) + ylim(-10,10) +
-  theme(text = element_text(size = 15)) +
-  geom_abline(linetype="dotted") +
-  geom_hline(yintercept = 0,linetype="dotted") +
-  labs(x="Donor Age",y="Predicted Age", title="Age vs. Predicted Age Per Donor") 
-
-
 #limma differential methylation analysis
 celltype_group <- factor(all_data$type,levels=c("naive","central_memory","effector_memory","temra"))
-donor_group <- factor(all_data$donor,levels=c("R45690","R45740","R45553","R45804","R45504",
+donor_group <- factor(all_data$donor,levels=c("R45690","R45740","R45804","R45504",
                                               "R45741","R45805"))
 sabgal_sample <- factor(all_data$sabgal_sample,levels=c("TRUE","FALSE"))
 old_group <- factor(all_data$old,levels=c(TRUE,FALSE))
 design <- model.matrix(~0 + donor_group + celltype_group)
 
-fit.reduced <- lmFit(m_values,design)
+fit.reduced <- lmFit(beta_values,design)
 fit.reduced <- eBayes(fit.reduced, robust=TRUE)
 summary(decideTests(fit.reduced))
-diff_exp <-topTable(fit.reduced,coef=10,number=1000000)
+diff_exp <-topTable(fit.reduced,coef=10,number=10000)
 
 diff_exp$color=factor(case_when(diff_exp$adj.P.Val < .05 & abs(diff_exp$logFC) >= .6 ~ "purple",
                                            (diff_exp$adj.P.Val < .05 & abs(diff_exp$logFC) < .6) ~ "red",
@@ -212,7 +202,7 @@ ggplot(data=diff_exp, aes(x=logFC, y=-log10(adj.P.Val), color=color)) +
   scale_colour_identity() +
   labs(title="Volcano Plot - TEMRA vs. Naive")
 
-beta_rotated <- t(m_values)
+beta_rotated <- t(beta_values)
 umap <- umap(beta_rotated)
 umap_plot_df <- data.frame(umap$layout) %>%
   tibble::rownames_to_column("SampleID") %>%
@@ -228,12 +218,12 @@ ggplot(
 
 ggplot(umap_plot_df,aes(x=type,y=X2, color=age)) + 
   theme_classic() +
-  labs(x="CD8 Cell Subtype", y="UMAP Component 1",title="UMAP Component 1 Tracks Cell Lineage") +
+  labs(x="CD8 Cell Subtype", y="UMAP Component 2",title="UMAP Component 2 Tracks Cell Lineage") +
   geom_point()
 
 #messing with pseudotime
 
-Y <- m_values
+Y <- beta_values
 var1K <- names(sort(apply(Y, 1, var),decreasing = TRUE))[1:1000]
 Y <- Y[var1K, ]  # only counts for variable genes
 t <- umap_plot_df$X2
@@ -357,3 +347,23 @@ ggplot(data=clock_changes, aes(x=logFC, y=-log10(adj.P.Val), color=color,label=d
   scale_colour_identity() +
   labs(title="Volcano Plot of Clock CpG Sites Changing between Naive & TEMRA Samples")
 head(clock_changes)
+
+#Let's look at differential methylation by subtype by gene.
+
+sasp_genes <- c("IL6R","IL4R","NFKB","IL1A")
+naive_genes <- c("CD45RA","CCR7","CD62L","CD127")
+effector_genes <- c("CD45RO","GRZMB","CD69","TNFR1")
+exhausted_genes <- c("TIGIT","LAG3","HAVCR2","TOX")
+
+combined_data <- data.frame(t(beta_values)) %>%
+  tibble::rownames_to_column("SampleID") %>%
+  dplyr::inner_join(all_data, by = "SampleID")
+combined_data$type <- factor(combined_data$type, levels=c("naive", "central_memory", "effector_memory","temra"))
+
+for (gene in sasp_genes) {
+  table <- diff_exp[rownames(diff_exp)[str_detect(rownames(diff_exp), gene)],]
+  average <- mean(table$logFC)
+  print(average)
+}
+
+all_genes <- diff_exp[rownames(diff_exp)[str_detect(rownames(diff_exp), "DNMT3A")],]
