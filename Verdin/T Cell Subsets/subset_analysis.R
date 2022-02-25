@@ -354,16 +354,3 @@ sasp_genes <- c("IL6R","IL4R","NFKB","IL1A")
 naive_genes <- c("CD45RA","CCR7","CD62L","CD127")
 effector_genes <- c("CD45RO","GRZMB","CD69","TNFR1")
 exhausted_genes <- c("TIGIT","LAG3","HAVCR2","TOX")
-
-combined_data <- data.frame(t(beta_values)) %>%
-  tibble::rownames_to_column("SampleID") %>%
-  dplyr::inner_join(all_data, by = "SampleID")
-combined_data$type <- factor(combined_data$type, levels=c("naive", "central_memory", "effector_memory","temra"))
-
-for (gene in sasp_genes) {
-  table <- diff_exp[rownames(diff_exp)[str_detect(rownames(diff_exp), gene)],]
-  average <- mean(table$logFC)
-  print(average)
-}
-
-all_genes <- diff_exp[rownames(diff_exp)[str_detect(rownames(diff_exp), "DNMT3A")],]
