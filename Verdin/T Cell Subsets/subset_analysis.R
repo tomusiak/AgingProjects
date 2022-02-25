@@ -133,6 +133,27 @@ ggplot(data=summary, aes(x=type, y=diff, group=1)) +
   labs(x="CD8+ T Cell Subset",y="Predicted Age - Age", title="CD8+ T Cell Subset Differences Between
        Clock Age and Chronological Age") 
 
+summary_IEAA <- getSummary(all_data,"IEAA", "type")
+
+ggplot(data=summary_IEAA, aes(x=type, y=IEAA, group=1)) +
+  geom_point() +
+  theme_classic() +
+  ylim(-5,5) +
+  theme(text = element_text(size = 15)) +
+  geom_hline(yintercept = 0,linetype="dotted") +
+  geom_errorbar(aes(ymin=IEAA-se, ymax=IEAA+se), width=.1) +
+  labs(x="CD8+ T Cell Subset",y="IEAA", title="CD8+ T Cell Subset Differences With IEAA") 
+
+summary_IEAA_donor <- getSummary(all_data,"IEAA", "donor")
+
+ggplot(data=all_data, aes(x=donor, y=IEAA, group=1,color=type)) +
+  geom_point() +
+  theme_classic() +
+  ylim(-10,10) +
+  theme(text = element_text(size = 15)) +
+  geom_hline(yintercept = 0,linetype="dotted") +
+  labs(x="Donor",y="IEAA", title="CD8+ IEAA Differences Between Donors") 
+
 young_subset <- all_data[all_data$age <= 50,]
 old_subset <- all_data[all_data$age > 50,]
 
