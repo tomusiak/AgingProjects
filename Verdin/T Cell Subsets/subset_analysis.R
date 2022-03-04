@@ -82,7 +82,7 @@ mapping <- read.csv("~/Desktop/Data/subset_data/mapping.csv", row.names=1)
 m_values <- read.csv("~/Desktop/Data/subset_data/m_values.csv", row.names=1)
 
 #Filter out unwanted data from metadata, mapping, and beta values.
-keep <- all_data$SampleID[all_data$donor != "R45553" & all_data$sabgal_sample == FALSE]
+keep <- all_data$SampleID[all_data$SampleID != "D3" & all_data$sabgal_sample == FALSE]
 all_data <- all_data[all_data$SampleID %in% keep,]
 beta_values <- beta_values[,colnames(beta_values) %in% keep]
 beta_values <- beta_values[order(all_data$type)]
@@ -196,33 +196,6 @@ ggplot(data=all_data,aes(x=age, y=DNAmAge, color=type)) +
   geom_hline(yintercept = 0,linetype="dotted") +
   labs(x="Donor Age",y="Predicted Age", title="Age vs. Predicted Age Per Donor") 
 
-#limma differential methylation analysis
-celltype_group <- factor(all_data$type,levels=c("naive","central_memory","effector_memory","temra"))
-donor_group <- factor(all_data$donor,levels=c("R45690","R45740","R45804","R45504",
-                                              "R45741","R45805"))
-sabgal_sample <- factor(all_data$sabgal_sample,levels=c("TRUE","FALSE"))
-old_group <- factor(all_data$old,levels=c(TRUE,FALSE))
-design <- model.matrix(~0 + donor_group + celltype_group)
-
-fit.reduced <- lmFit(beta_values,design)
-fit.reduced <- eBayes(fit.reduced, robust=TRUE)
-summary(decideTests(fit.reduced))
-diff_exp <-topTable(fit.reduced,coef=10,number=10000)
-
-diff_exp$color=factor(case_when(diff_exp$adj.P.Val < .05 & abs(diff_exp$logFC) >= .6 ~ "purple",
-                                           (diff_exp$adj.P.Val < .05 & abs(diff_exp$logFC) < .6) ~ "red",
-                                           (diff_exp$adj.P.Val > .05 & abs(diff_exp$logFC) >= .6) ~ "blue",
-                                           (diff_exp$adj.P.Val > .05 & abs(diff_exp$logFC) < .6) ~ "gray"))
-diff_exp$delabel <- NA
-diff_exp$delabel[diff_exp$color=="purple"] <- rownames(diff_exp)[diff_exp$color=="purple"]
-ggplot(data=diff_exp, aes(x=logFC, y=-log10(adj.P.Val), color=color)) + 
-  geom_point() +
-  xlim(-1,1) + ylim(0,20) +
-  theme_classic(base_size=18)  +
-  geom_hline(yintercept = 1.2,linetype="dotted") +
-  scale_colour_identity() +
-  labs(title="Volcano Plot - TEMRA vs. Naive")
-
 beta_rotated <- t(beta_values)
 umap <- umap(beta_rotated)
 umap_plot_df <- data.frame(umap$layout) %>%
@@ -242,11 +215,29 @@ ggplot(umap_plot_df,aes(x=type,y=X2, color=age)) +
   labs(x="CD8 Cell Subtype", y="UMAP Component 2",title="UMAP Component 2 Tracks Cell Lineage") +
   geom_point()
 
+
+beta_rotated <- data.frame(beta_rotated)
+all_data$Diff <- umap_plot_df$X2
+
+#limma differential methylation analysis
+celltype_group <- factor(all_data$type,levels=c("naive","central_memory","effector_memory","temra"))
+donor_group <- factor(all_data$donor,levels=c("R45690","R45740","R45804","R45504",
+                                              "R45741","R45805"))
+sabgal_sample <- factor(all_data$sabgal_sample,levels=c("TRUE","FALSE"))
+old_group <- factor(all_data$old,levels=c(TRUE,FALSE))
+diff_group <- all_data$Diff
+design <- model.matrix(~0 + donor_group + diff_group)
+
+fit.reduced <- lmFit(beta_values,design)
+fit.reduced <- eBayes(fit.reduced, robust=TRUE)
+summary(decideTests(fit.reduced))
+diff_exp <-topTable(fit.reduced,coef=7,number=10000)
 #messing with pseudotime
+diff_exp_order <- diff_exp[order(diff_exp$adj.P.Val),]
 
 Y <- beta_values
 var1K <- names(sort(apply(Y, 1, var),decreasing = TRUE))[1:1000]
-Y <- Y[var1K, ]  # only counts for variable genes
+Y <- drop_na(Y[rownames(diff_exp_order), ])  # only counts for variable genes
 t <- umap_plot_df$X2
 gam.pval <- apply(Y, 1, function(z){
   d <- data.frame(z=z, t=t)
@@ -254,16 +245,13 @@ gam.pval <- apply(Y, 1, function(z){
   p <- summary(tmp)[4][[1]][1,5]
   p
 })
-topgenes <- names(sort(gam.pval, decreasing = FALSE))[1:150]  
+topgenes <- names(sort(gam.pval, decreasing = FALSE))[1:10000]  
 heatdata <- as.matrix(beta_values[rownames(beta_values) %in% topgenes, order(t, na.last = NA)])
 heatclus <- umap_plot_df$type[order(t, na.last = NA)]
 ce <- ClusterExperiment(heatdata, heatclus)
-clusterExperiment::plotHeatmap(ce, clusterSamplesData = "orderSamplesValue", 
+clusterExperiment::plotHeatmap(ce, clusterSamplesData = "hclust", 
                                visualizeData = 'transformed', cexRow = 1.5, fontsize = 15)
 write.csv(gsub("\\..*","",topgenes),"list.csv")
-
-var25K <- names(sort(apply(Y, 1, var),decreasing = TRUE))[1:25000]
-Y <- Y[var25K, ]  # only counts for variable genes
 
 #Let's look at FAS
 FAS <- Y[rownames(Y)[str_detect(rownames(Y), "FAS")],]
