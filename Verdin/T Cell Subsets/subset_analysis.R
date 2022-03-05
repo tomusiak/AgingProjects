@@ -54,7 +54,7 @@ all_data$type <- factor(all_data$type, levels=c("naive", "central_memory", "effe
 # 
 # #Read in annotations to create a 'mapping table' that links together metadata, CpG data, and 
 # #clock information.
-# annotations <- read.delim("~/Desktop/Data/subset_data/EPIC.hg38.manifest.tsv")
+# cpg_annotation <- read.delim("~/Desktop/Data/subset_data/EPIC.hg38.manifest.tsv")
 # matched_positions <- match(rownames(beta_values),annotations$probeID) #Finds valid matches in table.
 # matched_symbols <- annotations$gene[matched_positions]
 # beta_values$gene <- matched_symbols
@@ -363,3 +363,6 @@ sasp_genes <- c("IL6R","IL4R","NFKB","IL1A")
 naive_genes <- c("CD45RA","CCR7","CD62L","CD127")
 effector_genes <- c("CD45RO","GRZMB","CD69","TNFR1")
 exhausted_genes <- c("TIGIT","LAG3","HAVCR2","TOX")
+
+#Let's create a custom CpG annotation table.
+genome_annotation <- read.delim("~/Desktop/Data/gencode.v39.annotation.gtf", header=FALSE, comment.char="#")

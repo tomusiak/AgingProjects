@@ -115,3 +115,31 @@ deleteFASTQs <- function() {
     unlink(fastq)
   }
 }
+
+createCPGTable <- function(cpg_annotation, genome_annotation, basepairs) {
+  cpg_annotation <- cpg_annotation[,1:5]
+  genome_annotation <- genome_annotation[genome_annotation$V3 == "gene" | genome_annotation$V3 == "ncRNA",]
+  genome_annotation <- separate(genome_annotation, V9, c("gene_id","gene_type","gene_name"), ";")
+  desired_columns <- c(1,3,4,5,7,11)
+  genome_annotation <- genome_annotation[,desired_columns]
+  genome_annotation <- separate(genome_annotation,gene_name,c("trash","trash2","gene_name")," ")
+  genome_annotation <- genome_annotation[,c(1,2,3,4,5,8)]
+  colnames(genome_annotation) <- c("chr","type","start","stop","strand","gene_name")
+  colnames(cpg_annotation) <- c("chr","start","stop","strand","probe_name")
+  cpg_table <- data.frame(matrix(ncol = 2, nrow = 0))
+  colnames(cpg_table) <- c("cpg","gene")
+  for (cpg in 1:nrow(cpg_annotation)) {
+    cpg_chr <- cpg_annotation[cpg,1]
+    cpg_strand <- cpg_annotation[cpg,4]
+    cpg_start <- cpg_annotation[cpg,2]
+    relevant_genes <- genome_annotation[genome_annotation$chr == cpg_chr &
+                                          genome_annotation$strand == cpg_strand,]
+    associated_genes <- relevant_genes[abs(relevant_genes$start - cpg_start) <=
+                                            basepairs,]
+    if (nrow(associated_genes) != 0) {
+      associated_genes$cpg <- cpg_annotation[cpg,5]
+      added_table <- associated_genes[,c(6,7)]
+      cpg_table <- rbind(cpg_table,added_table)
+    }
+  }
+}
