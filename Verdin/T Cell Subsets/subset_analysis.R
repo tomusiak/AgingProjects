@@ -209,7 +209,7 @@ design <- model.matrix(~0 + donor_group + diff_group)
 fit.reduced <- lmFit(beta_values,design)
 fit.reduced <- eBayes(fit.reduced, robust=TRUE)
 summary(decideTests(fit.reduced))
-diff_exp <-topTable(fit.reduced,coef=8,number=1000000)
+diff_exp <-topTable(fit.reduced,coef=8,number=1000)
 #messing with pseudotime
 diff_exp_order <- diff_exp[order(diff_exp$adj.P.Val),]
 pvals <- as.vector(diff_exp_order[,5])
