@@ -146,3 +146,49 @@ createCPGTable <- function(cpg_annotation, genome_annotation, upstream, downstre
     }
   return(cpg_table)
 }
+
+getDiffMethylation <- function(gene_name,cpg_table) {
+  grabCPGs <- function(gene_name) {
+    return(cpg_table[cpg_table$gene_name == gene_name,2])
+  }
+  gene <- beta_values[grabCPGs(gene_name),]
+  gene <- data.frame(t(gene))
+  gene$mean <- rowMeans(gene)
+  gene$type <- all_data$type
+  gene$type <- c(rep("Naive",7),rep("CM",7),rep("EM",7),rep("TEMRA",6))
+  gene <- gene[,c(ncol(gene)-1,ncol(gene))]
+  gene_summary <- getSummary(gene,"mean","type")
+  return(gene_summary[,c(1,3)])
+}
+
+getDiffMethylationList <- function(gene_list, cpg_table) {
+  diff_meth <- data.frame(matrix(ncol = 0, nrow = 4))
+  diff_meth$type <- c("naive","central_memory","effector_memory","temra")
+  for (gene in 1:length(gene_list)) {
+    table <- getDiffMethylation(gene_list[gene],cpg_table)
+    colnames(table) <- c("type",gene_list[gene])
+    diff_meth <- cbind(diff_meth,table[,gene_list[gene],drop=FALSE])
+  }
+  return (diff_meth)
+}
+
+#Let's focus on these TFs.
+getDiffMethylation2 <- function(gene_name,cpg_table) {
+  grabCPGs <- function(gene_name) {
+    return(cpg_table[cpg_table$gene_name == gene_name,2])
+  }
+  gene <- beta_values[grabCPGs(gene_name),]
+  gene <- data.frame(t(gene))
+  gene$type <- c(rep("Naive",7),rep("CM",7),rep("EM",7),rep("TEMRA",6))
+  gene$name <- gene_name
+  return (gene)
+}
+
+getDiffMethylationList2 <- function(gene_list, cpg_table) {
+  diff_meth <- getDiffMethylation2(gene_list[1],cpg_table)
+  for (gene in 2:length(gene_list)) {
+    table <- getDiffMethylation2(gene_list[gene],cpg_table)
+    diff_meth <- rbind.fill(diff_meth,table)
+  }
+  return (diff_meth)
+}

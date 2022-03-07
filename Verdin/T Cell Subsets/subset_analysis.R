@@ -6,6 +6,7 @@ source("generally_useful.R")
 setwd("/home/atom/Desktop/Data/subset_data") #Sets directory.
 
 #Libraries to import.
+library(plyr)
 library(reshape2)
 library("cgageR")
 library(WGCNA)
@@ -29,6 +30,7 @@ library(stringr)
 library(tidyr)
 library(rstatix)
 library(ggpubr)
+library(gplots)
 
 #Read in clock data and metadata. Merge them and process them.
 clock_data <- read.csv("~/Desktop/Data/subset_data/clock_data.csv")
@@ -227,58 +229,188 @@ ce <- ClusterExperiment(heatdata, heatclus)
 clusterExperiment::plotHeatmap(ce, clusterSamplesData = "dendrogramValue",nFeatures=150, 
                                visualizeData = 'transformed', cexRow = 1.5, fontsize = 15)
 
-#Let's look at differential methylation by subtype by gene
-dna_modifiers <- c("DNMT3A","TET1","TET2","APOBEC3A","APOBEC3D",
-                          "APOBEC3G","APOBEC3H")
-
 #Let's create a custom CpG annotation table.
 genome_annotation <- read.delim("~/Desktop/Data/gencode.v39.annotation.gtf", header=FALSE, comment.char="#")
 
 #Let's re-do the analysis using only the mapped CpGs.
 
-variable_cpgs <- names(sort(apply(beta_values, 1, var),decreasing = TRUE))[1:400000]
-variable_betas <- beta_values[variable_cpgs,]
-variable_annotation <- cpg_annotation[cpg_annotation$probeID %in% variable_cpgs,]
+#variable_cpgs <- names(sort(apply(beta_values, 1, var),decreasing = TRUE))[1:400000]
+#variable_betas <- beta_values[variable_cpgs,]
+#variable_annotation <- cpg_annotation[cpg_annotation$probeID %in% variable_cpgs,]
 
-cpg_table <- createCPGTable(variable_annotation,genome_annotation,1000,2500)
-write.csv(cpg_table,"cpg_table.csv")
+#cpg_table <- createCPGTable(variable_annotation,genome_annotation,1000,2500)
+#write.csv(cpg_table,"cpg_table.csv")
 
-getDiffMethylation <- function(gene_name,cpg_table) {
-  grabCPGs <- function(gene_name) {
-    return(cpg_table[cpg_table$gene_name == gene_name,2])
-  }
-  gene <- beta_values[grabCPGs(gene_name),]
-  gene <- data.frame(t(gene))
-  gene$mean <- rowMeans(gene)
-  gene$type <- all_data$type
-  gene <- gene[,c(ncol(gene)-1,ncol(gene))]
-  gene_summary <- getSummary(gene,"mean","type")
-  return(gene_summary[,c(1,3)])
-}
+cpg_table <- read.csv("~/Desktop/Data/subset_data/cpg_table.csv", row.names=1)
 
-getDiffMethylationList <- function(gene_list, cpg_table) {
-  diff_meth <- data.frame(matrix(ncol = 0, nrow = 4))
-  diff_meth$type <- c("naive","central_memory","effector_memory","temra")
-  for (gene in 1:length(gene_list)) {
-    table <- getDiffMethylation(gene_list[gene],cpg_table)
-    colnames(table) <- c("type",gene_list[gene])
-    diff_meth <- cbind(diff_meth,table[,gene_list[gene],drop=FALSE])
-  }
-  return (diff_meth)
-}
+#Let's look at differential methylation by subtype by gene
+dna_modifiers <- c("DNMT1","DNMT3A","DNMT3B",
+                   "TET1","TET2","TET3",
+                   "APOBEC3A","APOBEC3D","APOBEC3G","APOBEC3H")
+
+histone_modifiers <- c("HDAC1","HDAC4",
+                       "HDAC6","HDAC9", "HDAC11",
+                       "SIRT2","SIRT4","SIRT5",
+                       "SIRT6","SIRT7", "KAT2A","KAT2B",
+                       "KAT6A","KAT6B",
+                       "EHMT1","EHMT2",
+                       "NSD1","PRDM2","SET","SETD3","SETD5","SETD6",
+                       "SETMAR","SMYD1","SMYD2","SMYD3","SMYD5",
+                       "SUV39H1","SUV39H2","ATR")
+
+interesting_histones <- c("SET","HDAC1","KAT2A",
+                          "HDAC11","HDAC9","SIRT2","KAT6A",
+                          "KAT6B","KAT2B")
+
+interleukins <- c("IL3","IL4","IL5","IL6",
+                  "IL9","IL10","IL11",
+                  "IL13","IL15","IL16")
+
+transcription_factors <- as.list(read.table("~/Desktop/Data/subset_data/TFs.txt", 
+                                            quote="\"", comment.char=""))$V1
 
 dna <- getDiffMethylationList(dna_modifiers,cpg_table)
-dna <- melt(dna)
-dna$type <- as.factor(c("naive","central_memory","effector_memory","temra"))
-ggplot(dna,aes(x=type,y=variable,fill=value)) +
-  geom_tile() + theme_classic()
+rownames(dna) <- c("Naive","CM","EM","TEMRA")
+dna <- dna[,-1]
+dna <- log2(dna / rbind(dna[1,],dna[1,],dna[1,],dna[1,]))
+colors = colorRampPalette(c("blue", "black", "green"))(n = 30)
 
-rownames(dna) <- c("Naive","CM", "EM", "TEMRA")
-heatmap.2(t(dna),Rowv=TRUE,density.info="none",dendrogram="row",trace="none",
-          main="DNA Editing Enzymes", revC=TRUE,
-          colsep=1:10, xlab="Cell Type",
-          sepcolor='white', sepwidth=0.05,
+histone <- getDiffMethylationList(histone_modifiers,cpg_table)
+rownames(histone) <- c("Naive","CM","EM","TEMRA")
+histone <- histone[,-1]
+histone <- log2(histone / rbind(histone[1,],histone[1,],histone[1,],histone[1,]))
+
+ils <- getDiffMethylationList(interleukins,cpg_table)
+rownames(ils) <- c("Naive","CM","EM","TEMRA")
+ils <- ils[,-1]
+ils <- log2(ils / rbind(ils[1,],ils[1,],ils[1,],ils[1,]))
+
+TFs <- getDiffMethylationList(transcription_factors,cpg_table)
+TFs <- TFs %>% select_if(~all(!is.na(.)))
+rownames(TFs) <- c("Naive","CM","EM","TEMRA")
+TFs <- TFs[,-1]
+TFs <- log2(TFs / rbind(TFs[1,],TFs[1,],TFs[1,],TFs[1,]))
+
+heatmap.2(t(dna),density.info="none",Rowv = TRUE,Colv=FALSE,dendrogram="row",trace="none",
+          main="DNA Editing Enzymes", revC=TRUE, 
+          colsep=1:4, xlab="Cell Type", key.xlab="Diff Methylation (relative to Naive)",
+          breaks=seq(-1.5,1.5,0.1),col=colors,symkey=F,
           margins =c(10,10),cexRow=1.2,cexCol=1.2)
+
+heatmap.2(t(histone),density.info="none",Rowv = TRUE,dendrogram="row",trace="none",
+          Colv=FALSE, 
+          main="Histone Editing Enzymes", revC=TRUE,
+          colsep=1:10, xlab="Cell Type", key.xlab="Diff Methylation (relative to Naive)", 
+          breaks=seq(-1.5,1.5,0.1), col=colors,symkey=F, 
+          margins =c(10,10),cexRow=.5,cexCol=1.2)
+
+heatmap.2(t(ils),density.info="none",Rowv = TRUE,dendrogram="row", trace="none",
+          Colv=FALSE, colsep=1:4,
+          main="Interleukins",  revC=TRUE, 
+          xlab="Cell Type", key.xlab="Diff Methylation (relative to Naive)", 
+          breaks=seq(-1.5,1.5,0.1), col=colors, symkey=F,
+          margins =c(10,10),cexRow=1.2,cexCol=1.2)
+
+heatmap.2(t(TFs),density.info="none",Rowv = TRUE,dendrogram="row", trace="none",
+          Colv=FALSE, colsep=1:4,
+          main="Transcription Factors",  revC=TRUE, 
+          xlab="Cell Type", key.xlab="Diff Methylation (relative to Naive)", 
+          breaks=seq(-3,3,0.2), col=colors, symkey=F,
+          margins =c(10,10),cexRow=.1,cexCol=1.2)
+
+factors <- data.frame(t(TFs))
+factors[order(factors$CM,decreasing=TRUE),]
+
+hyper <- head(factors[order(factors$EM,decreasing=TRUE),],9)
+hypo <- tail(factors[order(factors$EM,decreasing=TRUE),],9)
+cool_TFs <- data.frame(t(rbind(hyper,hypo)))
+
+heatmap.2(t(cool_TFs),density.info="none",Rowv = TRUE,dendrogram="row", trace="none",
+          Colv=FALSE, colsep=1:4,
+          main="Transcription Factors",  revC=TRUE, 
+          xlab="Cell Type", key.xlab="Diff Methylation (relative to Naive)", 
+          breaks=seq(-3,3,0.2), col=colors, symkey=F,
+          margins =c(10,10),cexRow=.8,cexCol=1.2)
+
+hyper_list<-getDiffMethylationList2(rownames(hyper),cpg_table)
+melted_hyper<-drop_na(melt(hyper_list))
+melted_hyper$type <- factor(melted_hyper$type,levels=c("Naive","CM","EM","TEMRA"))
+
+ggplot(melted_hyper,aes(x=type,y=value,fill=type)) +
+  facet_wrap( ~ name, nrow = 3) +
+  geom_violin(alpha=.5) + theme_classic() +
+  geom_dotplot(binaxis = "y",
+               stackdir = "center",
+               dotsize = 0.5,
+               position="dodge") +
+  theme(legend.position = "none") +
+  xlab("Cell Type") +
+  ylab("Methylated %") +
+  ggtitle("Most-Hypermethylated TFs with Differentiation") +
+  stat_summary(fun = "mean",
+               geom = "pointrange",
+               color = "violet") +
+  scale_fill_brewer(palette="RdYlBu")
+
+hypo_list<-getDiffMethylationList2(rownames(hypo),cpg_table)
+melted_hypo<-drop_na(melt(hypo_list))
+melted_hypo$type <- factor(melted_hypo$type,levels=c("Naive","CM","EM","TEMRA"))
+
+ggplot(melted_hypo,aes(x=type,y=value,fill=type)) +
+  facet_wrap( ~ name, nrow = 3) +
+  geom_violin(alpha=.5) + theme_classic() +
+  geom_dotplot(binaxis = "y",
+               stackdir = "center",
+               dotsize = 0.5,
+               position="dodge") +
+  theme(legend.position = "none") + 
+  xlab("Cell Type") +
+  ylab("Methylated %") +
+  ggtitle("Most-Hypomethylated TFs with Differentiation") +
+  stat_summary(fun = "mean",
+               geom = "pointrange",
+               color = "violet") +
+  scale_fill_brewer(palette="RdYlBu")
+
+dna_binder_list<-getDiffMethylationList2(dna_modifiers[1:9],cpg_table)
+melted_dna<-drop_na(melt(dna_binder_list))
+melted_dna$type <- factor(melted_dna$type,levels=c("Naive","CM","EM","TEMRA"))
+
+ggplot(melted_dna,aes(x=type,y=value,fill=type)) +
+  facet_wrap( ~ name, nrow = 3) +
+  geom_violin(alpha=.5) + theme_classic() +
+  geom_dotplot(binaxis = "y",
+               stackdir = "center",
+               dotsize = 0.5,
+               position="dodge") +
+  theme(legend.position = "none") +
+  ggtitle("DNA-Modifying Enzymes") +
+  xlab("Cell Type") +
+  ylab("Methylated %") +
+  stat_summary(fun = "mean",
+               geom = "pointrange",
+               color = "violet") +
+  scale_fill_brewer(palette="RdYlBu")
+
+histones_list<-getDiffMethylationList2(interesting_histones,cpg_table)
+melted_histones<-drop_na(melt(histones_list))
+melted_histones$type <- factor(melted_histones$type,levels=c("Naive","CM","EM","TEMRA"))
+
+ggplot(melted_histones,aes(x=type,y=value,fill=type)) +
+  facet_wrap( ~ name, nrow = 3) +
+  geom_violin(alpha=.5) + theme_classic() +
+  geom_dotplot(binaxis = "y",
+               stackdir = "center",
+               dotsize = 0.5,
+               position="dodge") +
+  theme(legend.position = "none") +
+  xlab("Cell Type") +
+  ylab("Methylated %") +
+  ggtitle("Histone-Modifying Enzymes") +
+  stat_summary(fun = "mean",
+               geom = "pointrange",
+               color = "violet") +
+  scale_fill_brewer(palette="RdYlBu")
 
 # #Read in annotations to create a 'mapping table' that links together metadata, CpG data, and 
 # #clock information.
