@@ -412,6 +412,36 @@ ggplot(melted_histones,aes(x=type,y=value,fill=type)) +
                color = "violet") +
   scale_fill_brewer(palette="RdYlBu")
 
+getAllGeneMethylation <- function(cpg_table) {
+  genome_annotation <- genome_annotation[genome_annotation$V3 == "gene" | genome_annotation$V3 == "ncRNA",]
+  genome_annotation <- separate(genome_annotation, V9, c("gene_id","gene_type","gene_name"), ";")
+  desired_columns <- c(1,3,4,5,7,11)
+  genome_annotation <- genome_annotation[,desired_columns]
+  genome_annotation <- separate(genome_annotation,gene_name,c("trash","trash2","gene_name")," ")
+  genome_annotation <- genome_annotation[,c(1,2,3,4,5,8)]
+  all_genes <- genome_annotation[,c(6)]
+  gene <- all_genes[1]
+  gene <- beta_values[grabCPGs(gene),]
+  gene <- data.frame(t(gene))
+  gene$mean <- rowMeans(gene)
+  complete_table <- data.frame(t(gene$mean))
+  colnames(complete_table) <- rownames(gene)
+  rownames(complete_table) <- all_genes[1]
+  for (x in 2:length(all_genes)) {
+    gene <- all_genes[x]
+    gene <- beta_values[grabCPGs(gene),]
+    gene <- data.frame(t(gene))
+    gene$mean <- rowMeans(gene)
+    gene_table <- data.frame(t(gene$mean))
+    colnames(gene_table) <- rownames(gene)
+    rownames(gene_table) <- all_genes[x]
+    complete_table <- rbind(complete_table,gene_table)
+  }
+  return(complete_table)
+}
+
+complete_table <- getAllGeneMethylation(cpg_table)
+
 # #Read in annotations to create a 'mapping table' that links together metadata, CpG data, and 
 # #clock information.
 # cpg_annotation <- read.delim("~/Desktop/Data/subset_data/EPIC.hg38.manifest.tsv")
