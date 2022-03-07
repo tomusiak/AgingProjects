@@ -441,6 +441,36 @@ getAllGeneMethylation <- function(cpg_table) {
 }
 
 complete_table <- getAllGeneMethylation(cpg_table)
+complete_table <- na.omit(complete_table)
+write.csv(complete_table,"complete_table.csv")
+
+fit.reduced_2 <- lmFit(complete_table,design)
+fit.reduced_2 <- eBayes(fit.reduced_2, robust=TRUE)
+summary(decideTests(fit.reduced_2))
+diff_exp_2 <-topTable(fit.reduced_2,coef=8,number=1000)
+diff_exp_order_2 <- diff_exp_2[order(diff_exp_2$adj.P.Val),]
+top <- rownames(head(diff_exp_order_2,9))
+
+
+top_list<-getDiffMethylationList2(top,cpg_table)
+top_list<-drop_na(melt(top_list))
+top_list$type <- factor(top_list$type,levels=c("Naive","CM","EM","TEMRA"))
+
+ggplot(top_list,aes(x=type,y=value,fill=type)) +
+  facet_wrap( ~ name, nrow = 3) +
+  geom_violin(alpha=.5) + theme_classic() +
+  geom_dotplot(binaxis = "y",
+               stackdir = "center",
+               dotsize = 0.5,
+               position="dodge") +
+  theme(legend.position = "none") +
+  xlab("Cell Type") +
+  ylab("Methylated %") +
+  ggtitle("Histone-Modifying Enzymes") +
+  stat_summary(fun = "mean",
+               geom = "pointrange",
+               color = "violet") +
+  scale_fill_brewer(palette="RdYlBu")
 
 # #Read in annotations to create a 'mapping table' that links together metadata, CpG data, and 
 # #clock information.
