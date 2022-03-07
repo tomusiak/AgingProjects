@@ -147,10 +147,11 @@ createCPGTable <- function(cpg_annotation, genome_annotation, upstream, downstre
   return(cpg_table)
 }
 
+grabCPGs <- function(gene_name) {
+  return(cpg_table[cpg_table$gene_name == gene_name,2])
+}
+
 getDiffMethylation <- function(gene_name,cpg_table) {
-  grabCPGs <- function(gene_name) {
-    return(cpg_table[cpg_table$gene_name == gene_name,2])
-  }
   gene <- beta_values[grabCPGs(gene_name),]
   gene <- data.frame(t(gene))
   gene$mean <- rowMeans(gene)
@@ -158,6 +159,8 @@ getDiffMethylation <- function(gene_name,cpg_table) {
   gene$type <- c(rep("Naive",7),rep("CM",7),rep("EM",7),rep("TEMRA",6))
   gene <- gene[,c(ncol(gene)-1,ncol(gene))]
   gene_summary <- getSummary(gene,"mean","type")
+  gene_summary <- gene_summary %>% arrange(factor(type,levels=c("Naive","CM",
+                                                                "EM","TEMRA")))
   return(gene_summary[,c(1,3)])
 }
 
@@ -189,6 +192,51 @@ getDiffMethylationList2 <- function(gene_list, cpg_table) {
   diff_meth <- getDiffMethylation2(gene_list[1],cpg_table)
   for (gene in 2:length(gene_list)) {
     table <- getDiffMethylation2(gene_list[gene],cpg_table)
+    diff_meth <- rbind.fill(diff_meth,table)
+  }
+  return (diff_meth)
+}
+
+getAllGeneMethylation <- function(genome_annotation,cpg_table) {
+  genome_annotation <- genome_annotation[genome_annotation$V3 == "gene" | genome_annotation$V3 == "ncRNA",]
+  genome_annotation <- separate(genome_annotation, V9, c("gene_id","gene_type","gene_name"), ";")
+  desired_columns <- c(1,3,4,5,7,11)
+  genome_annotation <- genome_annotation[,desired_columns]
+  genome_annotation <- separate(genome_annotation,gene_name,c("trash","trash2","gene_name")," ")
+  genome_annotation <- genome_annotation[,c(1,2,3,4,5,8)]
+  all_genes <- genome_annotation[,c(6)]
+  gene <- all_genes[1]
+  gene <- beta_values[grabCPGs(gene),]
+  gene <- data.frame(t(gene))
+  gene$mean <- rowMeans(gene)
+  complete_table <- data.frame(t(gene$mean))
+  colnames(complete_table) <- rownames(gene)
+  rownames(complete_table) <- all_genes[1]
+  for (x in 2:length(all_genes)) {
+    gene <- all_genes[x]
+    gene <- beta_values[grabCPGs(gene),]
+    gene <- data.frame(t(gene))
+    gene$mean <- rowMeans(gene)
+    gene_table <- data.frame(t(gene$mean))
+    colnames(gene_table) <- rownames(gene)
+    rownames(gene_table) <- all_genes[x]
+    complete_table <- rbind(complete_table,gene_table)
+  }
+  return(complete_table)
+}
+
+getDiffMethylationAge <- function(gene_name,cpg_table) {
+  gene <- beta_values[grabCPGs(gene_name),]
+  gene <- data.frame(t(gene))
+  gene$older <- as.factor(all_data$older)
+  gene$name <- gene_name
+  return (gene)
+}
+
+getDiffMethylationListAge <- function(gene_list, cpg_table) {
+  diff_meth <- getDiffMethylationAge(gene_list[1],cpg_table)
+  for (gene in 2:length(gene_list)) {
+    table <- getDiffMethylationAge(gene_list[gene],cpg_table)
     diff_meth <- rbind.fill(diff_meth,table)
   }
   return (diff_meth)

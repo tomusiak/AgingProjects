@@ -6,6 +6,7 @@ source("generally_useful.R")
 setwd("/home/atom/Desktop/Data/subset_data") #Sets directory.
 
 #Libraries to import.
+library(methylGSA)
 library(plyr)
 library(reshape2)
 library("cgageR")
@@ -57,7 +58,7 @@ all_data$type <- factor(all_data$type, levels=c("naive", "central_memory", "effe
 #write.csv(beta_values,"beta_values.csv")
 #write.csv(m_values,"m_values.csv")
 beta_values <- read.csv("~/Desktop/Data/subset_data/beta_values.csv", row.names=1)
-m_values <- read.csv("~/Desktop/Data/subset_data/m_values.csv", row.names=1)
+#m_values <- read.csv("~/Desktop/Data/subset_data/m_values.csv", row.names=1)
 
 #Filter out unwanted data from metadata, mapping, and beta values.
 keep <- all_data$SampleID[all_data$SampleID != "D3" & all_data$sabgal_sample == FALSE]
@@ -208,9 +209,12 @@ design <- model.matrix(~0 + donor_group + diff_group)
 fit.reduced <- lmFit(beta_values,design)
 fit.reduced <- eBayes(fit.reduced, robust=TRUE)
 summary(decideTests(fit.reduced))
-diff_exp <-topTable(fit.reduced,coef=8,number=1000)
+diff_exp <-topTable(fit.reduced,coef=8,number=1000000)
 #messing with pseudotime
 diff_exp_order <- diff_exp[order(diff_exp$adj.P.Val),]
+pvals <- as.vector(diff_exp_order[,5])
+names(pvals) <- rownames(diff_exp_order)
+adjustment <- methylglm(pvals, array.type = "EPIC")
 
 Y <- drop_na(beta_values[rownames(diff_exp_order), ]) 
 t <- umap_plot_df$X2
@@ -264,7 +268,7 @@ interesting_histones <- c("SET","HDAC1","KAT2A",
 
 interleukins <- c("IL3","IL4","IL5","IL6",
                   "IL9","IL10","IL11",
-                  "IL13","IL15","IL16")
+                  "IL13","IL15","IL16","IL17D")
 
 transcription_factors <- as.list(read.table("~/Desktop/Data/subset_data/TFs.txt", 
                                             quote="\"", comment.char=""))$V1
@@ -321,8 +325,8 @@ heatmap.2(t(TFs),density.info="none",Rowv = TRUE,dendrogram="row", trace="none",
 factors <- data.frame(t(TFs))
 factors[order(factors$CM,decreasing=TRUE),]
 
-hyper <- head(factors[order(factors$EM,decreasing=TRUE),],9)
-hypo <- tail(factors[order(factors$EM,decreasing=TRUE),],9)
+hyper <- head(factors[order(factors$EM,decreasing=TRUE),],12)
+hypo <- tail(factors[order(factors$EM,decreasing=TRUE),],12)
 cool_TFs <- data.frame(t(rbind(hyper,hypo)))
 
 heatmap.2(t(cool_TFs),density.info="none",Rowv = TRUE,dendrogram="row", trace="none",
@@ -330,7 +334,7 @@ heatmap.2(t(cool_TFs),density.info="none",Rowv = TRUE,dendrogram="row", trace="n
           main="Transcription Factors",  revC=TRUE, 
           xlab="Cell Type", key.xlab="Diff Methylation (relative to Naive)", 
           breaks=seq(-3,3,0.2), col=colors, symkey=F,
-          margins =c(10,10),cexRow=.8,cexCol=1.2)
+          margins =c(10,10),cexRow=.6,cexCol=1.2)
 
 hyper_list<-getDiffMethylationList2(rownames(hyper),cpg_table)
 melted_hyper<-drop_na(melt(hyper_list))
@@ -412,45 +416,55 @@ ggplot(melted_histones,aes(x=type,y=value,fill=type)) +
                color = "violet") +
   scale_fill_brewer(palette="RdYlBu")
 
-getAllGeneMethylation <- function(cpg_table) {
-  genome_annotation <- genome_annotation[genome_annotation$V3 == "gene" | genome_annotation$V3 == "ncRNA",]
-  genome_annotation <- separate(genome_annotation, V9, c("gene_id","gene_type","gene_name"), ";")
-  desired_columns <- c(1,3,4,5,7,11)
-  genome_annotation <- genome_annotation[,desired_columns]
-  genome_annotation <- separate(genome_annotation,gene_name,c("trash","trash2","gene_name")," ")
-  genome_annotation <- genome_annotation[,c(1,2,3,4,5,8)]
-  all_genes <- genome_annotation[,c(6)]
-  gene <- all_genes[1]
-  gene <- beta_values[grabCPGs(gene),]
-  gene <- data.frame(t(gene))
-  gene$mean <- rowMeans(gene)
-  complete_table <- data.frame(t(gene$mean))
-  colnames(complete_table) <- rownames(gene)
-  rownames(complete_table) <- all_genes[1]
-  for (x in 2:length(all_genes)) {
-    gene <- all_genes[x]
-    gene <- beta_values[grabCPGs(gene),]
-    gene <- data.frame(t(gene))
-    gene$mean <- rowMeans(gene)
-    gene_table <- data.frame(t(gene$mean))
-    colnames(gene_table) <- rownames(gene)
-    rownames(gene_table) <- all_genes[x]
-    complete_table <- rbind(complete_table,gene_table)
-  }
-  return(complete_table)
-}
-
 complete_table <- getAllGeneMethylation(cpg_table)
 complete_table <- na.omit(complete_table)
 write.csv(complete_table,"complete_table.csv")
 
+complete_table <- read.csv("~/Desktop/Data/subset_data/complete_table.csv", row.names=1)
+
+#Let's look at UMAP per genes.
+gene_table_rotated <- t(complete_table)
+gene_umap <- umap(gene_table_rotated)
+gene_umap_plot_df <- data.frame(gene_umap$layout) %>%
+  tibble::rownames_to_column("SampleID") %>%
+  dplyr::inner_join(all_data, by = "SampleID")
+gene_umap_plot_df$type <- as.character(gene_umap_plot_df$type)
+gene_umap_plot_df$type <- factor(gene_umap_plot_df$type, levels=c("naive", "central_memory", "effector_memory","temra"))
+ggplot(
+  gene_umap_plot_df,
+  aes(x = X1, y = X2, color=type)) +
+  labs(x="UMAP Component 1", y="UMAP Component 2", title = "UMAP Visualization - Genes") +
+  theme_classic() +
+  geom_point() # Plot individual points to make a scatterplot
+
+ggplot(gene_umap_plot_df,aes(x=type,y=X2, color=age)) + 
+  theme_classic() +
+  labs(x="CD8 Cell Subtype", y="UMAP Component 2",title="UMAP Component 2 Tracks Cell Lineage") +
+  geom_point()
+
+all_data$differentiation <- -gene_umap_plot_df$X2
+diff_group <- all_data$differentiation
+design <- model.matrix(~0 + donor_group + diff_group)
+
 fit.reduced_2 <- lmFit(complete_table,design)
 fit.reduced_2 <- eBayes(fit.reduced_2, robust=TRUE)
 summary(decideTests(fit.reduced_2))
-diff_exp_2 <-topTable(fit.reduced_2,coef=8,number=1000)
+diff_exp_2 <-topTable(fit.reduced_2,coef=8,number=400000)
 diff_exp_order_2 <- diff_exp_2[order(diff_exp_2$adj.P.Val),]
-top <- rownames(head(diff_exp_order_2,9))
 
+diff_exp_order_2 <-
+  diff_exp_order_2[!grepl("ENSG",rownames(diff_exp_order_2)),]
+
+diff_exp_order_2 <-
+  diff_exp_order_2[!grepl("MIR",rownames(diff_exp_order_2)),]
+
+diff_exp_order_2 <-
+  diff_exp_order_2[!grepl("RNU",rownames(diff_exp_order_2)),]
+
+diff_exp_order_2 <-
+  diff_exp_order_2[!grepl("LINC",rownames(diff_exp_order_2)),]
+
+top <- rownames(head(diff_exp_order_2,12))
 
 top_list<-getDiffMethylationList2(top,cpg_table)
 top_list<-drop_na(melt(top_list))
@@ -466,58 +480,109 @@ ggplot(top_list,aes(x=type,y=value,fill=type)) +
   theme(legend.position = "none") +
   xlab("Cell Type") +
   ylab("Methylated %") +
-  ggtitle("Histone-Modifying Enzymes") +
+  ggtitle("Most Differentially-Methylated Genes") +
   stat_summary(fun = "mean",
                geom = "pointrange",
                color = "violet") +
   scale_fill_brewer(palette="RdYlBu")
 
-# #Read in annotations to create a 'mapping table' that links together metadata, CpG data, and 
-# #clock information.
-# cpg_annotation <- read.delim("~/Desktop/Data/subset_data/EPIC.hg38.manifest.tsv")
-# matched_positions <- match(rownames(beta_values),annotations$probeID) #Finds valid matches in table.
-# matched_symbols <- annotations$gene[matched_positions]
-# beta_values$gene <- matched_symbols
-# m_values$gene <- matched_symbols
-# beta_values <- na.omit(beta_values)
-# m_values <- na.omit(m_values)
-# cpg_data <- beta_values
-# write.csv(cpg_data,"cpg_data.csv")
-# unique_names <- make.names(beta_values$gene,unique=TRUE)
-# rownames(beta_values) <- unique_names
-# rownames(m_values) <- unique_names
-# mapping <- cbind(cpg_data,beta_values)
-# mapping$row_name <-rownames(beta_values) 
-# beta_values <- beta_values[,1:32]
-# m_values <- m_values[1:32]
-# mapping$cpg <- rownames(mapping)
-# beginning_positions <- match(mapping$cpg,annotations$probeID)
-# mapping$begin <- annotations$CpG_beg[beginning_positions]
-# mapping$end <- annotations$CpG_end[beginning_positions]
-# write.csv(mapping,"mapping.csv")
-# mapping <- read.csv("~/Desktop/Data/subset_data/mapping.csv", row.names=1)
+#Creates a volcano plot using the corrected counts.
+diff_exp_order_2$color=factor(case_when(diff_exp_order_2$adj.P.Val < .05 & abs(diff_exp_order_2$logFC) >= .10 ~ "purple",
+                                        (diff_exp_order_2$adj.P.Val < .05 & abs(diff_exp_order_2$logFC) < .10) ~ "red",
+                                        (diff_exp_order_2$adj.P.Val >= .05 & abs(diff_exp_order_2$logFC) >= .10) ~ "blue",
+                                        (diff_exp_order_2$adj.P.Val >= .05 & abs(diff_exp_order_2$logFC) < .10) ~ "gray"))
+diff_exp_order_2$delabel <- NA
+diff_exp_order_2$delabel[diff_exp_order_2$color=="purple"] <- rownames(diff_exp_order_2)[diff_exp_order_2$color=="purple"]
+ggplot(data=diff_exp_order_2, aes(x=logFC, y=-log10(adj.P.Val), color=color)) + 
+  geom_point() +
+  xlim(-.25,.25) + ylim(0,20) +
+  theme_classic(base_size=18)  +
+  geom_hline(yintercept = 1.2,linetype="dotted") +
+  geom_vline(xintercept = .1,linetype="dotted") +
+  geom_vline(xintercept = -.1,linetype="dotted") +
+  scale_colour_identity() +
+  labs(title="Volcano Plot for Differentiation")
+
+#Let's look at aging!
+all_data$older <- all_data$age > 35
+age_group <- all_data$older
+age_design <- model.matrix(~0 + celltype_group + age_group)
+
+fit.reduced_age <- lmFit(complete_table,age_design)
+fit.reduced_age <- eBayes(fit.reduced_age, robust=TRUE)
+summary(decideTests(fit.reduced_age))
+diff_exp_age <-topTable(fit.reduced_age,coef=5,number=400000)
+diff_exp_order_age <- diff_exp_age[order(diff_exp_age$adj.P.Val),]
+
+top_age <- rownames(head(diff_exp_order_age,12))
+
+top_list_age<-getDiffMethylationListAge(top_age,cpg_table)
+top_list_age<-drop_na(melt(top_list_age))
+
+ggplot(top_list_age,aes(x=older,y=value,fill=older)) +
+  facet_wrap( ~ name, nrow = 3) +
+  geom_violin(alpha=.5) + theme_classic() +
+  geom_dotplot(binaxis = "y",
+               stackdir = "center",
+               dotsize = 0.5,
+               position="dodge") +
+  theme(legend.position = "none") +
+  xlab("> 60 Years Old") +
+  ylab("Methylated %") +
+  ggtitle("Most Differentially-Methylated Genes") +
+  stat_summary(fun = "mean",
+               geom = "pointrange",
+               color = "violet") +
+  scale_fill_brewer(palette="RdYlBu")
+
+#Creates a volcano plot using the corrected counts.
+diff_exp_order_age$color=factor(case_when(diff_exp_order_age$adj.P.Val < .05 & abs(diff_exp_order_age$logFC) >= .25 ~ "purple",
+                                        (diff_exp_order_age$adj.P.Val < .05 & abs(diff_exp_order_age$logFC) < .25) ~ "red",
+                                        (diff_exp_order_age$adj.P.Val >= .05 & abs(diff_exp_order_age$logFC) >= .25) ~ "blue",
+                                        (diff_exp_order_age$adj.P.Val >= .05 & abs(diff_exp_order_age$logFC) < .25) ~ "gray"))
+diff_exp_order_age$delabel <- NA
+diff_exp_order_age$delabel[diff_exp_order_age$color=="purple"] <- rownames(diff_exp_order_age)[diff_exp_order_age$color=="purple"]
+ggplot(data=diff_exp_order_age, aes(x=logFC, y=-log10(adj.P.Val), color=color)) + 
+  geom_point() +
+  xlim(-.5,.5) + ylim(0,20) +
+  theme_classic(base_size=18)  +
+  geom_hline(yintercept = 1.2,linetype="dotted") +
+  geom_vline(xintercept = .25,linetype="dotted") +
+  geom_vline(xintercept = -.25,linetype="dotted") +
+  scale_colour_identity() +
+  labs(title="Volcano Plot for Aging")
+
+fit_aging <- lmFit(beta_values,age_design)
+fit_aging <- eBayes(fit_aging, robust=TRUE)
+summary(decideTests(fit_aging))
+diff_exp_aging <-topTable(fit_aging,coef=5,number=100000)
+#messing with pseudotime
+diff_exp_aging_order <- diff_exp_aging[order(diff_exp_aging$adj.P.Val),]
+pvals_aging <- as.vector(diff_exp_aging_order[,5])
+names(pvals_aging) <- rownames(diff_exp_aging_order)
+diff_aging <- methylglm(pvals_aging, array.type = "EPIC")
 
 #Looking at clock CpGs
-data(HorvathLongCGlist)
-clock_list <- HorvathLongCGlist
-matching_cpgs <- match(clock_list$MR_var,mapping$cpg)
-gene_names <- mapping$row_name[matching_cpgs]
-clock_changes <- na.omit(diff_exp[gene_names,1:6])
-clock_changes <- clock_changes[order(clock_changes$adj.P.Val),]
-clock_changes$color=factor(case_when(clock_changes$adj.P.Val < .05 & abs(clock_changes$logFC) >= .25 ~ "purple",
-                                     (clock_changes$adj.P.Val < .05 & abs(clock_changes$logFC) < .25) ~ "red",
-                                     (clock_changes$adj.P.Val > .05 & abs(clock_changes$logFC) >= .25) ~ "blue",
-                                     (clock_changes$adj.P.Val > .05 & abs(clock_changes$logFC) < .25) ~ "gray"))
-clock_changes$delabel <- NA
-clock_changes$delabel[clock_changes$color=="purple"] <- rownames(clock_changes)[clock_changes$color=="purple"]
-ggplot(data=clock_changes, aes(x=logFC, y=-log10(adj.P.Val), color=color,label=delabel)) + 
-  geom_point() +
-  xlim(-1,1) + ylim(0,12) +
-  theme_classic(base_size=15)  + 
-  geom_vline(xintercept=.25,linetype="dotted") +
-  geom_vline(xintercept=-.25,linetype="dotted") +
-  geom_hline(yintercept = 1.2,linetype="dotted") +
-  geom_text(nudge_y=.2) +
-  scale_colour_identity() +
-  labs(title="Volcano Plot of Clock CpG Sites Changing between Naive & TEMRA Samples")
-head(clock_changes)
+#data(HorvathLongCGlist)
+#clock_list <- HorvathLongCGlist
+#matching_cpgs <- match(clock_list$MR_var,mapping$cpg)
+#gene_names <- mapping$row_name[matching_cpgs]
+#clock_changes <- na.omit(diff_exp[gene_names,1:6])
+#clock_changes <- clock_changes[order(clock_changes$adj.P.Val),]
+#clock_changes$color=factor(case_when(clock_changes$adj.P.Val < .05 & abs(clock_changes$logFC) >= .3 ~ "purple",
+#                                     (clock_changes$adj.P.Val < .05 & abs(clock_changes$logFC) < .3) ~ "red",
+#                                     (clock_changes$adj.P.Val > .05 & abs(clock_changes$logFC) >= .3) ~ "blue",
+#                                     (clock_changes$adj.P.Val > .05 & abs(clock_changes$logFC) < .3) ~ "gray"))
+#clock_changes$delabel <- NA
+#clock_changes$delabel[clock_changes$color=="purple"] <- rownames(clock_changes)[clock_changes$color=="purple"]
+#ggplot(data=clock_changes, aes(x=logFC, y=-log10(adj.P.Val), color=color,label=delabel)) + 
+#  geom_point() +
+#  xlim(-1,1) + ylim(0,12) +
+#  theme_classic(base_size=15)  + 
+#  geom_vline(xintercept=.25,linetype="dotted") +
+#  geom_vline(xintercept=-.25,linetype="dotted") +
+#  geom_hline(yintercept = 1.2,linetype="dotted") +
+#  geom_text(nudge_y=.2) +
+#  scale_colour_identity() +
+#  labs(title="Volcano Plot of Clock CpG Sites Changing between Naive & TEMRA Samples")
+#head(clock_changes)
