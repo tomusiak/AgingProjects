@@ -147,10 +147,11 @@ createCPGTable <- function(cpg_annotation, genome_annotation, upstream, downstre
   return(cpg_table)
 }
 
+grabCPGs <- function(gene_name) {
+  return(cpg_table[cpg_table$gene_name == gene_name,2])
+}
+
 getDiffMethylation <- function(gene_name,cpg_table) {
-  grabCPGs <- function(gene_name) {
-    return(cpg_table[cpg_table$gene_name == gene_name,2])
-  }
   gene <- beta_values[grabCPGs(gene_name),]
   gene <- data.frame(t(gene))
   gene$mean <- rowMeans(gene)
