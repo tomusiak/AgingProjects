@@ -324,7 +324,6 @@ heatmap.2(t(TFs),density.info="none",Rowv = TRUE,dendrogram="row", trace="none",
           margins =c(10,10),cexRow=.1,cexCol=1.2)
 
 factors <- data.frame(t(TFs))
-factors[order(factors$CM,decreasing=TRUE),]
 
 hyper <- head(factors[order(factors$EM,decreasing=TRUE),],12)
 hypo <- tail(factors[order(factors$EM,decreasing=TRUE),],12)
@@ -565,6 +564,42 @@ diff_exp_aging_order <- diff_exp_aging[order(diff_exp_aging$adj.P.Val),]
 pvals_aging <- as.vector(diff_exp_aging_order[,5])
 names(pvals_aging) <- rownames(diff_exp_aging_order)
 diff_aging <- methylglm(pvals_aging, array.type = "EPIC")
+
+all_data$PC1 <- -gene_umap_plot_df$X1
+PC1_group <- all_data$PC1
+PC1_design <- model.matrix(~0 + donor_group + PC1_group)
+
+fit_reduced_PC1 <- lmFit(complete_table,PC1_design)
+fit_reduced_PC1 <- eBayes(fit_reduced_PC1, robust=TRUE)
+summary(decideTests(fit_reduced_PC1))
+diff_exp_PC1 <-topTable(fit_reduced_PC1,coef=8,number=400000)
+diff_exp_order_PC1 <- diff_exp_PC1[order(diff_exp_PC1$adj.P.Val),]
+
+diff_exp_order_PC1 <-
+  diff_exp_order_PC1[!grepl("ENSG",rownames(diff_exp_order_PC1)),]
+
+top_PC1 <- rownames(head(diff_exp_order_PC1,12))
+top_list_PC1<-getDiffMethylationList2(top_PC1,cpg_table)
+top_list_PC1<-drop_na(melt(top_list_PC1))
+ggplot(top_list_PC1,aes(x=type,y=value,fill=type)) +
+  facet_wrap( ~ name, nrow = 3) +
+  geom_violin(alpha=.5) + theme_classic() +
+  geom_dotplot(binaxis = "y",
+               stackdir = "center",
+               dotsize = 0.5,
+               position="dodge") +
+  theme(legend.position = "none") +
+  xlab("> 60 Years Old") +
+  ylab("Methylated %") +
+  ggtitle("Most Differentially-Methylated Genes") +
+  stat_summary(fun = "mean",
+               geom = "pointrange",
+               color = "violet") +
+  scale_fill_brewer(palette="RdYlBu")
+
+#TFs going DOWN
+
+
 
 #Looking at clock CpGs
 #data(HorvathLongCGlist)
