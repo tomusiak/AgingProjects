@@ -4,7 +4,6 @@ source("generally_useful.R")
 
 #Sets location of data 
 setwd("/home/atom/Desktop/Data/subset_data") #Sets directory.
-
 #Libraries to import.
 library(methylGSA)
 library(plyr)
@@ -32,6 +31,7 @@ library(tidyr)
 library(rstatix)
 library(ggpubr)
 library(gplots)
+library(minfi)
 
 #Read in clock data and metadata. Merge them and process them.
 clock_data <- read.csv("~/Desktop/Data/subset_data/clock_data.csv")
@@ -209,7 +209,7 @@ design <- model.matrix(~0 + donor_group + diff_group)
 fit.reduced <- lmFit(beta_values,design)
 fit.reduced <- eBayes(fit.reduced, robust=TRUE)
 summary(decideTests(fit.reduced))
-diff_exp <-topTable(fit.reduced,coef=8,number=1000)
+diff_exp <-topTable(fit.reduced,coef=8,number=1000000)
 #messing with pseudotime
 diff_exp_order <- diff_exp[order(diff_exp$adj.P.Val),]
 pvals <- as.vector(diff_exp_order[,5])
@@ -537,9 +537,9 @@ ggplot(top_list_age,aes(x=older,y=value,fill=older)) +
 
 #Creates a volcano plot using the corrected counts.
 diff_exp_order_age$color=factor(case_when(diff_exp_order_age$adj.P.Val < .05 & abs(diff_exp_order_age$logFC) >= .25 ~ "purple",
-                                        (diff_exp_order_age$adj.P.Val < .05 & abs(diff_exp_order_age$logFC) < .25) ~ "red",
-                                        (diff_exp_order_age$adj.P.Val >= .05 & abs(diff_exp_order_age$logFC) >= .25) ~ "blue",
-                                        (diff_exp_order_age$adj.P.Val >= .05 & abs(diff_exp_order_age$logFC) < .25) ~ "gray"))
+                                          (diff_exp_order_age$adj.P.Val < .05 & abs(diff_exp_order_age$logFC) < .25) ~ "red",
+                                          (diff_exp_order_age$adj.P.Val >= .05 & abs(diff_exp_order_age$logFC) >= .25) ~ "blue",
+                                          (diff_exp_order_age$adj.P.Val >= .05 & abs(diff_exp_order_age$logFC) < .25) ~ "gray"))
 diff_exp_order_age$delabel <- NA
 diff_exp_order_age$delabel[diff_exp_order_age$color=="purple"] <- rownames(diff_exp_order_age)[diff_exp_order_age$color=="purple"]
 ggplot(data=diff_exp_order_age, aes(x=logFC, y=-log10(adj.P.Val), color=color)) + 
@@ -561,6 +561,14 @@ diff_exp_aging_order <- diff_exp_aging[order(diff_exp_aging$adj.P.Val),]
 pvals_aging <- as.vector(diff_exp_aging_order[,5])
 names(pvals_aging) <- rownames(diff_exp_aging_order)
 diff_aging <- methylglm(pvals_aging, array.type = "EPIC")
+
+#Let's try methylkit.
+sig_difs <- diff_exp_order[diff_exp_order$adj.P.Val < .05,]
+sig_difs_aging <- diff_exp_aging_order[diff_exp_aging_order$adj.P.Val < .05,]
+go <- gometh(rownames(sig_difs),array.type="EPIC")
+go_aging <- gometh(rownames(sig_difs_aging),array.type="EPIC")
+
+
 
 #Looking at clock CpGs
 #data(HorvathLongCGlist)
