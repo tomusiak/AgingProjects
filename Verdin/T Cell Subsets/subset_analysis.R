@@ -268,7 +268,8 @@ interesting_histones <- c("SET","HDAC1","KAT2A",
 
 interleukins <- c("IL3","IL4","IL5","IL6",
                   "IL9","IL10","IL11",
-                  "IL13","IL15","IL16","IL17D")
+                  "IL13","IL15","IL16","IL17D","IL17A",
+                  "IL17B","IL17C","IL25")
 
 transcription_factors <- as.list(read.table("~/Desktop/Data/subset_data/TFs.txt", 
                                             quote="\"", comment.char=""))$V1
@@ -308,12 +309,12 @@ heatmap.2(t(histone),density.info="none",Rowv = TRUE,dendrogram="row",trace="non
           breaks=seq(-1.5,1.5,0.1), col=colors,symkey=F, 
           margins =c(10,10),cexRow=.5,cexCol=1.2)
 
-heatmap.2(t(ils),density.info="none",Rowv = TRUE,dendrogram="row", trace="none",
+heatmap.2(t(ils),density.info="none",dendrogram="none", trace="none", Rowv=FALSE,
           Colv=FALSE, colsep=1:4,
           main="Interleukins",  revC=TRUE, 
           xlab="Cell Type", key.xlab="Diff Methylation (relative to Naive)", 
           breaks=seq(-1.5,1.5,0.1), col=colors, symkey=F,
-          margins =c(10,10),cexRow=1.2,cexCol=1.2)
+          margins =c(10,10),cexRow=.8,cexCol=1.2)
 
 heatmap.2(t(TFs),density.info="none",Rowv = TRUE,dendrogram="row", trace="none",
           Colv=FALSE, colsep=1:4,
@@ -480,7 +481,7 @@ ggplot(top_list,aes(x=type,y=value,fill=type)) +
   theme(legend.position = "none") +
   xlab("Cell Type") +
   ylab("Methylated %") +
-  ggtitle("Most Differentially-Methylated Genes") +
+  ggtitle("Most Differentially-Methylated Genes With Differentiation") +
   stat_summary(fun = "mean",
                geom = "pointrange",
                color = "violet") +
