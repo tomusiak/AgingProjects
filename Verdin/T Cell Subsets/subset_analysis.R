@@ -271,6 +271,11 @@ interleukins <- c("IL3","IL4","IL5","IL6",
                   "IL13","IL15","IL16","IL17D","IL17A",
                   "IL17B","IL17C","IL25")
 
+known_diff_TFs <- c("TCF7","EOMES", "FOXO1",
+                    "BATF","IRF4",
+                    "TBX21","RUNX3","PRDM1",
+                    "LEF1")
+
 transcription_factors <- as.list(read.table("~/Desktop/Data/subset_data/TFs.txt", 
                                             quote="\"", comment.char=""))$V1
 
@@ -597,9 +602,80 @@ ggplot(top_list_PC1,aes(x=type,y=value,fill=type)) +
                color = "violet") +
   scale_fill_brewer(palette="RdYlBu")
 
+#TFs going UP
+TFs_hypermeth <- diff_exp_2[rownames(factors),]
+TFs_hypermeth <- TFs_hypermeth[TFs_hypermeth$adj.P.Val < .01 & TFs_hypermeth$logFC < -.05,]
+TFs_hypermeth <- TFs_hypermeth[order(TFs_hypermeth$logFC),]
+top_TFs_hypermeth <- TFs_hypermeth[1:12,]
+
+top_TFs_hypermeth<-getDiffMethylationList2(rownames(top_TFs_hypermeth),cpg_table)
+top_TFs_hypermeth<-drop_na(melt(top_TFs_hypermeth))
+top_TFs_hypermeth$type <- factor(top_TFs_hypermeth$type,levels=c("Naive","CM","EM","TEMRA"))
+
+ggplot(top_TFs_hypermeth,aes(x=type,y=value,fill=type)) +
+  facet_wrap( ~ name, nrow = 3) +
+  geom_violin(alpha=.5) + theme_classic() +
+  geom_dotplot(binaxis = "y",
+               stackdir = "center",
+               dotsize = 0.5,
+               position="dodge") +
+  theme(legend.position = "none") +
+  xlab("Cell Type") +
+  ylab("Methylated %") +
+  ggtitle("Most Hypomethylated TFs With Differentiation") +
+  stat_summary(fun = "mean",
+               geom = "pointrange",
+               color = "violet") +
+  scale_fill_brewer(palette="RdYlBu")
+
+
 #TFs going DOWN
+TFs_hypometh <- diff_exp_2[rownames(factors),]
+TFs_hypometh <- TFs_hypometh[TFs_hypometh$adj.P.Val < .01 & TFs_hypometh$logFC > -.05,]
+TFs_hypometh <- TFs_hypometh[order(TFs_hypometh$logFC,decreasing=TRUE),]
+top_TFs_hypometh <- TFs_hypometh[1:12,]
 
+top_TFs_hypometh<-getDiffMethylationList2(rownames(top_TFs_hypometh),cpg_table)
+top_TFs_hypometh<-drop_na(melt(top_TFs_hypometh))
+top_TFs_hypometh$type <- factor(top_TFs_hypometh$type,levels=c("Naive","CM","EM","TEMRA"))
 
+ggplot(top_TFs_hypometh,aes(x=type,y=value,fill=type)) +
+  facet_wrap( ~ name, nrow = 3) +
+  geom_violin(alpha=.5) + theme_classic() +
+  geom_dotplot(binaxis = "y",
+               stackdir = "center",
+               dotsize = 0.5,
+               position="dodge") +
+  theme(legend.position = "none") +
+  xlab("Cell Type") +
+  ylab("Methylated %") +
+  ggtitle("Most Hypermethylated TFs With Differentiation") +
+  stat_summary(fun = "mean",
+               geom = "pointrange",
+               color = "violet") +
+  scale_fill_brewer(palette="RdYlBu")
+
+#Canonical TFs
+important_TFs <- diff_exp_2[known_diff_TFs,]
+important_TFs<-getDiffMethylationList2(rownames(important_TFs),cpg_table)
+important_TFs<-drop_na(melt(important_TFs))
+important_TFs$type <- factor(important_TFs$type,levels=c("Naive","CM","EM","TEMRA"))
+
+ggplot(important_TFs,aes(x=type,y=value,fill=type)) +
+  facet_wrap( ~ name, nrow = 3) +
+  geom_violin(alpha=.5) + theme_classic() +
+  geom_dotplot(binaxis = "y",
+               stackdir = "center",
+               dotsize = 0.5,
+               position="dodge") +
+  theme(legend.position = "none") +
+  xlab("Cell Type") +
+  ylab("Methylated %") +
+  ggtitle("Most Hypermethylated TFs With Differentiation") +
+  stat_summary(fun = "mean",
+               geom = "pointrange",
+               color = "violet") +
+  scale_fill_brewer(palette="RdYlBu")
 
 #Looking at clock CpGs
 #data(HorvathLongCGlist)
