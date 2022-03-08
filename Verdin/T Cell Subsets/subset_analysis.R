@@ -504,7 +504,10 @@ ggplot(data=diff_exp_order_2, aes(x=logFC, y=-log10(adj.P.Val), color=color)) +
   labs(title="Volcano Plot for Differentiation")
 
 #Let's look at aging!
-all_data$older <- all_data$age > 35
+all_data$older <- c("Younger","Younger","Older","Older","Older","Younger","Older",
+                    "Younger","Younger","Older","Older","Older","Younger","Older",
+                    "Younger","Younger","Older","Older","Older","Younger","Older",
+                    "Younger","Older","Older","Older","Younger","Older")
 age_group <- all_data$older
 age_design <- model.matrix(~0 + celltype_group + age_group)
 
@@ -562,13 +565,17 @@ pvals_aging <- as.vector(diff_exp_aging_order[,5])
 names(pvals_aging) <- rownames(diff_exp_aging_order)
 diff_aging <- methylglm(pvals_aging, array.type = "EPIC")
 
-#Let's try methylkit.
-sig_difs <- diff_exp_order[diff_exp_order$adj.P.Val < .05,]
-sig_difs_aging <- diff_exp_aging_order[diff_exp_aging_order$adj.P.Val < .05,]
-go <- gometh(rownames(sig_difs),array.type="EPIC")
-go_aging <- gometh(rownames(sig_difs_aging),array.type="EPIC")
-
-
+#Let's try DMRcate!
+myannotation <- cpg.annotate("array", as.matrix(beta_values), arraytype = "EPIC",
+                             analysis.type="differential", design=model.matrix(~age_design), 
+                             coef=6)
+groups <- c("Younger"="magenta", "Older"="forestgreen")
+type <- factor(all_data$older)
+cols <- groups[as.character(type)]
+dmrcoutput <- dmrcate(myannotation, lambda=1000, C=2)
+results.ranges <- extractRanges(dmrcoutput, genome = "hg19")
+DMR.plot(ranges=results.ranges, dmr=1, CpGs=as.matrix(beta_values), what="Beta",
+         arraytype = "EPIC", phen.col=cols, genome="hg19")
 
 #Looking at clock CpGs
 #data(HorvathLongCGlist)
