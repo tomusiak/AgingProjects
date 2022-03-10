@@ -5,6 +5,7 @@ source("generally_useful.R")
 #Sets location of data 
 setwd("/home/atom/Desktop/Data/subset_data") #Sets directory.
 #Libraries to import.
+library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
 library(methylGSA)
 library(plyr)
 library(reshape2)
@@ -300,10 +301,10 @@ TFs <- TFs[,-1]
 TFs <- log2(TFs / rbind(TFs[1,],TFs[1,],TFs[1,],TFs[1,]))
 
 heatmap.2(t(dna),density.info="none",Rowv = TRUE,Colv=FALSE,dendrogram="row",trace="none",
-          main="DNA Editing Enzymes", revC=TRUE, 
+          main="DNA Modifying Enzymes", revC=TRUE, 
           colsep=1:4, xlab="Cell Type", key.xlab="Diff Methylation (relative to Naive)",
           breaks=seq(-1.5,1.5,0.1),col=colors,symkey=F,
-          margins =c(10,10),cexRow=1.2,cexCol=1.2)
+          margins =c(7,7),cexRow=1,cexCol=1.2)
 
 heatmap.2(t(histone),density.info="none",Rowv = TRUE,dendrogram="row",trace="none",
           Colv=FALSE, 
@@ -312,7 +313,7 @@ heatmap.2(t(histone),density.info="none",Rowv = TRUE,dendrogram="row",trace="non
           breaks=seq(-1.5,1.5,0.1), col=colors,symkey=F, 
           margins =c(10,10),cexRow=.5,cexCol=1.2)
 
-heatmap.2(t(ils),density.info="none",dendrogram="none", trace="none", Rowv=FALSE,
+heatmap.2(t(ils),density.info="none",dendrogram="row", trace="none", Rowv=TRUE,
           Colv=FALSE, colsep=1:4,
           main="Interleukins",  revC=TRUE, 
           xlab="Cell Type", key.xlab="Diff Methylation (relative to Naive)", 
@@ -498,7 +499,7 @@ diff_exp_order_2$delabel <- NA
 diff_exp_order_2$delabel[diff_exp_order_2$color=="purple"] <- rownames(diff_exp_order_2)[diff_exp_order_2$color=="purple"]
 ggplot(data=diff_exp_order_2, aes(x=logFC, y=-log10(adj.P.Val), color=color)) + 
   geom_point() +
-  xlim(-.25,.25) + ylim(0,20) +
+  xlim(-.5,.5) + ylim(0,20) +
   theme_classic(base_size=18)  +
   geom_hline(yintercept = 1.2,linetype="dotted") +
   geom_vline(xintercept = .1,linetype="dotted") +
@@ -520,6 +521,8 @@ summary(decideTests(fit.reduced_age))
 diff_exp_age <-topTable(fit.reduced_age,coef=5,number=400000)
 diff_exp_order_age <- diff_exp_age[order(diff_exp_age$adj.P.Val),]
 
+diff_exp_order_age <-
+  diff_exp_order_age[!grepl("ENSG",rownames(diff_exp_order_age)),]
 top_age <- rownames(head(diff_exp_order_age,12))
 
 top_list_age<-getDiffMethylationListAge(top_age,cpg_table)
@@ -533,19 +536,19 @@ ggplot(top_list_age,aes(x=older,y=value,fill=older)) +
                dotsize = 0.5,
                position="dodge") +
   theme(legend.position = "none") +
-  xlab("> 60 Years Old") +
+  xlab("Age Group") +
   ylab("Methylated %") +
-  ggtitle("Most Differentially-Methylated Genes") +
+  ggtitle("Most Differentially-Methylated Genes - Aging") +
   stat_summary(fun = "mean",
                geom = "pointrange",
                color = "violet") +
   scale_fill_brewer(palette="RdYlBu")
 
 #Creates a volcano plot using the corrected counts.
-diff_exp_order_age$color=factor(case_when(diff_exp_order_age$adj.P.Val < .05 & abs(diff_exp_order_age$logFC) >= .25 ~ "purple",
-                                          (diff_exp_order_age$adj.P.Val < .05 & abs(diff_exp_order_age$logFC) < .25) ~ "red",
-                                          (diff_exp_order_age$adj.P.Val >= .05 & abs(diff_exp_order_age$logFC) >= .25) ~ "blue",
-                                          (diff_exp_order_age$adj.P.Val >= .05 & abs(diff_exp_order_age$logFC) < .25) ~ "gray"))
+diff_exp_order_age$color=factor(case_when(diff_exp_order_age$adj.P.Val < .05 & abs(diff_exp_order_age$logFC) >= .1 ~ "purple",
+                                          (diff_exp_order_age$adj.P.Val < .05 & abs(diff_exp_order_age$logFC) < .1) ~ "red",
+                                          (diff_exp_order_age$adj.P.Val >= .05 & abs(diff_exp_order_age$logFC) >= .1) ~ "blue",
+                                          (diff_exp_order_age$adj.P.Val >= .05 & abs(diff_exp_order_age$logFC) < .1) ~ "gray"))
 diff_exp_order_age$delabel <- NA
 diff_exp_order_age$delabel[diff_exp_order_age$color=="purple"] <- rownames(diff_exp_order_age)[diff_exp_order_age$color=="purple"]
 ggplot(data=diff_exp_order_age, aes(x=logFC, y=-log10(adj.P.Val), color=color)) + 
@@ -553,8 +556,8 @@ ggplot(data=diff_exp_order_age, aes(x=logFC, y=-log10(adj.P.Val), color=color)) 
   xlim(-.5,.5) + ylim(0,20) +
   theme_classic(base_size=18)  +
   geom_hline(yintercept = 1.2,linetype="dotted") +
-  geom_vline(xintercept = .25,linetype="dotted") +
-  geom_vline(xintercept = -.25,linetype="dotted") +
+  geom_vline(xintercept = .1,linetype="dotted") +
+  geom_vline(xintercept = -.1,linetype="dotted") +
   scale_colour_identity() +
   labs(title="Volcano Plot for Aging")
 
@@ -583,6 +586,7 @@ diff_exp_order_PC1 <-
 
 top_PC1 <- rownames(head(diff_exp_order_PC1,12))
 top_list_PC1<-getDiffMethylationList2(top_PC1,cpg_table)
+top_list_PC1$type <- factor(top_list_PC1$type,levels=c("Naive","CM","EM","TEMRA"))
 top_list_PC1<-drop_na(melt(top_list_PC1))
 ggplot(top_list_PC1,aes(x=type,y=value,fill=type)) +
   facet_wrap( ~ name, nrow = 3) +
@@ -594,7 +598,7 @@ ggplot(top_list_PC1,aes(x=type,y=value,fill=type)) +
   theme(legend.position = "none") +
   xlab("> 60 Years Old") +
   ylab("Methylated %") +
-  ggtitle("Most Differentially-Methylated Genes") +
+  ggtitle("Most Differentially-Methylated Genes with UMAP Component 1") +
   stat_summary(fun = "mean",
                geom = "pointrange",
                color = "violet") +
