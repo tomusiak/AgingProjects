@@ -1,28 +1,22 @@
-mtt_data <- read.csv("~/Desktop/Data/mtt_data_3_3.csv")
+mtt_data <-read.csv("~/Desktop/AgingProjects/Cohen/3-31mtt.csv")
 setwd("/home/atom/Desktop/AgingProjects/Useful Scripts/")
 source("generally_useful.R")
 library(ggplot2)
 library(RColorBrewer)
 library(dplyr)
-mtt_data$Combo <- paste(mtt_data$concentration_uM,mtt_data$mdp)
-data_summary <- getSummary(mtt_data,"value","Combo")
 
-mtt_data <- mtt_data %>% group_by(mdp) %>% summarize(mean_value = mean(value),
-                                                                          sd = sd(value),
-                                                                          n = n(),
-                                                                          se = sd / sqrt(n))
-mtt_data$mdp <-factor(mtt_data$mdp,levels=c("108C SNP",
-                  "108C WT", 
-                  "63D SNP", 
+data_summary <- getSummary(mtt_data,"Values","MDP")
+data_summary$MDP <-factor(data_summary$MDP,levels=c("No Doxo",
                   "63D WT", 
-                  "MOTS_C",
-                  "Doxo-", "Doxo+"))
+                  "63D SNP", 
+                  "108C WT", 
+                  "108C SNP",
+                  "HNG", "NOSH",
+                  "Doxo Only"))
 
-mtt_data$mdp <- as.factor(mtt_data$mdp)
-
-ggplot(data=mtt_data,aes(x=mdp,y=mean_value)) + 
-  geom_bar(stat="identity",position="dodge") +
-  geom_errorbar(aes(ymin=mean_value-se, ymax=mean_value+se), width=.2,position=position_dodge(width=.9)) +
+ggplot(data=data_summary,aes(x=MDP,y=Values)) + 
+  geom_bar(stat="identity",position="dodge",fill="pink",color="black") +
+  geom_errorbar(aes(ymin=Values-se, ymax=Values+se), width=.2,position=position_dodge(width=.9)) +
   labs(x="Peptide (100uM)",y="Absorbance (Ab550-Ab680)",title="MDP Protection Against Doxo Toxicity") +
-  theme_classic() + scale_fill_brewer(palette="Paired")
+  theme_classic() + scale_fill_brewer(palette="Paired") + coord_flip()
 
