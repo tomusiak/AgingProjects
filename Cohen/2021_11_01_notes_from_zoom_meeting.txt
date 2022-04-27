@@ -1,7 +1,0 @@
-brendan, alan notes november 1 2021
-
-1. Cytoplasmic rRNA depletion only RNA preps are preferred
-2. PolyA RNA preps are ok, but be aware of potential over amplofying degraded products
-3. Cyotplasmic and mitochondrial rRNA preps are the least preferred because 12S and 16S reads are discarded and potentially pre-processed reads too
-
-4. For mass spec PRIDE data, consider using SearchGUI/PeptideShaker for analysis, which is what Bruno from tbhe Brawnin paper used. This is not likely to yield positive results, but it's worth a shot and I consider it valuable because it will teach our about mass sepc limitations/advantages.
