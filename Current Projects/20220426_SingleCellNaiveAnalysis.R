@@ -7,46 +7,50 @@ library(Matrix)
 library(tidyverse)
 library('biomaRt')
 
-matrix <- readMM("Data/filtered_matrices_mex/hg19/matrix.mtx")
-genes <- read_tsv("Data/filtered_matrices_mex/hg19/genes.tsv", col_names = FALSE)$X1
-mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
-G_list <- getBM(filters= "ensembl_gene_id", attributes= c("ensembl_gene_id",
-                                                          "hgnc_symbol"),values=genes,mart= mart)
-match <- match(genes,G_list$ensembl_gene_id, nomatch=NULL)
-symbols <- G_list$hgnc_symbol[match]
-symbols <- make.unique(symbols)
-symbols[4] <- ".."
-symbols[6] <- "..."
-cell_ids <- read_tsv("Data/filtered_matrices_mex/hg19/barcodes.tsv", col_names = FALSE)$X1
-rownames(matrix) <- symbols
-colnames(matrix) <- cell_ids
-pbmc <- CreateSeuratObject(counts = matrix)
-pbmc <- subset(pbmc, subset = nFeature_RNA > 200 & nFeature_RNA < 2500)
-pbmc <- NormalizeData(pbmc, normalization.method = "LogNormalize", scale.factor = 10000)
-pbmc <- FindVariableFeatures(pbmc, selection.method = "vst", nfeatures = 2000)
-top10 <- head(VariableFeatures(pbmc), 10)
-plot1 <- VariableFeaturePlot(pbmc)
-all.genes <- rownames(pbmc)
-pbmc <- ScaleData(pbmc)
-pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
-DimPlot(pbmc, reduction = "pca")
-DimHeatmap(pbmc, dims = 1, cells = 500, balanced = TRUE)
+# matrix <- readMM("Data/filtered_matrices_mex/hg19/matrix.mtx")
+# genes <- read_tsv("Data/filtered_matrices_mex/hg19/genes.tsv", col_names = FALSE)$X1
+# mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
+# G_list <- getBM(filters= "ensembl_gene_id", attributes= c("ensembl_gene_id",
+#                                                           "hgnc_symbol"),values=genes,mart= mart)
 
-ElbowPlot(pbmc)
-pbmc <- FindNeighbors(pbmc, dims = 1:10)
-pbmc <- FindClusters(pbmc, resolution = 0.5)
-pbmc <- RunUMAP(pbmc, dims = 1:10)
+pbmc <- readRDS("pbmc.rds")
+True_Naive_T_Cells <- readRDS("truenaive.rds")
+
+# match <- match(genes,G_list$ensembl_gene_id, nomatch=NULL)
+# symbols <- G_list$hgnc_symbol[match]
+# symbols <- make.unique(symbols)
+# symbols[4] <- ".."
+# symbols[6] <- "..."
+# cell_ids <- read_tsv("Data/filtered_matrices_mex/hg19/barcodes.tsv", col_names = FALSE)$X1
+# rownames(matrix) <- symbols
+# colnames(matrix) <- cell_ids
+# pbmc <- CreateSeuratObject(counts = matrix)
+# pbmc <- subset(pbmc, subset = nFeature_RNA > 200 & nFeature_RNA < 2500)
+# pbmc <- NormalizeData(pbmc, normalization.method = "LogNormalize", scale.factor = 10000)
+# pbmc <- FindVariableFeatures(pbmc, selection.method = "vst", nfeatures = 2000)
+# top10 <- head(VariableFeatures(pbmc), 10)
+# plot1 <- VariableFeaturePlot(pbmc)
+# all.genes <- rownames(pbmc)
+# pbmc <- ScaleData(pbmc)
+# pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
+# DimPlot(pbmc, reduction = "pca")
+# DimHeatmap(pbmc, dims = 1, cells = 500, balanced = TRUE)
+# ElbowPlot(pbmc)
+# pbmc <- FindNeighbors(pbmc, dims = 1:10)
+# pbmc <- FindClusters(pbmc, resolution = 0.5)
+# pbmc <- RunUMAP(pbmc, dims = 1:10)
+# saveRDS(pbmc, file = "pbmc.rds")
+
 DimPlot(pbmc, reduction = "umap")
-saveRDS(pbmc, file = "pbmc.rds")
-pbmc.markers <- FindAllMarkers(pbmc, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+ pbmc.markers <- FindAllMarkers(pbmc, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
 pbmc.markers %>%
   group_by(cluster) %>%
   slice_max(n = 2, order_by = avg_log2FC)
-FeaturePlot(pbmc, features = c("MS4A1", "GNLY", "CD3E", "CD14", "CD4", "FCGR3A", "PTPRC", "CCR7",
+FeaturePlot(pbmc, features = c("MS4A1", "GNLY", "CD3E", "CD14", "CD4", "IL2RA", "FOXP3", "CCR7",
                                "CD8A"))
 Naive_T_Cells <- subset(pbmc, subset=seurat_clusters %in% c(0,3,5))
 DimPlot(Naive_T_Cells, reduction = "umap")
-FeaturePlot(Naive_T_Cells, features = c("CD8B", "IL2RG", "CD3E", "GZMA", "CD4", "IL7R", "PTPRC", "CCR7",
+FeaturePlot(Naive_T_Cells, features = c("CD8B", "IL2RG", "CD3E", "GZMA", "CD4", "IL7R", "FOXP3", "CCR7",
                                "CD8A"))
 Naive_T_Cells <- NormalizeData(Naive_T_Cells, normalization.method = "LogNormalize", scale.factor = 10000)
 FindVariableFeatures(Naive_T_Cells, selection.method = "vst", nfeatures = 2000)
@@ -58,7 +62,7 @@ Naive_T_Cells <- FindNeighbors(Naive_T_Cells, dims = 1:10)
 Naive_T_Cells <- FindClusters(Naive_T_Cells, resolution = 0.3)
 Naive_T_Cells <- RunUMAP(Naive_T_Cells, dims = 1:10)
 DimPlot(Naive_T_Cells, reduction = "umap")
-FeaturePlot(Naive_T_Cells, features = c("CD8B", "IL32", "CD3E", "S100A4", "CD4", "IL7R", "SH3BGRL3", "CCR7",
+FeaturePlot(Naive_T_Cells, features = c("CD8B", "IL32", "CD3E", "S100A4", "CD4", "FOXP3", "IL2RA", "CCR7",
                                         "CD8A"))
 top10 <- head(VariableFeatures(Naive_T_Cells), 20)
 FindMarkers(Naive_T_Cells,ident.1=0, ident.2=2)
@@ -78,7 +82,7 @@ True_Naive_T_Cells <- FindClusters(True_Naive_T_Cells, resolution = .6)
 True_Naive_T_Cells <- RunUMAP(True_Naive_T_Cells, dims = 1:10)
 DimPlot(True_Naive_T_Cells, reduction = "umap")
 FeaturePlot(True_Naive_T_Cells, features = c("CD8B", "CD8A", "CD3E", "CD4", "SOX4", "CHI3L2", "FOXP3", "TMSB10",
-                                        "ACTG1"))
+                                        "IL2RA"))
 top10 <- head(VariableFeatures(True_Naive_T_Cells), 20)
 FindMarkers(True_Naive_T_Cells,ident.1=2, ident.2=4)
 saveRDS(True_Naive_T_Cells, file = "truenaive.rds")
