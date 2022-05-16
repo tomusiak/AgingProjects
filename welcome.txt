@@ -1,5 +1,7 @@
 Hello! Welcome to my GitHub. 'Useful Scripts' contains often-run helper functions that make analysis easier. Other subfolders are project specific.
 
+Code primarily revolves around DNA methylation, RNA-Seq, and scRNA-Seq analysis. More research to come.
+
 To reach me:
 Alan Tomusiak
 tomusiak@usc.edu
