@@ -6,7 +6,7 @@ library(Seurat)
 library(Matrix)
 library(tidyverse)
 library('biomaRt')
-
+# 
 # matrix <- readMM("Data/Witkowski2020/matrix.mtx")
 # genes <- read_tsv("Data/Witkowski2020/genes.tsv", col_names = FALSE)$X1
 # mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
@@ -15,7 +15,7 @@ library('biomaRt')
 
 pbmc <- readRDS("pbmc.rds")
 True_Naive_T_Cells <- readRDS("truenaive.rds")
-# 
+
 # match <- match(genes,G_list$ensembl_gene_id, nomatch=NULL)
 # symbols <- G_list$hgnc_symbol[match]
 # symbols <- make.unique(symbols)
@@ -46,8 +46,8 @@ DimPlot(pbmc, reduction = "umap")
 # pbmc.markers %>%
 #  group_by(cluster) %>%
 #  slice_max(n = 2, order_by = avg_log2FC)
-FeaturePlot(pbmc, features = c("CD3E", "CD8A", "CD4", "FOXP3", "CCR7", "GZMB", "PDCD1", "IL7R",
-                               "CD27"))
+# FeaturePlot(pbmc, features = c("CD3E", "CD8A", "CD4", "FOXP3", "CCR7", "GZMB", "PDCD1", "IL7R",
+#                                "CD27"))
 # Naive_T_Cells <- subset(pbmc, subset=seurat_clusters %in% c(0,3,5))
 # DimPlot(Naive_T_Cells, reduction = "umap")
 # FeaturePlot(Naive_T_Cells, features = c("CD8B", "IL2RG", "CD3E", "GZMA", "CD4", "IL7R", "FOXP3", "CCR7",
@@ -66,20 +66,20 @@ FeaturePlot(pbmc, features = c("CD3E", "CD8A", "CD4", "FOXP3", "CCR7", "GZMB", "
 #                                         "CD8A"))
 # top10 <- head(VariableFeatures(Naive_T_Cells), 20)
 # FindMarkers(Naive_T_Cells,ident.1=0, ident.2=2)
-# 
+
 # True_Naive_T_Cells <- subset(Naive_T_Cells, subset=seurat_clusters %in% c(0,1))
-DimPlot(True_Naive_T_Cells, reduction = "umap")
-FeaturePlot(True_Naive_T_Cells, features = c("CD8B", "IL2RG", "CD3E", "GZMA", "CD4", "IL7R", "PTPRC", "CCR7",
-                                        "CD8A"))
-True_Naive_T_Cells <- NormalizeData(True_Naive_T_Cells, normalization.method = "LogNormalize", scale.factor = 10000)
-FindVariableFeatures(True_Naive_T_Cells, selection.method = "vst", nfeatures = 2000)
-True_Naive_T_Cells <- ScaleData(True_Naive_T_Cells)
-True_Naive_T_Cells <- RunPCA(True_Naive_T_Cells, features = VariableFeatures(object = True_Naive_T_Cells))
-DimPlot(True_Naive_T_Cells, reduction = "pca")
-DimHeatmap(True_Naive_T_Cells, dims = 1, cells = 500, balanced = TRUE)
-True_Naive_T_Cells <- FindNeighbors(True_Naive_T_Cells, dims = 1:10)
-True_Naive_T_Cells <- FindClusters(True_Naive_T_Cells, resolution = .6)
-True_Naive_T_Cells <- RunUMAP(True_Naive_T_Cells, dims = 1:10)
+# DimPlot(True_Naive_T_Cells, reduction = "umap")
+# FeaturePlot(True_Naive_T_Cells, features = c("CD8B", "IL2RG", "CD3E", "GZMA", "CD4", "IL7R", "PTPRC", "CCR7",
+#                                         "CD8A"))
+# True_Naive_T_Cells <- NormalizeData(True_Naive_T_Cells, normalization.method = "LogNormalize", scale.factor = 10000)
+# FindVariableFeatures(True_Naive_T_Cells, selection.method = "vst", nfeatures = 2000)
+# True_Naive_T_Cells <- ScaleData(True_Naive_T_Cells)
+# True_Naive_T_Cells <- RunPCA(True_Naive_T_Cells, features = VariableFeatures(object = True_Naive_T_Cells))
+# DimPlot(True_Naive_T_Cells, reduction = "pca")
+# DimHeatmap(True_Naive_T_Cells, dims = 1, cells = 500, balanced = TRUE)
+# True_Naive_T_Cells <- FindNeighbors(True_Naive_T_Cells, dims = 1:10)
+# True_Naive_T_Cells <- FindClusters(True_Naive_T_Cells, resolution = .6)
+# True_Naive_T_Cells <- RunUMAP(True_Naive_T_Cells, dims = 1:10)
 DimPlot(True_Naive_T_Cells, reduction = "umap")
 FeaturePlot(True_Naive_T_Cells, features = c("CD3E", "CD4", "CCR7", "PDCD1", "SOX4", "ARPC1B","TMSB10","TOX","CD14"))
 top10 <- head(VariableFeatures(True_Naive_T_Cells), 20)

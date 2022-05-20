@@ -9,7 +9,6 @@ library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
 library(methylGSA)
 library(plyr)
 library(reshape2)
-library("cgageR")
 library(WGCNA)
 library(limma)
 library(dplyr)
@@ -20,21 +19,18 @@ library(ggplot2)
 library(GOfuncR)
 library(readr)
 library(plotrix)
-library(sesame)
 library(umap)
 library(splines)
 library(gam)
 require(clusterExperiment)
 library(stringr)
 library(tidyr)
-library(rstatix)
-library(ggpubr)
 library(gplots)
 library(minfi)
 
 #Read in clock data and metadata. Merge them and process them.
-clock_data <- read.csv("~/Desktop/Data/subset_data/clock_data.csv")
-subset_metadata <- read.csv("~/Desktop/Data/subset_data/subset_metadata.csv")
+clock_data <- read.csv("Data/subset_data/clock_data.csv")
+subset_metadata <- read.csv("Data/subset_data/subset_metadata.csv")
 all_data <- merge(clock_data,subset_metadata)
 all_data$type <- as.character(all_data$type)
 all_data$type <- factor(all_data$type, levels=c("naive", "central_memory", "effector_memory","temra"))
@@ -56,7 +52,7 @@ all_data$type <- factor(all_data$type, levels=c("naive", "central_memory", "effe
 #m_values<-m_values[,all_data$SampleID]
 #write.csv(beta_values,"beta_values.csv")
 #write.csv(m_values,"m_values.csv")
-beta_values <- read.csv("~/Desktop/Data/subset_data/beta_values.csv", row.names=1)
+beta_values <- read.csv("Data/subset_data/beta_values.csv", row.names=1)
 #m_values <- read.csv("~/Desktop/Data/subset_data/m_values.csv", row.names=1)
 
 #Filter out unwanted data from metadata, mapping, and beta values.
@@ -233,7 +229,7 @@ clusterExperiment::plotHeatmap(ce, clusterSamplesData = "dendrogramValue",nFeatu
                                visualizeData = 'transformed', cexRow = 1.5, fontsize = 15)
 
 #Let's create a custom CpG annotation table.
-genome_annotation <- read.delim("~/Desktop/Data/gencode.v39.annotation.gtf", header=FALSE, comment.char="#")
+genome_annotation <- read.delim("Data/gencode.v39.annotation.gtf", header=FALSE, comment.char="#")
 
 #Let's re-do the analysis using only the mapped CpGs.
 
@@ -244,7 +240,7 @@ genome_annotation <- read.delim("~/Desktop/Data/gencode.v39.annotation.gtf", hea
 #cpg_table <- createCPGTable(variable_annotation,genome_annotation,1000,2500)
 #write.csv(cpg_table,"cpg_table.csv")
 
-cpg_table <- read.csv("~/Desktop/Data/subset_data/cpg_table.csv", row.names=1)
+cpg_table <- read.csv("Data/subset_data/cpg_table.csv", row.names=1)
 
 #Let's look at differential methylation by subtype by gene
 dna_modifiers <- c("DNMT1","DNMT3A","DNMT3B",
@@ -275,7 +271,7 @@ known_diff_TFs <- c("TCF7","EOMES", "FOXO1",
                     "TBX21","RUNX3","PRDM1",
                     "LEF1")
 
-transcription_factors <- as.list(read.table("~/Desktop/Data/subset_data/TFs.txt", 
+transcription_factors <- as.list(read.table("Data/subset_data/TFs.txt", 
                                             quote="\"", comment.char=""))$V1
 
 dna <- getDiffMethylationList(dna_modifiers,cpg_table)
@@ -424,7 +420,7 @@ complete_table <- getAllGeneMethylation(cpg_table)
 complete_table <- na.omit(complete_table)
 write.csv(complete_table,"complete_table.csv")
 
-complete_table <- read.csv("~/Desktop/Data/subset_data/complete_table.csv", row.names=1)
+complete_table <- read.csv("Data/subset_data/complete_table.csv", row.names=1)
 
 #Let's look at UMAP per genes.
 gene_table_rotated <- t(complete_table)
