@@ -179,7 +179,6 @@ grabCPGs <- function(gene_name) {
   return(cpg_table[cpg_table$gene_name == gene_name,2])
 }
 
-#Let's focus on these TFs.
 getDiffMethylation2 <- function(gene_name,cpg_table) {
   gene <- beta_values[grabCPGs(gene_name),]
   gene <- data.frame(t(gene))

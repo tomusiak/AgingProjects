@@ -1,6 +1,5 @@
 #Grabs some useful scripts.
-setwd("/home/atom/Desktop/AgingProjects/Useful Scripts/")
-source("generally_useful.R")
+source("AgingProjects/Useful Scripts/generally_useful.R")
 
 #Sets location of data 
 setwd("/home/atom/Desktop/Data/subset_data") #Sets directory.
@@ -561,7 +560,6 @@ fit_aging <- lmFit(beta_values,age_design)
 fit_aging <- eBayes(fit_aging, robust=TRUE)
 summary(decideTests(fit_aging))
 diff_exp_aging <-topTable(fit_aging,coef=5,number=100000)
-#messing with pseudotime
 diff_exp_aging_order <- diff_exp_aging[order(diff_exp_aging$adj.P.Val),]
 pvals_aging <- as.vector(diff_exp_aging_order[,5])
 names(pvals_aging) <- rownames(diff_exp_aging_order)
@@ -701,3 +699,36 @@ ggplot(important_TFs,aes(x=type,y=value,fill=type)) +
 #head(clock_changes)
 
 #let's test a change
+
+naive_keep <- all_data$SampleID[all_data$type == "naive"]
+naive_data <- all_data[all_data$SampleID %in% naive_keep,]
+naive_beta_values <- beta_values[,colnames(beta_values) %in% naive_keep]
+naive_beta_values <- naive_beta_values[order(naive_data$type)]
+age_naive <- factor(naive_data$older)
+donor_naive <- factor(naive_data$donor)
+
+design <- model.matrix(~0 + age_naive)
+
+naive_fit_reduced <- lmFit(naive_beta_values,design)
+naive_fit_reduced <- eBayes(naive_fit_reduced, robust=TRUE)
+summary(decideTests(naive_fit_reduced))
+diff_exp_naive <-topTable(naive_fit_reduced,coef=1,number=100000)
+#messing with pseudotime
+diff_exp_naive_order <- diff_exp_naive[order(diff_exp_naive$adj.P.Val),]
+sig_naive_diff <- diff_exp_naive_order[diff_exp_naive_order$adj.P.Val <= .01,]
+sig_naive_diff$name <- cpg_table$gene_name[match(rownames(sig_naive_diff),cpg_table$cpg)]
+sig_naive_diff <- drop_na(sig_naive_diff)
+sig_naive_diff<-
+  sig_naive_diff[!grepl("ENSG",sig_naive_diff$name),]
+list_of_cpgs_naive_older <- sig_naive_diff$name
+write.csv(list_of_cpgs_naive_older,"diff_meth_naive.csv")
+get_anno_categories(list_of_cpgs_naive_older)
+background <- data.frame(unique(cpg_table$gene_name))
+candidates <- data.frame(unique(list_of_cpgs_naive_older))
+background$candidate <- 0
+candidates$candidate <- 1
+colnames(background) <- c("name","candidate")
+colnames(candidates) <- c("name","candidate")
+full_list <- rbind(candidates,background)
+go_results <- go_enrich(full_list)
+go_results$results

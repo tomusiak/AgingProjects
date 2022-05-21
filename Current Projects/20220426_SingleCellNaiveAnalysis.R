@@ -5,6 +5,7 @@
 library(Seurat)
 library(Matrix)
 library(tidyverse)
+library(GOfuncR)
 library('biomaRt')
 # 
 # matrix <- readMM("Data/Witkowski2020/matrix.mtx")
@@ -83,5 +84,9 @@ DimPlot(pbmc, reduction = "umap")
 DimPlot(True_Naive_T_Cells, reduction = "umap")
 FeaturePlot(True_Naive_T_Cells, features = c("CD3E", "CD4", "CCR7", "PDCD1", "SOX4", "ARPC1B","TMSB10","TOX","CD14"))
 top10 <- head(VariableFeatures(True_Naive_T_Cells), 20)
-FindMarkers(True_Naive_T_Cells,ident.1=3, ident.2=1)
-saveRDS(True_Naive_T_Cells, file = "truenaive.rds")
+#saveRDS(True_Naive_T_Cells, file = "truenaive.rds")
+markers <- FindMarkers(True_Naive_T_Cells,ident.1=3, ident.2=1)
+true_markers <- rownames(markers)[markers$p_val_adj<.05]
+go_results <- go_enrich(data.frame(true_markers))
+
+                        
