@@ -81,12 +81,22 @@ DimPlot(pbmc, reduction = "umap")
 # True_Naive_T_Cells <- FindNeighbors(True_Naive_T_Cells, dims = 1:10)
 # True_Naive_T_Cells <- FindClusters(True_Naive_T_Cells, resolution = .6)
 # True_Naive_T_Cells <- RunUMAP(True_Naive_T_Cells, dims = 1:10)
-DimPlot(True_Naive_T_Cells, reduction = "umap")
+DimPlot(True_Naive_T_Cells, reduction = "umap",pt.size=.8)
 FeaturePlot(True_Naive_T_Cells, features = c("CD3E", "CD4", "CCR7", "PDCD1", "SOX4", "ARPC1B","TMSB10","TOX","CD14"))
-top10 <- head(VariableFeatures(True_Naive_T_Cells), 20)
+top50 <- head(VariableFeatures(True_Naive_T_Cells), 50)
 #saveRDS(True_Naive_T_Cells, file = "truenaive.rds")
-markers <- FindMarkers(True_Naive_T_Cells,ident.1=3, ident.2=1)
-true_markers <- rownames(markers)[markers$p_val_adj<.05]
-go_results <- go_enrich(data.frame(true_markers))
-
+markers <- FindMarkers(True_Naive_T_Cells,ident.1=1, ident.2=2)
+true_markers <- data.frame(rownames(markers)[markers$p_val_adj<.05])
+gene_list <- data.frame(rownames(GetAssayData(object = pbmc, slot = "counts")))
+true_markers$candidate <- 1
+gene_list$candidate <- 0
+colnames(true_markers) <- c("name","candidate")
+colnames(gene_list) <- c("name","candidate")
+full_list <- rbind(true_markers,gene_list)
+go_results <- go_enrich(full_list)
+go_results$results
+write.csv(markers,"naive_scrnaseq_markers.csv")
                         
+DoHeatmap(subset(True_Naive_T_Cells, downsample = 100), features = c("CD8B", "IL2RG", "CD3E", "GZMA", "CD4", "IL7R", "PTPRC", "CCR7", "CD8A"), size = 3)
+
+                                                                     
