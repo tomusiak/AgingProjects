@@ -85,7 +85,7 @@ DimPlot(True_Naive_T_Cells, reduction = "umap",pt.size=.8)
 FeaturePlot(True_Naive_T_Cells, features = c("CD3E", "CD4", "CCR7", "PDCD1", "SOX4", "ARPC1B","TMSB10","TOX","CD14"))
 top50 <- head(VariableFeatures(True_Naive_T_Cells), 50)
 #saveRDS(True_Naive_T_Cells, file = "truenaive.rds")
-markers <- FindMarkers(True_Naive_T_Cells,ident.1=1, ident.2=2)
+markers <- FindMarkers(True_Naive_T_Cells,ident.1=0, ident.2=4)
 true_markers <- data.frame(rownames(markers)[markers$p_val_adj<.05])
 gene_list <- data.frame(rownames(GetAssayData(object = pbmc, slot = "counts")))
 true_markers$candidate <- 1
@@ -97,6 +97,6 @@ go_results <- go_enrich(full_list)
 go_results$results
 write.csv(markers,"naive_scrnaseq_markers.csv")
                         
-DoHeatmap(subset(True_Naive_T_Cells, downsample = 100), features = c("CD8B", "IL2RG", "CD3E", "GZMA", "CD4", "IL7R", "PTPRC", "CCR7", "CD8A"), size = 3)
+VlnPlot(True_Naive_T_Cells, features = c("SOX4", "CHI3L2"))
 
                                                                      
