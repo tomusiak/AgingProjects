@@ -1,5 +1,5 @@
 #Sets location of Olga's data.
-setwd("/home/atom/Desktop/Data/Olga") #Sets directory.
+setwd("Data") #Sets directory.
 
 #Libraries to import.
 library(WGCNA)
