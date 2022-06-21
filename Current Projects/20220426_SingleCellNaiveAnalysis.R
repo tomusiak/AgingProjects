@@ -96,6 +96,7 @@ full_list <- rbind(true_markers,gene_list)
 go_results <- go_enrich(full_list)
 go_results$results
 write.csv(markers,"naive_scrnaseq_markers.csv")
+FeaturePlot(object = True_Naive_T_Cells, features = c("CHI3L2"), reduction = 'umap', pt.size = .8, cols=c("lightgrey", "blue"))
                         
 VlnPlot(True_Naive_T_Cells, features = c("SOX4", "CHI3L2"))
 
