@@ -37,20 +37,18 @@ orig <- dat0
 matched_positions <- match(rownames(dat0),annotations$CGid) #Finds valid matches in table.
 matched_symbols <- annotations$SYMBOL[matched_positions]
 matched_category <- annotations$main_Categories[matched_positions]
-dat0$Symbol <- matched_symbols
-dat0$category <- matched_category
-dat0 <- subset(dat0, dat0$category == "Exon" | dat0$category == "Promoter")
-dat0 <- dat0[!is.na(dat0$Symbol),]
-dat0 <- dat0[,1:(ncol(dat0)-2)]
 # rownames(dat0) <- make.names(dat0$Symbol,unique=TRUE)
 # dat0 <- dat0[,1:81]
 # m_orig <- log2(orig/(1-orig))
 # colnames(dat0)[-1]=paste0(datSample$OriginalOrderInBatch,datSample$Tissue)
 # colnames(orig)=paste0(datSample$OriginalOrderInBatch,datSample$Tissue)
 
+#processing
+m_values <- log2(dat0/(1-dat0))
+
 #Some QC checks and re-formatting performed by Horvath's group and copied here.
 #QC primarily performed by cluster analysis
-corSample=cor(dat0[,-ncol(dat0)], use="p")
+corSample=cor(dat0, use="p")
 hierSample=hclust(as.dist(1-corSample), method="a")
 branch1=cutreeStatic(hierSample,.02,minSize=2)
 datSample$ClusteringBranch=branch1
@@ -63,17 +61,15 @@ datColors=data.frame(branch= datSample$ClusteringColor,
                      Female=ifelse(datSample$Female==1,"pink","lightblue") )
 plotDendroAndColors(hierSample, colors=datColors)
 
-#processing
-data_no_symbols <- dat0[,-ncol(dat0)]
-unique_names <- make.names(dat0$Symbol,unique=TRUE)
-data_symbolized <- data_no_symbols
-rownames(data_symbolized) <- unique_names
-m_values <- log2(data_symbolized/(1-data_symbolized))
+m_values$Symbol <- matched_symbols
+m_values$category <- matched_category
+m_values <- subset(m_values, m_values$category == "Exon" | m_values$category == "Promoter")
+m_values <- m_values[!is.na(m_values$Symbol),]
 
 #let's combine CpG sites by gene..
-aggregated <- aggregate(x = m_values,                # Specify data column
-          by = list(dat0$Symbol),              # Specify group indicator
-          FUN = mean)
+aggregated <- aggregate(x = m_values[,1:(ncol(m_values)-2)],                # Specify data column
+          by = list(m_values$Symbol),              # Specify group indicator
+          FUN = median)
 rownames(aggregated) <- aggregated$Group.1
 aggregated <- aggregated[,-1]
 
@@ -265,7 +261,7 @@ a <- list('Muscle' = sig_dmrs_muscle[,1],
           'Liver' = sig_dmrs_liver[,1])
 ggvenn(a,c("Muscle","Liver","Heart")) 
 
-select(rownames(sig_dmrs_heart) %in% )
+sig_dmrs_heart[(sig_dmrs_heart[,1] %in%  sig_dmrs_liver[,1]) & (sig_dmrs_heart[,1] %in%  sig_dmrs_muscle[,1]),]
 
 clock_results <- read_csv("data/ResultsClock/OutputMouseClockFeb8.2021.csv")
 
