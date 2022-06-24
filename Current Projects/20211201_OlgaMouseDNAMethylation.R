@@ -17,7 +17,9 @@ library(readr)
 library(plotrix)
 library("Mus.musculus")
 library(minfi)
+library(stringr)
 library(umap)
+library(ggrepel)
 library(ggvenn)
 
 #Loading in data.
@@ -65,11 +67,16 @@ m_values$Symbol <- matched_symbols
 m_values$category <- matched_category
 m_values <- subset(m_values, m_values$category == "Exon" | m_values$category == "Promoter")
 m_values <- m_values[!is.na(m_values$Symbol),]
+dat0_symbols <- dat0
+dat0_symbols$symbol <- matched_symbols
+dat0_symbols$category <- matched_category
+dat0_symbols <- subset(dat0_symbols, dat0_symbols$category == "Exon" | dat0_symbols$category == "Promoter")
+dat0_symbols <- dat0_symbols[!is.na(dat0_symbols$symbol),]
 
 #let's combine CpG sites by gene..
 aggregated <- aggregate(x = m_values[,1:(ncol(m_values)-2)],                # Specify data column
           by = list(m_values$Symbol),              # Specify group indicator
-          FUN = median)
+          FUN = mean)
 rownames(aggregated) <- aggregated$Group.1
 aggregated <- aggregated[,-1]
 
@@ -84,41 +91,23 @@ pca$sex <- datSample$Sex
 pca$age <- datSample$Age
 ggplot(data=data.frame(pca),aes(x=PC1,y=PC8,color=genotype,shape=tissue)) +
   geom_point() + theme_classic()
-qplot(c(1:20), var_explained[1:20]) + 
+qplot(c(1:20), var_explained[1:10]) + 
   geom_line() + 
   xlab("Principal Component") + 
   ylab("Variance Explained") +
   ggtitle("Scree Plot") +
   ylim(0, 1) + theme_classic()
 
-#PCA for heart only.
-rotated <- t(aggregated[grepl("heart",colnames(aggregated))])
+#PCA for heart and liver only.
+rotated <- t(aggregated[grepl("heart",colnames(aggregated)) | grepl("liver",colnames(aggregated))])
 pca<-prcomp(rotated,scale=TRUE)
 var_explained = pca$sdev^2 / sum(pca$sdev^2)
 pca <- data.frame(pca$x)
-pca$genotype <- datSample[datSample$Tissue=="Heart",]$Genotype
-pca$tissue <- datSample[datSample$Tissue=="Heart",]$Tissue
-pca$sex <- datSample[datSample$Tissue=="Heart",]$Sex
-pca$age <- datSample[datSample$Tissue=="Heart",]$Age
-ggplot(data=data.frame(pca),aes(x=PC1,y=PC2,color=genotype,shape=sex)) +
-  geom_point() + theme_classic()
-qplot(c(1:10), var_explained[1:10]) + 
-  geom_line() + 
-  xlab("Principal Component") + 
-  ylab("Variance Explained") +
-  ggtitle("Scree Plot") +
-  ylim(0, 1) + theme_classic()
-
-#PCA for liver only.
-rotated <- t(aggregated[grepl("liver",colnames(aggregated))])
-pca<-prcomp(rotated,scale=TRUE)
-var_explained = pca$sdev^2 / sum(pca$sdev^2)
-pca <- data.frame(pca$x)
-pca$genotype <- datSample[datSample$Tissue=="Liver",]$Genotype
-pca$tissue <- datSample[datSample$Tissue=="Liver",]$Tissue
-pca$sex <- datSample[datSample$Tissue=="Liver",]$Sex
-pca$age <- datSample[datSample$Tissue=="Liver",]$Age
-ggplot(data=data.frame(pca),aes(x=PC1,y=PC2,color=genotype,shape=sex)) +
+pca$genotype <- datSample[datSample$Tissue=="Heart" | datSample$Tissue=="Liver",]$Genotype
+pca$tissue <- datSample[datSample$Tissue=="Heart"| datSample$Tissue=="Liver",]$Tissue
+pca$sex <- datSample[datSample$Tissue=="Heart"| datSample$Tissue=="Liver",]$Sex
+pca$age <- datSample[datSample$Tissue=="Heart"| datSample$Tissue=="Liver",]$Age
+ggplot(data=data.frame(pca),aes(x=PC1,y=PC3,color=genotype,shape=tissue)) +
   geom_point() + theme_classic()
 qplot(c(1:10), var_explained[1:10]) + 
   geom_line() + 
@@ -176,15 +165,11 @@ plot_stats = plot_anno_scores(res_hyper_bg, top_gos_hyper_bg)
 plot_stats
 res_hyper_bg[[1]][1:10, 'node_name']
 
-#other stuff
-sig_dmrs_full_data<-diff_exp[sig_dmrs$gene_ids,]
-mean(diff_exp$logFC)
-
 #let's subset - muscle only
 muscle_only <- aggregated[grepl("muscle",colnames(aggregated))]
 muscle_only_annot <- datSample[datSample$Tissue == "Muscle",]
 genotype_group_muscle <- factor(muscle_only_annot$Genotype,levels=c("WT","KO"))
-sex_group_muscle <- factor(muscle_only_annot$Sex)
+sex_group_muscle <- factor(muscle_only_annot$Sex) 
 design_muscle <- model.matrix(~ sex_group_muscle + genotype_group_muscle)
 fit.reduced_muscle <- lmFit(muscle_only,design_muscle)
 fit.reduced_muscle <- eBayes(fit.reduced_muscle, robust=TRUE)
@@ -252,16 +237,6 @@ write.csv(sig_dmrs_heart, "sig_dmrs_heart.csv")
 write.csv(sig_dmrs_cerebellum, "sig_dmrs_cerebellum.csv")
 write.csv(sig_dmrs_brain, "sig_dmrs_brain.csv")
 write.csv(sig_dmrs_liver, "sig_dmrs_liver.csv")
-
-#Let's try to do a Venn Diagram.
-a <- list('Muscle' = sig_dmrs_muscle[,1],
-          'Heart' = sig_dmrs_heart[,1],
-          'Cerebellum' = sig_dmrs_cerebellum[,1],
-          'Brain' = sig_dmrs_brain[,1],
-          'Liver' = sig_dmrs_liver[,1])
-ggvenn(a,c("Muscle","Liver","Heart")) 
-
-sig_dmrs_heart[(sig_dmrs_heart[,1] %in%  sig_dmrs_liver[,1]) & (sig_dmrs_heart[,1] %in%  sig_dmrs_muscle[,1]),]
 
 clock_results <- read_csv("data/ResultsClock/OutputMouseClockFeb8.2021.csv")
 
@@ -377,4 +352,79 @@ ggplot(summary,aes(x=Region,y=Methylation_Perc,fill=KO)) +
   facet_wrap(. ~ Tissue) +
   scale_fill_manual(values=c('lavender','red'))
 
+#Volcano plot colored by number of CpGs per gene.
+symbols <- m_values$Symbol
+symbol_occurrences <- data.frame(table(symbols))
+rownames(symbol_occurrences) <- symbol_occurrences[,1]
+symbol_occurrences <- subset(symbol_occurrences, select = c(Freq))
+diff_exp_freq <- merge(diff_exp,symbol_occurrences,by="row.names")
+rownames(diff_exp_freq) <- diff_exp_freq$Row.names
+
+diff_exp_freq$label = abs(diff_exp_freq$logFC) >.06 & (diff_exp_freq$adj.P.Val) < .0000005
+
+ggplot(diff_exp_freq,aes(x=logFC,y=-log10(adj.P.Val),size=sqrt(Freq),col=1/(sqrt(Freq)))) +
+  geom_point() + theme_classic() + geom_text_repel(data = subset(diff_exp_freq, label==TRUE), aes(label = Row.names), 
+                                                   box.padding = unit(0.60, "lines")) +
+  scale_color_distiller(palette = "RdPu")
+
+#Let's do the same but for heart and liver only.
+heart_and_liver_aggregated <- aggregated[grepl("heart",colnames(aggregated)) | 
+                                           grepl("liver",colnames(aggregated))]
+heart_and_liver_annot <- datSample[datSample$Tissue == "Heart" | datSample$Tissue == "Liver",]
+genotype_group_heartliver <- factor(heart_and_liver_annot$Genotype,levels=c("WT","KO"))
+sex_group_heartliver <- factor(heart_and_liver_annot$Sex)
+design_heartliver <- model.matrix(~ sex_group_heartliver + genotype_group_heartliver)
+fit.reduced_heartliver <- lmFit(heart_and_liver_aggregated,design_heartliver)
+fit.reduced_heartliver <- eBayes(fit.reduced_heartliver, robust=TRUE)
+summary(decideTests(fit.reduced_heartliver))
+diff_exp_heartliver <-topTable(fit.reduced_heartliver,coef=3,number=30000)
+diff_exp_heartliver_freq <- merge(diff_exp_heartliver,symbol_occurrences,by="row.names")
+rownames(diff_exp_heartliver_freq) <- diff_exp_heartliver_freq$Row.names
+
+diff_exp_heartliver_freq$label = abs(diff_exp_heartliver_freq$logFC) >.06 & 
+  (diff_exp_heartliver_freq$adj.P.Val) < .0008
+
+ggplot(diff_exp_heartliver_freq,aes(x=logFC,y=-log10(adj.P.Val),size=sqrt(Freq),col=1/(sqrt(Freq)))) +
+  geom_point() + theme_classic() + geom_text_repel(data = subset(diff_exp_heartliver_freq, label==TRUE), aes(label = Row.names), 
+                                                   box.padding = unit(0.60, "lines")) +
+  xlim(-1,1) + ylim(0,6) +
+  scale_color_distiller(palette = "RdPu")
+
+#Let's look at EIF4G2
+eif4g2_heartliver <- dat0_symbols[grepl("heart",colnames(dat0_symbols)) | 
+                                           grepl("liver",colnames(dat0_symbols)) |
+                                    grepl("symbol",colnames(dat0_symbols))]
+eif4g2_heartliver <- data.frame(t(eif4g2_heartliver[eif4g2_heartliver$symbol=="Eif4g2",
+                                                    1:(ncol(eif4g2_heartliver)-2)]))
+
+eif4g2_heartliver_melted <- melt(as.matrix(eif4g2_heartliver))
+eif4g2_heartliver_melted$KO <- grepl("KO",eif4g2_heartliver_melted$Var1)
+eif4g2_heartliver_summary <- eif4g2_heartliver_melted %>% group_by(KO,Var2) %>% 
+                                            summarize(mean_perc = mean(value),
+                                                                    sd_perc = sd(value))
+split_eif4g2 <- split(eif4g2_heartliver_summary,f=eif4g2_heartliver_summary$KO)
+cpg_change <- as.data.frame(split_eif4g2[2])$TRUE.mean_perc -
+  as.data.frame(split_eif4g2[1])$FALSE.mean_perc 
+ggplot(eif4g2_heartliver_summary,aes(x=KO,y=mean_perc,group=Var2)) +
+  geom_line() + geom_point() +
+  theme_classic()
+
+#Let's look at VEGFA
+vegfa_heartliver <- dat0_symbols[grepl("heart",colnames(dat0_symbols)) | 
+                                    grepl("liver",colnames(dat0_symbols)) |
+                                    grepl("symbol",colnames(dat0_symbols))]
+vegfa_heartliver <- data.frame(t(vegfa_heartliver[vegfa_heartliver$symbol=="Vegfa",
+                                                    1:(ncol(vegfa_heartliver)-2)]))
+
+vegfa_heartliver_melted <- melt(as.matrix(vegfa_heartliver))
+vegfa_heartliver_melted$KO <- grepl("KO",vegfa_heartliver_melted$Var1)
+vegfa_heartliver_summary <- vegfa_heartliver_melted %>% group_by(KO,Var2) %>% 
+  summarize(mean_perc = mean(value),
+            sd_perc = sd(value))
+split_vegfa <- split(vegfa_heartliver_summary,f=vegfa_heartliver_summary$KO)
+cpg_change <- as.data.frame(split_vegfa[2])$TRUE.mean_perc -
+  as.data.frame(split_vegfa[1])$FALSE.mean_perc 
+ggplot(vegfa_heartliver_summary,aes(x=KO,y=mean_perc,group=Var2)) +
+  geom_line() + geom_point() +
+  theme_classic()
 
