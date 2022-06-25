@@ -493,10 +493,12 @@ ggplot(diff_exp_heartliver_freq,aes(x=logFC,y=-log10(adj.P.Val),size=sqrt(Freq),
   xlim(-5.5,5.5) + ylim(0,36) +
   scale_color_distiller(palette = "RdPu")
 
+#Quick glances at a few genes Olga is interested in.
 heart_liver <- dat0_symbols[grepl("heart",colnames(dat0_symbols)) | 
                               grepl("liver",colnames(dat0_symbols)) |
                               grepl("symbol",colnames(dat0_symbols))]
-gene_summary <- analyzeGene(heart_liver,"Tgfb3","KO")
-ggplot(gene_summary,aes(x=condition,y=mean_perc,group=Var2)) +
-  geom_line() + geom_point() +
-  theme_classic()
+Kdm5a <- analyzeGene(heart_liver,"Kdm5a","KO")
+Mfn1 <- analyzeGene(heart_liver,"Mfn1","KO")
+Mfn2 <- analyzeGene(heart_liver,"Mfn2","KO")
+Drp1 <- analyzeGene(heart_liver,"Drp1","KO")
+Rb1 <- analyzeGene(heart_liver,"Rb1","KO")
