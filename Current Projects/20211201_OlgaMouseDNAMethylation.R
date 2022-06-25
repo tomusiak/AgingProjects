@@ -76,9 +76,10 @@ dat0_symbols <- dat0_symbols[!is.na(dat0_symbols$symbol),]
 #Let's do a complicated thing where we decipher most "significant" changes in
 #CpGs per gene by doing column-wise subtraction. Heart only here.
 genes_cpg_subtractions <- data.frame(matrix(ncol = 3, nrow = 1))
-colnames(genes_cpg_subtractions) <- c("Gene","Mean","SD")
+colnames(genes_cpg_subtractions) <- c("Gene","Mean","SE")
 heart_m_values <- dat0_symbols[,grepl("heart",colnames(dat0_symbols)) |
-                             grepl("symbol",colnames(dat0_symbols))]
+                             grepl("symbol",colnames(dat0_symbols)) |
+                               grepl("liver",colnames(dat0_symbols))]
 split_m_values <- heart_m_values[,1:(ncol(heart_m_values)-1)] %>% 
   split(heart_m_values,f=heart_m_values$symbol)
 transposed_m_values <- lapply(split_m_values,t)
@@ -96,30 +97,33 @@ for (x in 1:length(dataframed_m_values)) {
   average_average_differences <- rowMeans(average_differences)
   average_average_sd <- sd(average_average_differences)
   average_average_average_differences <- mean(average_average_differences)
-  genes_cpg_subtractions <- genes_cpg_subtractions %>% add_row(Gene = name, Mean = average_average_average_differences, 
-                                     SD =average_average_sd )
+  average_average_n <- ncol(average_differences)
+  if(average_average_n > 1) {
+    genes_cpg_subtractions <- genes_cpg_subtractions %>% add_row(Gene = name, Mean = average_average_average_differences, 
+                                     SE =average_average_sd/sqrt(average_average_n) )
+  }
 }
 genes_cpg_subtractions <- genes_cpg_subtractions[-1,]
-genes_cpg_subtractions$Diff <- abs(genes_cpg_subtractions$Mean) - genes_cpg_subtractions$SD
-ordered_list <- genes_cpg_subtractions[order(-genes_cpg_subtractions$Diff),]
-ordered_list_positives <- ordered_list[ordered_list$Mean > 0,]
-rownames(ordered_list_positives) <- ordered_list_positives[,1]
-ordered_list_negatives <- ordered_list[ordered_list$Mean < 0,]
+rownames(genes_cpg_subtractions) <- genes_cpg_subtractions[,1]
+positives <- genes_cpg_subtractions[genes_cpg_subtractions$Mean > 0,]
+ordered_list_positives <- positives[order(-(positives$Mean-abs(positives$SE))),]
+negatives <- genes_cpg_subtractions[genes_cpg_subtractions$Mean < 0,]
+ordered_list_negatives <- negatives[order((negatives$Mean+abs(negatives$SE))),]
 top_changes <- rbind(ordered_list_positives[1:15,],ordered_list_negatives[1:15,])
-ggplot(ordered_list_positives[1:15,],aes(x=reorder(Gene,-Diff),y=Mean,ymin=Mean-SD,ymax=Mean+SD)) + 
+ggplot(ordered_list_positives[1:15,],aes(x=reorder(Gene,-SE),y=Mean,ymin=Mean-SE,ymax=Mean+SE)) + 
   geom_bar(stat="identity",fill="maroon",color="red") + theme_classic() +
   geom_errorbar(width=.2,position=position_dodge(.9)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
-ggplot(ordered_list_negatives[1:15,],aes(x=reorder(Gene,-Diff),y=Mean,ymin=Mean-SD,ymax=Mean+SD)) + 
+ggplot(ordered_list_negatives[1:15,],aes(x=reorder(Gene,-SE),y=Mean,ymin=Mean-SE,ymax=Mean+SE)) + 
   geom_bar(stat="identity",fill="maroon",color="red") + theme_classic() +
   geom_errorbar(width=.2,position=position_dodge(.9)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
-ggplot(top_changes,aes(x=reorder(Gene,-Mean),y=Mean,ymin=Mean-SD,ymax=Mean+SD)) + 
+ggplot(top_changes,aes(x=reorder(Gene,-Mean),y=Mean,ymin=Mean-SE,ymax=Mean+SE)) + 
   geom_bar(stat="identity",fill="pink",color="red") + theme_classic() +
   geom_errorbar(width=.2,position=position_dodge(.9)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
   xlab("Gene") + ylab("Mean Change of Methylation (WT-KO)") +
-  ggtitle("Mean Change in Methylation Site State, Per Gene (Heart Only)")
+  ggtitle("Mean Change in Methylation Site State, Per Gene (Heart and Liver Only)")
  
 aggregated <- aggregate(x = m_values[,1:(ncol(m_values)-2)],                # Specify data column
           by = list(m_values$Symbol),              # Specify group indicator
@@ -417,10 +421,13 @@ ggplot(diff_exp_freq,aes(x=logFC,y=-log10(adj.P.Val),size=sqrt(Freq),col=1/(sqrt
 #Let's do the same but for heart and liver only.
 heart_and_liver_aggregated <- aggregated[grepl("heart",colnames(aggregated)) | 
                                            grepl("liver",colnames(aggregated))]
+rownames(heart_and_liver_aggregated) <- aggregated[,1]
 heart_and_liver_annot <- datSample[datSample$Tissue == "Heart" | datSample$Tissue == "Liver",]
 genotype_group_heartliver <- factor(heart_and_liver_annot$Genotype,levels=c("WT","KO"))
 sex_group_heartliver <- factor(heart_and_liver_annot$Sex)
-design_heartliver <- model.matrix(~ sex_group_heartliver + genotype_group_heartliver)
+tissue_group_heartliver <- factor(heart_and_liver_annot$Tissue)
+design_heartliver <- model.matrix(~ sex_group_heartliver + tissue_group_heartliver +
+                                    genotype_group_heartliver)
 fit.reduced_heartliver <- lmFit(heart_and_liver_aggregated,design_heartliver)
 fit.reduced_heartliver <- eBayes(fit.reduced_heartliver, robust=TRUE)
 summary(decideTests(fit.reduced_heartliver))
@@ -428,50 +435,70 @@ diff_exp_heartliver <-topTable(fit.reduced_heartliver,coef=3,number=30000)
 diff_exp_heartliver_freq <- merge(diff_exp_heartliver,symbol_occurrences,by="row.names")
 rownames(diff_exp_heartliver_freq) <- diff_exp_heartliver_freq$Row.names
 
-diff_exp_heartliver_freq$label = abs(diff_exp_heartliver_freq$logFC) >.06 & 
-  (diff_exp_heartliver_freq$adj.P.Val) < .0008
+diff_exp_heartliver_freq$label = abs(diff_exp_heartliver_freq$logFC) >2.5 & 
+  (diff_exp_heartliver_freq$adj.P.Val) < .00000000000000000000001
 
 ggplot(diff_exp_heartliver_freq,aes(x=logFC,y=-log10(adj.P.Val),size=sqrt(Freq),col=1/(sqrt(Freq)))) +
   geom_point() + theme_classic() + geom_text_repel(data = subset(diff_exp_heartliver_freq, label==TRUE), aes(label = Row.names), 
                                                    box.padding = unit(0.60, "lines")) +
-  xlim(-1,1) + ylim(0,6) +
+  xlim(-5.5,5.5) + ylim(0,36) +
   scale_color_distiller(palette = "RdPu")
 
-#Let's look at EIF4G2
-eif4g2_heartliver <- dat0_symbols[grepl("heart",colnames(dat0_symbols)) | 
+#Let's look at Slc10a1
+Slc10a1_heartliver <- dat0_symbols[grepl("heart",colnames(dat0_symbols)) | 
                                            grepl("liver",colnames(dat0_symbols)) |
                                     grepl("symbol",colnames(dat0_symbols))]
-eif4g2_heartliver <- data.frame(t(eif4g2_heartliver[eif4g2_heartliver$symbol=="Eif4g2",
-                                                    1:(ncol(eif4g2_heartliver)-2)]))
-
-eif4g2_heartliver_melted <- melt(as.matrix(eif4g2_heartliver))
-eif4g2_heartliver_melted$KO <- grepl("KO",eif4g2_heartliver_melted$Var1)
-eif4g2_heartliver_summary <- eif4g2_heartliver_melted %>% group_by(KO,Var2) %>% 
+Slc10a1_heartliver <- data.frame(t(Slc10a1_heartliver[Slc10a1_heartliver$symbol=="Slc10a1",
+                                                  1:(ncol(Slc10a1_heartliver)-2)]))
+Slc10a1_heartliver_melted <- melt(as.matrix(Slc10a1_heartliver))
+Slc10a1_heartliver_melted$KO <- grepl("KO",Slc10a1_heartliver_melted$Var1)
+Slc10a1_heartliver_summary <- Slc10a1_heartliver_melted %>% group_by(KO,Var2) %>% 
                                             summarize(mean_perc = mean(value),
                                                                     sd_perc = sd(value))
-split_eif4g2 <- split(eif4g2_heartliver_summary,f=eif4g2_heartliver_summary$KO)
-cpg_change <- as.data.frame(split_eif4g2[2])$TRUE.mean_perc -
-  as.data.frame(split_eif4g2[1])$FALSE.mean_perc 
-ggplot(eif4g2_heartliver_summary,aes(x=KO,y=mean_perc,group=Var2)) +
+split_Slc10a1 <- split(Slc10a1_heartliver_summary,f=Slc10a1_heartliver_summary$KO)
+cpg_change <- as.data.frame(split_Slc10a1[2])$TRUE.mean_perc -
+  as.data.frame(split_Slc10a1[1])$FALSE.mean_perc 
+ggplot(Slc10a1_heartliver_summary,aes(x=KO,y=mean_perc,group=Var2)) +
   geom_line() + geom_point() +
   theme_classic()
 
-#Let's look at VEGFA
-vegfa_heartliver <- dat0_symbols[grepl("heart",colnames(dat0_symbols)) | 
+#Let's look at Dnajc22
+Dnajc22_heartliver <- dat0_symbols[grepl("heart",colnames(dat0_symbols)) | 
                                     grepl("liver",colnames(dat0_symbols)) |
                                     grepl("symbol",colnames(dat0_symbols))]
-vegfa_heartliver <- data.frame(t(vegfa_heartliver[vegfa_heartliver$symbol=="Vegfa",
-                                                    1:(ncol(vegfa_heartliver)-2)]))
+Dnajc22_heartliver <- data.frame(t(Dnajc22_heartliver[Dnajc22_heartliver$symbol=="Dnajc22",
+                                                    1:(ncol(Dnajc22_heartliver)-2)]))
 
-vegfa_heartliver_melted <- melt(as.matrix(vegfa_heartliver))
-vegfa_heartliver_melted$KO <- grepl("KO",vegfa_heartliver_melted$Var1)
-vegfa_heartliver_summary <- vegfa_heartliver_melted %>% group_by(KO,Var2) %>% 
+Dnajc22_heartliver_melted <- melt(as.matrix(Dnajc22_heartliver))
+Dnajc22_heartliver_melted$KO <- grepl("KO",Dnajc22_heartliver_melted$Var1)
+Dnajc22_heartliver_summary <- Dnajc22_heartliver_melted %>% group_by(KO,Var2) %>% 
   summarize(mean_perc = mean(value),
             sd_perc = sd(value))
-split_vegfa <- split(vegfa_heartliver_summary,f=vegfa_heartliver_summary$KO)
-cpg_change <- as.data.frame(split_vegfa[2])$TRUE.mean_perc -
-  as.data.frame(split_vegfa[1])$FALSE.mean_perc 
-ggplot(vegfa_heartliver_summary,aes(x=KO,y=mean_perc,group=Var2)) +
+split_Dnajc22 <- split(Dnajc22_heartliver_summary,f=Dnajc22_heartliver_summary$KO)
+cpg_change <- as.data.frame(split_Dnajc22[2])$TRUE.mean_perc -
+  as.data.frame(split_Dnajc22[1])$FALSE.mean_perc 
+ggplot(Dnajc22_heartliver_summary,aes(x=KO,y=mean_perc,group=Var2)) +
   geom_line() + geom_point() +
   theme_classic()
+
+
+#Let's look at Id2
+Id2_heartliver <- dat0_symbols[grepl("heart",colnames(dat0_symbols)) | 
+                                     grepl("liver",colnames(dat0_symbols)) |
+                                     grepl("symbol",colnames(dat0_symbols))]
+Id2_heartliver <- data.frame(t(Id2_heartliver[Id2_heartliver$symbol=="Id2",
+                                                      1:(ncol(Id2_heartliver)-2)]))
+
+Id2_heartliver_melted <- melt(as.matrix(Id2_heartliver))
+Id2_heartliver_melted$KO <- grepl("KO",Id2_heartliver_melted$Var1)
+Id2_heartliver_summary <- Id2_heartliver_melted %>% group_by(KO,Var2) %>% 
+  summarize(mean_perc = mean(value),
+            sd_perc = sd(value))
+split_Id2 <- split(Id2_heartliver_summary,f=Id2_heartliver_summary$KO)
+cpg_change <- as.data.frame(split_Id2[2])$TRUE.mean_perc -
+  as.data.frame(split_Id2[1])$FALSE.mean_perc 
+ggplot(Id2_heartliver_summary,aes(x=KO,y=mean_perc,group=Var2)) +
+  geom_line() + geom_point() +
+  theme_classic()
+
 
