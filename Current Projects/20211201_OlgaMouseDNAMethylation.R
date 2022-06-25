@@ -73,7 +73,54 @@ dat0_symbols$category <- matched_category
 dat0_symbols <- subset(dat0_symbols, dat0_symbols$category == "Exon" | dat0_symbols$category == "Promoter")
 dat0_symbols <- dat0_symbols[!is.na(dat0_symbols$symbol),]
 
-#let's combine CpG sites by gene..
+#Let's do a complicated thing where we decipher most "significant" changes in
+#CpGs per gene by doing column-wise subtraction. Heart only here.
+genes_cpg_subtractions <- data.frame(matrix(ncol = 3, nrow = 1))
+colnames(genes_cpg_subtractions) <- c("Gene","Mean","SD")
+heart_m_values <- dat0_symbols[,grepl("heart",colnames(dat0_symbols)) |
+                             grepl("symbol",colnames(dat0_symbols))]
+split_m_values <- heart_m_values[,1:(ncol(heart_m_values)-1)] %>% 
+  split(heart_m_values,f=heart_m_values$symbol)
+transposed_m_values <- lapply(split_m_values,t)
+dataframed_m_values <- lapply(transposed_m_values,as.data.frame)
+for (i in 1:length(dataframed_m_values)) {
+  dataframed_m_values[[i]]$Genotype <- str_sub(rownames((dataframed_m_values[[i]])),-2,) 
+}
+for (x in 1:length(dataframed_m_values)) {
+  name <- names(dataframed_m_values[x])[[1]]
+  practice_split<-split(dataframed_m_values[[x]],dataframed_m_values[[x]]$Genotype)
+  for (i in 1:length(practice_split)) {
+    practice_split[[i]] <- (practice_split[[i]])[,1:ncol((practice_split[[i]]))-1]
+  }
+  average_differences <- data.frame(practice_split[[2]] - practice_split[[1]])
+  average_average_differences <- rowMeans(average_differences)
+  average_average_sd <- sd(average_average_differences)
+  average_average_average_differences <- mean(average_average_differences)
+  genes_cpg_subtractions <- genes_cpg_subtractions %>% add_row(Gene = name, Mean = average_average_average_differences, 
+                                     SD =average_average_sd )
+}
+genes_cpg_subtractions <- genes_cpg_subtractions[-1,]
+genes_cpg_subtractions$Diff <- abs(genes_cpg_subtractions$Mean) - genes_cpg_subtractions$SD
+ordered_list <- genes_cpg_subtractions[order(-genes_cpg_subtractions$Diff),]
+ordered_list_positives <- ordered_list[ordered_list$Mean > 0,]
+rownames(ordered_list_positives) <- ordered_list_positives[,1]
+ordered_list_negatives <- ordered_list[ordered_list$Mean < 0,]
+top_changes <- rbind(ordered_list_positives[1:15,],ordered_list_negatives[1:15,])
+ggplot(ordered_list_positives[1:15,],aes(x=reorder(Gene,-Diff),y=Mean,ymin=Mean-SD,ymax=Mean+SD)) + 
+  geom_bar(stat="identity",fill="maroon",color="red") + theme_classic() +
+  geom_errorbar(width=.2,position=position_dodge(.9)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+ggplot(ordered_list_negatives[1:15,],aes(x=reorder(Gene,-Diff),y=Mean,ymin=Mean-SD,ymax=Mean+SD)) + 
+  geom_bar(stat="identity",fill="maroon",color="red") + theme_classic() +
+  geom_errorbar(width=.2,position=position_dodge(.9)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+ggplot(top_changes,aes(x=reorder(Gene,-Mean),y=Mean,ymin=Mean-SD,ymax=Mean+SD)) + 
+  geom_bar(stat="identity",fill="pink",color="red") + theme_classic() +
+  geom_errorbar(width=.2,position=position_dodge(.9)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  xlab("Gene") + ylab("Mean Change of Methylation (WT-KO)") +
+  ggtitle("Mean Change in Methylation Site State, Per Gene (Heart Only)")
+ 
 aggregated <- aggregate(x = m_values[,1:(ncol(m_values)-2)],                # Specify data column
           by = list(m_values$Symbol),              # Specify group indicator
           FUN = mean)
