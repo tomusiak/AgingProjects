@@ -41,7 +41,6 @@ library(ggvenn)
 analyzeGene <- function(dataframe,gene_name, condition) {
   gene <- data.frame(t(dataframe[dataframe$symbol==gene_name,
                                  1:(ncol(dataframe)-1)]))
-  
   gene <- melt(as.matrix(gene))
   gene$condition <- grepl(condition,gene$Var1)
   gene_summary <- gene %>% group_by(condition,Var2) %>% 

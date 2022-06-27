@@ -240,3 +240,8 @@ getDiffMethylationListAge <- function(gene_list, cpg_table) {
   }
   return (diff_meth)
 }
+
+#Removes all columns that have any NA values.
+removeNAColumns <- function(dataframe) {
+  dataframe[,!names(dataframe) %in% names(which(colSums(is.na(dataframe))>0))]
+}
