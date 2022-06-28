@@ -156,8 +156,8 @@ colnames(predictedAges) <- c("ID","Horvath","Hannum","Levine","BNN",
                              "skinHorvath","PedBE","Wu","TL","BLUP","EN")
 merged_data <- merge(predictedAges,sample_table,by="ID")
 filtered_data <- merged_data[merged_data$Misc != "Activated",]
-summary <- filtered_data %>% group_by(CellType) %>% summarise(average_age = mean(Horvath),
-                                                              sd_age=sd(Horvath))
+summary <- filtered_data %>% group_by(CellType) %>% summarise(average_age = mean(Hannum),
+                                                              sd_age=sd(Hannum))
 ggplot(summary,aes(x=CellType,y=average_age)) +
   geom_bar(stat="identity",position="dodge") + geom_errorbar(
     aes(ymin=average_age-sd_age,ymax=average_age+sd_age,width=.2)) + 
