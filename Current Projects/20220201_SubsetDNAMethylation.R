@@ -765,3 +765,5 @@ ggplot(
   labs(x="UMAP Component 1", y="UMAP Component 2", title = "UMAP Visualization") +
   theme_classic() +
   geom_point() # Plot individual points to make a scatterplot
+
+write.csv(rownames(nodiff_beta_rotated),"ClockConstruction/nodiff_cpgs.csv")
