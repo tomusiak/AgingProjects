@@ -81,15 +81,15 @@ matched_category <- annotations$main_Categories[matched_positions]
 m_values <- log2(dat0/(1-dat0))
 m_values$Symbol <- matched_symbols
 m_values$category <- matched_category
-m_values <- subset(m_values, m_values$category == "Exon" | 
-                     m_values$category == "Promoter" |
-                     m_values$category == "Intron")
+# m_values <- subset(m_values, m_values$category == "Exon" | 
+#                      m_values$category == "Promoter" |
+#                      m_values$category == "Intron")
 m_values <- m_values[!is.na(m_values$Symbol),]
 dat0_symbols <- dat0
 dat0_symbols$symbol <- matched_symbols
 dat0_symbols$category <- matched_category
-dat0_symbols <- subset(dat0_symbols, dat0_symbols$category == "Exon" | 
-                         dat0_symbols$category == "Promoter")
+# dat0_symbols <- subset(dat0_symbols, dat0_symbols$category == "Exon" | 
+#                          dat0_symbols$category == "Promoter")
 dat0_symbols <- dat0_symbols[!is.na(dat0_symbols$symbol),]
 
 #Another bit of pre-processing where we average the methylation of all CpGs by gene symbol.
@@ -486,11 +486,13 @@ ggplot(diff_exp_heartliver_freq,aes(x=logFC,y=-log10(adj.P.Val),size=sqrt(Freq),
                                     col=1/(sqrt(Freq)))) +
   geom_point() + theme_classic() + 
   geom_text_repel(data = subset(diff_exp_heartliver_freq, 
-                                label==TRUE), 
+                                label==TRUE,max.overlaps=1000), 
                                 aes(label = Row.names), 
                                 box.padding = unit(0.60, "lines")) +
-  xlim(-5.5,5.5) + ylim(0,36) +
+  xlim(-6,6) + ylim(0,40) +
   scale_color_distiller(palette = "RdPu")
+
+
 
 #Quick glances at a few genes Olga is interested in.
 heart_liver <- dat0_symbols[grepl("heart",colnames(dat0_symbols)) | 
@@ -501,3 +503,4 @@ Mfn1 <- analyzeGene(heart_liver,"Mfn1","KO")
 Mfn2 <- analyzeGene(heart_liver,"Mfn2","KO")
 Drp1 <- analyzeGene(heart_liver,"Drp1","KO")
 Rb1 <- analyzeGene(heart_liver,"Rb1","KO")
+Kdm5b <- analyzeGene(heart_liver,"Kdm5b","KO")
