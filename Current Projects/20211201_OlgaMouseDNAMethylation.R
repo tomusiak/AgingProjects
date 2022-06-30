@@ -81,9 +81,7 @@ matched_category <- annotations$main_Categories[matched_positions]
 m_values <- log2(dat0/(1-dat0))
 m_values$Symbol <- matched_symbols
 m_values$category <- matched_category
-# m_values <- subset(m_values, m_values$category == "Exon" | 
-#                      m_values$category == "Promoter" |
-#                      m_values$category == "Intron")
+m_values <- subset(m_values, m_values$category == "Promoter")
 m_values <- m_values[!is.na(m_values$Symbol),]
 dat0_symbols <- dat0
 dat0_symbols$symbol <- matched_symbols
@@ -166,9 +164,9 @@ plotDendroAndColors(hierSample, colors=datColors)
 # fully rigorous as it does not account for the number of samples. 
 genes_cpg_subtractions <- data.frame(matrix(ncol = 3, nrow = 1))
 colnames(genes_cpg_subtractions) <- c("Gene","Mean","SE")
-heart_m_values <- dat0_symbols[,grepl("heart",colnames(dat0_symbols)) |
-                                 grepl("symbol",colnames(dat0_symbols)) |
-                                 grepl("liver",colnames(dat0_symbols))]
+heart_m_values <- dat0_symbols[,grepl("WT",colnames(dat0_symbols)) |
+                                 grepl("KO",colnames(dat0_symbols)) |
+                                 grepl("symbol",colnames(dat0_symbols))]
 #Splits m values by all the CpGs per gene.
 split_m_values <- heart_m_values[,1:(ncol(heart_m_values)-1)] %>% 
   split(heart_m_values,f=heart_m_values$symbol)
@@ -226,6 +224,7 @@ ggplot(top_changes,aes(x=reorder(Gene,-Mean),
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
   xlab("Gene") + ylab("Mean Change of Methylation (WT-KO)") +
   ggtitle("Mean Change in Methylation Site State, Per Gene (Heart and Liver Only)")
+write.csv(top_changes,"olga_overall_top_differences.csv")
 
 #Straightforward limma-based differential methylation analysis.
 # Note that this is not statistically rigorous, partially due to not accounting for the
@@ -367,11 +366,12 @@ sig_dmrs_liver <- data.frame(rownames(diff_exp_liver[diff_exp_liver$adj.P.Val < 
                                                        abs(diff_exp_liver$logFC) >.10,]))
 
 #Writing each of the results into a csv.
-write.csv(sig_dmrs_muscle, "sig_dmrs_muscle.csv")
-write.csv(sig_dmrs_heart, "sig_dmrs_heart.csv")
-write.csv(sig_dmrs_cerebellum, "sig_dmrs_cerebellum.csv")
-write.csv(sig_dmrs_brain, "sig_dmrs_brain.csv")
-write.csv(sig_dmrs_liver, "sig_dmrs_liver.csv")
+write.csv(diff_exp_muscle, "sig_dmrs_muscle.csv")
+write.csv(diff_exp_heart, "sig_dmrs_heart.csv")
+write.csv(diff_exp_cerebellum, "sig_dmrs_cerebellum.csv")
+write.csv(diff_exp_brain, "sig_dmrs_brain.csv")
+write.csv(diff_exp_liver, "sig_dmrs_liver.csv")
+write.csv(diff_exp, "sig_dmrs_overall.csv")
 
 #Clock analysis looking at different tissues.
 horvathclock_heart <- clock_results[clock_results$Tissue=="Heart",]
@@ -504,3 +504,6 @@ Mfn2 <- analyzeGene(heart_liver,"Mfn2","KO")
 Drp1 <- analyzeGene(heart_liver,"Drp1","KO")
 Rb1 <- analyzeGene(heart_liver,"Rb1","KO")
 Kdm5b <- analyzeGene(heart_liver,"Kdm5b","KO")
+
+
+
