@@ -766,4 +766,4 @@ ggplot(
   theme_classic() +
   geom_point() # Plot individual points to make a scatterplot
 
-write.csv(rownames(nodiff_beta_rotated),"ClockConstruction/nodiff_cpgs.csv")
+write.csv(rownames(nodiff_beta_values),"ClockConstruction/nodiff_cpgs.csv")
