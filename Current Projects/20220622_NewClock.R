@@ -7,10 +7,20 @@ library(caret)
 library(glmnet)
 library(MASS)
 
+
 sample_table <- read.csv("ClockConstruction/sample_table.csv",row.names=1)
 cpg_table <- read.csv("ClockConstruction/cpg_table.csv",row.names=1)
 cpg_table_rotated <- data.frame(t(cpg_table))
-str(cpg_table)
+
+
+validation_sample_table <- read.csv("ClockConstruction/validation_sample_table.csv",row.names=1)
+validation_cpg_table <- read.csv("ClockConstruction/validation_cpg_table.csv",row.names=1)
+validation_cpg_table <- validation_cpg_table[rownames(validation_cpg_table) %in% 
+                                               rownames(cpg_table),]
+validation_cpg_table_rotated <- data.frame(t(validation_cpg_table))
+validation_cpg_table_rotated <- validation_cpg_table_rotated[,colnames(cpg_table_rotated[,1:227605])]
+small_validation <- validation_cpg_table_rotated[,220000:227605]
+
 train_control <- trainControl(method = "repeatedcv",
                               number = 5,
                               repeats = 5,
@@ -56,3 +66,6 @@ ggplotRegression <- function(fit){
 
 ggplotRegression(lm(Age ~ fitted, sample_table_2))
 
+#curious
+fitted_validation <- predict(training,small_validation)
+write.csv(fitted_validation,"ClockConstruction/predictions.csv")
