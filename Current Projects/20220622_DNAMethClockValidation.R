@@ -14,7 +14,7 @@ library(devtools)
 library(ggplot2)
 library("methylclock")
 
-#Quick helper function for pre-processing datasets.
+# #Quick helper function for pre-processing datasets.
 # preprocessDataset <- function(file_name) {
 #   cpgs <- data.frame(read_table2(file_name,
 #                                  col_names = FALSE, comment = "!"))
@@ -120,14 +120,14 @@ library("methylclock")
 #                                            "E5","E6","E1","E2","E3","E4",
 #                                            "E5","E6", "E1","E2","E3","E4"),
 #                                  Misc=c(rep("Resting",16)))
-# sample_table <- rbind(sample_table,pitaksalee_samples)
+# validation_sample_table <- rbind(sample_table,pitaksalee_samples)
 # cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(pitaksalee_cpgs),]
 # pitaksalee_cpgs <- pitaksalee_cpgs[rownames(pitaksalee_cpgs) %in% rownames(cpg_table),]
-# cpg_table <- cbind(cpg_table,pitaksalee_cpgs)
-
-#Writing tables and saving them.
-#write.csv(sample_table,"ClockConstruction/validation_sample_table.csv")
-#write.csv(cpg_table,"ClockConstruction/validation_cpg_table.csv")
+# validation_cpg_table <- cbind(cpg_table,pitaksalee_cpgs)
+# 
+# #Writing tables and saving them.
+# write.csv(validation_sample_table,"ClockConstruction/validation_sample_table.csv")
+# write.csv(validation_cpg_table,"ClockConstruction/validation_cpg_table.csv")
 
 #Reading in tables.
 validation_sample_table <- read.csv("ClockConstruction/validation_sample_table.csv",row.names=1)
