@@ -126,8 +126,8 @@ library("methylclock")
 # cpg_table <- cbind(cpg_table,pitaksalee_cpgs)
 
 #Writing tables and saving them.
-write.csv(sample_table,"ClockConstruction/validation_sample_table.csv")
-write.csv(cpg_table,"ClockConstruction/validation_cpg_table.csv")
+#write.csv(sample_table,"ClockConstruction/validation_sample_table.csv")
+#write.csv(cpg_table,"ClockConstruction/validation_cpg_table.csv")
 
 #Reading in tables.
 validation_sample_table <- read.csv("ClockConstruction/validation_sample_table.csv",row.names=1)
