@@ -19,6 +19,7 @@ library(stringr)
 library(tidyr)
 library(gplots)
 library(minfi)
+library(stats)
 
 #Read in clock data and metadata. Merge them and process them.
 clock_data <- read.csv("subset_data/clock_data.csv")
@@ -27,16 +28,9 @@ all_data <- merge(clock_data,subset_metadata)
 all_data$type <- as.character(all_data$type)
 all_data$type <- factor(all_data$type, levels=c("naive", "central_memory", "effector_memory","temra"))
 
-beta_values <- read.csv("subset_data/beta_values.csv", row.names=1)
-m_values <- read.csv("subset_data/m_values.csv", row.names=1)
-
 #Filter out unwanted data from metadata, mapping, and beta values.
 keep <- all_data$SampleID[all_data$SampleID != "D3" & all_data$sabgal_sample == FALSE]
 all_data <- all_data[all_data$SampleID %in% keep,]
-beta_values <- beta_values[,colnames(beta_values) %in% keep]
-beta_values <- beta_values[order(all_data$type)]
-m_values <- m_values[,colnames(m_values) %in% keep]
-m_values <- m_values[order(all_data$type)]
 all_data <- all_data[order(all_data$type),]
 
 #Calculate epigenetic clock acceleration
@@ -51,17 +45,6 @@ cm_data <- all_data[all_data$type == "central_memory",]
 em_data <- all_data[all_data$type == "effector_memory",]
 temra_data <- all_data[all_data$type == "temra",]
 
-#t tests
-t.test(em_data$IEAA,naive_data$IEAA,paired=TRUE)
-t_test_data <- data.frame(all_data[all_data$donor != "R45553",])
-t_test_data <- t_test_data[c("IEAA","type","donor")]
-t_test_data$type <- as.factor(t_test_data$type)
-t_test_data$donor <- as.factor(t_test_data$donor)
-test <- t_test_data %>% pairwise_t_test(IEAA ~ type, paired=TRUE,correction="bonferroni")  %>%
-  select(-df, -statistic, -p)
-res.aov <- t_test_data %>% anova_test(IEAA ~ type) 
-res.aov
-
 #QC check for DNA quantity
 ggplot(data=all_data, aes(x=as.factor(final_dna), y=meanAbsDifferenceSampleVSgoldstandard, group=1)) +
   geom_point() +
@@ -71,6 +54,7 @@ ggplot(data=all_data, aes(x=as.factor(final_dna), y=meanAbsDifferenceSampleVSgol
   labs(x="Input DNA",y="Difference between Sample and Gold Standard",
        title="QC - Differences between Sample and Gold Standard") 
 
+#Investigating differences in methylation age per subset.
 ggplot(data=summary, aes(x=type, y=diff, group=1)) +
   geom_line()+ 
   geom_point() +
@@ -82,8 +66,8 @@ ggplot(data=summary, aes(x=type, y=diff, group=1)) +
   labs(x="CD8+ T Cell Subset",y="Predicted Age - Age", title="CD8+ T Cell Subset Differences Between
        Clock Age and Chronological Age") 
 
+#Investigating differences in methylation age per subset, focusing on IEAA.
 summary_IEAA <- getSummary(all_data,"IEAA", "type")
-
 ggplot(data=summary_IEAA, aes(x=type, y=IEAA, group=1)) +
   geom_point() +
   theme_classic() +
@@ -93,8 +77,8 @@ ggplot(data=summary_IEAA, aes(x=type, y=IEAA, group=1)) +
   geom_errorbar(aes(ymin=IEAA-se, ymax=IEAA+se), width=.1) +
   labs(x="CD8+ T Cell Subset",y="IEAA", title="CD8+ T Cell Subset Differences With IEAA") 
 
+#Looking at whether there are donor-specific differences in IEAA.
 summary_IEAA_donor <- getSummary(all_data,"IEAA", "donor")
-
 ggplot(data=all_data, aes(x=donor, y=IEAA, group=1,color=type)) +
   geom_point() +
   theme_classic() +
@@ -103,9 +87,9 @@ ggplot(data=all_data, aes(x=donor, y=IEAA, group=1,color=type)) +
   geom_hline(yintercept = 0,linetype="dotted") +
   labs(x="Donor",y="IEAA", title="CD8+ IEAA Differences Between Donors") 
 
+#Looking at whether skewedness of clock results is age-dependent.
 young_subset <- all_data[all_data$age <= 50,]
 old_subset <- all_data[all_data$age > 50,]
-
 summary_young <- getSummary(young_subset,"diff", "type")
 summary_young$type <-  c("Naive","Central Memory","Effector Memory","TEMRA")
 summary_young$type <-factor(summary$type,levels=c("Naive","Central Memory","Effector Memory","TEMRA"))
@@ -145,7 +129,7 @@ ggplot(data=all_data,aes(x=age, y=DNAmAge, color=type)) +
   geom_hline(yintercept = 0,linetype="dotted") +
   labs(x="Donor Age",y="Predicted Age", title="Age vs. Predicted Age Per Donor") 
 
-#Looking at clock CpGs
+#Looking at clock CpGs - investigating which CpGs in the clock change with differentiation state.
 #data(HorvathLongCGlist)
 #clock_list <- HorvathLongCGlist
 #matching_cpgs <- match(clock_list$MR_var,mapping$cpg)
