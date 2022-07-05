@@ -1,3 +1,7 @@
+#This code analyzes data obtained from the Illumina EPIC array chip on four different CD8+ T cell
+# subsets - Naive, CM, EM, and TEMRA cells. It compares changes in DNA methylation between different ages,
+# and specifically investigates changes in CD8+ Naive cells.
+
 #Grabs some useful scripts.
 source("AgingProjects/Useful Scripts/generally_useful.R")
 

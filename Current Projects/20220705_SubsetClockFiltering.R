@@ -1,3 +1,9 @@
+#This code analyzes data obtained from the Illumina EPIC array chip on four different CD8+ T cell
+# subsets - Naive, CM, EM, and TEMRA cells. It identifies CpGs that are associated with T cell differentiation
+# and removes them. It then filters on remaining CpGs that are associated with aging. In so doing, the program
+# aims to create a list of CpGs that can be used for an epigenetic aging clock that are not associated with T
+# cell differentiation.
+
 #Grabs some useful scripts.
 source("AgingProjects/Useful Scripts/generally_useful.R")
 
@@ -128,4 +134,5 @@ ggplot(nodiff_umap_plot_df,aes(x=X2,y=Age)) +
   labs(x="UMAP Component 2", y="Age",title="UMAP Component 2 Tracks Age") +
   geom_point()
 
+#Writes list of candidate CpGs to be used for new clock construction.
 write.csv(rownames(nodiff_beta_values),"ClockConstruction/nodiff_cpgs.csv")

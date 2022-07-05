@@ -1,3 +1,6 @@
+#This program creates a new epigenetic clock by training on CpGs that were identified to be not associated with
+# T cell differentiation in a previous analysis. The clock is based on elastic net.
+
 source("AgingProjects/Useful Scripts/generally_useful.R")
 setwd("Data/") #Sets directory.
 
@@ -7,19 +10,18 @@ library(caret)
 library(glmnet)
 library(MASS)
 
-
 sample_table <- read.csv("ClockConstruction/sample_table.csv",row.names=1)
 cpg_table <- read.csv("ClockConstruction/cpg_table.csv",row.names=1)
 cpg_table_rotated <- data.frame(t(cpg_table))
-
+permitted_cpgs <- read.csv("ClockConstruction/nodiff_cpgs.csv",row.names=1)[,1]
 
 validation_sample_table <- read.csv("ClockConstruction/validation_sample_table.csv",row.names=1)
 validation_cpg_table <- read.csv("ClockConstruction/validation_cpg_table.csv",row.names=1)
 validation_cpg_table <- validation_cpg_table[rownames(validation_cpg_table) %in% 
                                                rownames(cpg_table),]
 validation_cpg_table_rotated <- data.frame(t(validation_cpg_table))
-validation_cpg_table_rotated <- validation_cpg_table_rotated[,colnames(cpg_table_rotated[,1:227605])]
-small_validation <- validation_cpg_table_rotated[,220000:227605]
+validation_cpg_table_rotated <- validation_cpg_table_rotated[,colnames(validation_cpg_table_rotated) %in%
+                                                               permitted_cpgs]
 
 train_control <- trainControl(method = "repeatedcv",
                               number = 5,
@@ -27,7 +29,9 @@ train_control <- trainControl(method = "repeatedcv",
                               search = "random",
                               verboseIter = TRUE)
 cpg_table_rotated$Age <- sample_table$Age
-small_test <- cpg_table_rotated[,220000:227606]
+small_test <- cpg_table_rotated[,colnames(cpg_table_rotated) %in%
+                                  permitted_cpgs | colnames(cpg_table_rotated) ==
+                                  "Age"]
 training <-train(Age ~ .,
       data = small_test,
       method = "glmnet",
@@ -67,5 +71,5 @@ ggplotRegression <- function(fit){
 ggplotRegression(lm(Age ~ fitted, sample_table_2))
 
 #curious
-fitted_validation <- predict(training,small_validation)
+fitted_validation <- predict(training,validation_cpg_table_rotated)
 write.csv(fitted_validation,"ClockConstruction/predictions.csv")
