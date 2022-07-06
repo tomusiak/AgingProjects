@@ -166,7 +166,7 @@ cd8_new_summary_type <- filtered_data[filtered_data$CellType=="Effector CD8+" |
                                 filtered_data$CellType=="Naive CD8+",] %>% 
   group_by(DonorID,CellType) %>% summarise(average_age = mean(new_predictions))
 cd8_new_differences <- cd8_new_summary_type %>% group_by(DonorID)
-ggplot(cd8_new_differences,aes(x=CellType,y=average_age)) + 
+ggplot(cd8_new_summary_type,aes(x=CellType,y=average_age)) + 
   geom_line(aes(group=DonorID)) + theme_classic()
 
 cd8_old_changes<- na.omit(ave(cd8_differences$average_age, 
@@ -189,6 +189,14 @@ cd8_quantifying_differences <- rbind(cd8_quantifying_differences,
                                                 Mean_SE=cd8_new_se))
 cd8_quantifying_differences <- cd8_quantifying_differences[-1,]
 cd8_quantifying_differences$Clock <- c("Horvath_Clock", "New_Clock")
+
+#Let's do a T test with the old and new clock on the validation samples - CD8s.
+old_naive_cd8 <- cd8_summary_type[cd8_summary_type$CellType=="Naive CD8+",]
+old_effector_cd8 <- cd8_summary_type[cd8_summary_type$CellType=="Effector CD8+",]
+new_naive_cd8 <- cd8_new_summary_type[cd8_new_summary_type$CellType=="Naive CD8+",]
+new_effector_cd8 <- cd8_new_summary_type[cd8_new_summary_type$CellType=="Effector CD8+",]
+t.test(old_naive_cd8$average_age,old_effector_cd8$average_age,paired=TRUE)
+t.test(new_naive_cd8$average_age,new_effector_cd8$average_age,paired=TRUE)
 
 #CD8+ differentiation processed above. Will process CD4+ differentiation below.
 
@@ -234,6 +242,14 @@ cd4_quantifying_differences$Cell <- "CD4 Memory - CD4 Naive"
 
 quantifying_differences <- rbind(cd8_quantifying_differences,
                                  cd4_quantifying_differences)
+
+#Let's do a T test with the old and new clock on the validation samples - CD4s.
+old_naive_cd4 <- cd4_summary_type[cd4_summary_type$CellType=="Naive CD4+",]
+old_memory_cd4 <- cd4_summary_type[cd4_summary_type$CellType=="Memory CD4+",]
+new_naive_cd4 <- cd4_new_summary_type[cd4_new_summary_type$CellType=="Naive CD4+",]
+new_memory_cd4 <- cd4_new_summary_type[cd4_new_summary_type$CellType=="Memory CD4+",]
+t.test(old_naive_cd4$average_age,old_memory_cd4$average_age,paired=TRUE)
+t.test(new_naive_cd4$average_age,new_memory_cd4$average_age,paired=TRUE)
 
 # Now plotting the differences in predicted age per differentiation state per clock.
 

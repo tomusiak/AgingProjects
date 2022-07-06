@@ -33,7 +33,7 @@ all_data <- merge(clock_data,subset_metadata)
 all_data$type <- as.character(all_data$type)
 all_data$type <- factor(all_data$type, levels=c("naive", "central_memory", "effector_memory","temra"))
 beta_values <- read.csv("subset_data/beta_values.csv", row.names=1)
-m_values <- read.csv("subset_data/m_values.csv", row.names=1)
+#m_values <- read.csv("subset_data/m_values.csv", row.names=1)
 
 #Filter out unwanted data from metadata, mapping, and beta values.
 keep <- all_data$SampleID[all_data$SampleID != "D3" & all_data$sabgal_sample == FALSE]
@@ -44,8 +44,8 @@ keep <- all_data$SampleID[all_data$SampleID != "D3" & all_data$sabgal_sample == 
 all_data <- all_data[all_data$SampleID %in% keep,]
 beta_values <- beta_values[,colnames(beta_values) %in% keep]
 beta_values <- beta_values[,order(all_data$type)]
-m_values <- m_values[,colnames(m_values) %in% keep]
-m_values <- m_values[order(all_data$type)]
+#m_values <- m_values[,colnames(m_values) %in% keep]
+#m_values <- m_values[order(all_data$type)]
 all_data <- all_data[order(all_data$type),]
 
 #Here we will do differential methylation analysis on subsets, but subset down to CpGs that
@@ -95,7 +95,7 @@ diff_exp <-topTable(fit.reduced,coef=8,number=1000000)
 #Now we can remove all CpGs that change with differentiation.
 changed_cpgs <- diff_exp[diff_exp$adj.P.Val < .10, ]
 `%!in%` <- Negate(`%in%`)
-filtered_cpgs <- filtered_beta_values[(rownames(filtered_beta_values) %!in% rownames(changed_cpgs)),]
+filtered_cpgs <- beta_values[(rownames(beta_values) %!in% rownames(changed_cpgs)),]
 
 #What if we now find best CpGs that change with age?
 # Note - we can remove this step, and it may be best to as using this method inherently biases for 
@@ -109,11 +109,11 @@ fit_aging <- eBayes(fit_aging, robust=TRUE)
 summary(decideTests(fit_aging))
 diff_exp_aging <-topTable(fit_aging,coef=5,number=100000)
 diff_exp_aging_order <- diff_exp_aging[order(diff_exp_aging$adj.P.Val),]
-age_cpgs <- diff_exp_aging_order[diff_exp_aging_order$adj.P.Val < .10, ]
+age_cpgs <- diff_exp_aging_order[diff_exp_aging_order$adj.P.Val < .05, ]
+filtered_cpgs <- filtered_cpgs[rownames(filtered_cpgs) %in% rownames(age_cpgs),]
 
 #Quickly double-checking if UMAP now segregates cell types..
-nodiff_beta_values <- beta_values[rownames(beta_values) %in% rownames(age_cpgs),]
-nodiff_beta_rotated <- t(nodiff_beta_values)
+nodiff_beta_rotated <- t(filtered_cpgs)
 nodiff_umap <- umap(nodiff_beta_rotated)
 nodiff_umap_plot_df <- data.frame(nodiff_umap$layout) %>%
   tibble::rownames_to_column("SampleID") %>%
@@ -125,7 +125,7 @@ nodiff_umap_plot_df$type <- factor(nodiff_umap_plot_df$type,
 #Plotting all of this now.
 ggplot(
   nodiff_umap_plot_df,
-  aes(x = X1, y = X2, color=Age )) +
+  aes(x = X1, y = X2, color=age )) +
   labs(x="UMAP Component 1", y="UMAP Component 2", title = "UMAP Visualization") +
   theme_classic() +
   geom_point() # Plot individual points to make a scatterplot
@@ -135,4 +135,4 @@ ggplot(nodiff_umap_plot_df,aes(x=X2,y=Age)) +
   geom_point()
 
 #Writes list of candidate CpGs to be used for new clock construction.
-write.csv(rownames(nodiff_beta_values),"ClockConstruction/nodiff_cpgs.csv")
+write.csv(rownames(filtered_cpgs),"ClockConstruction/nodiff_cpgs.csv")
