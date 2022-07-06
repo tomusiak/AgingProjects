@@ -132,26 +132,113 @@ library("methylclock")
 #Reading in tables.
 validation_sample_table <- read.csv("ClockConstruction/validation_sample_table.csv",row.names=1)
 validation_cpg_table <- read.csv("ClockConstruction/validation_cpg_table.csv",row.names=1)
+
+# #Here - testing whether or not I can re-capitulate Jonkman 2022 results.
+# # Looks like results are similar. 
+# cpg_names <- data.frame(rownames(validation_cpg_table))
+# validation_cpg_table <- as.data.frame(lapply(validation_cpg_table, as.numeric))
+# cpg_names <- cpg_names[!rowSums(validation_cpg_table > 1),]
+# validation_cpg_table <- validation_cpg_table[!rowSums(validation_cpg_table > 1),]
+# validation_cpg_table <- cbind(cpg_names,validation_cpg_table)
+# clocks <- checkClocks(validation_cpg_table)
+# predicted_ages <- DNAmAge(validation_cpg_table, toBetas=FALSE)
+# colnames(predicted_ages) <- c("ID","Horvath","Hannum","Levine","BNN",
+#                              "skinHorvath","PedBE","Wu","TL","BLUP","EN")
+# write.csv(predicted_ages,"ClockConstruction/predicted_ages_oldclock.csv")
+
+predicted_ages_oldclock <- read.csv("ClockConstruction/predicted_ages_oldclock.csv",row.names=1)
 predicted_ages_newclock <- read.csv("ClockConstruction/predictions.csv",row.names=1)
 validation_sample_table$new_predictions <- predicted_ages_newclock$x
-
-#Here - testing whether or not I can re-capitulate Jonkman 2022 results.
-# Looks like results are similar. 
-cpg_names <- data.frame(rownames(validation_cpg_table))
-validation_cpg_table <- as.data.frame(lapply(validation_cpg_table, as.numeric))
-cpg_names <- cpg_names[!rowSums(validation_cpg_table > 1),]
-validation_cpg_table <- validation_cpg_table[!rowSums(validation_cpg_table > 1),]
-validation_cpg_table <- cbind(cpg_names,validation_cpg_table)
-clocks <- checkClocks(validation_cpg_table)
-predictedAges <- DNAmAge(validation_cpg_table, toBetas=FALSE)
-colnames(predictedAges) <- c("ID","Horvath","Hannum","Levine","BNN",
-                             "skinHorvath","PedBE","Wu","TL","BLUP","EN")
-merged_data <- merge(predictedAges,validation_sample_table,by="ID")
+merged_data <- merge(predicted_ages,validation_sample_table,by="ID")
 filtered_data <- merged_data[merged_data$Misc != "Activated",]
-summary <- filtered_data %>% group_by(CellType) %>% summarise(average_age = mean(new_predictions),
-                                                              sd_age=sd(new_predictions))
-ggplot(summary,aes(x=CellType,y=average_age)) +
-  geom_bar(stat="identity",position="dodge") + geom_errorbar(
-    aes(ymin=average_age-sd_age,ymax=average_age+sd_age,width=.2)) + 
-  theme_classic()
+
+#Going to investigate CD4s and CD8s and compare the "differences" between CD8+ effector -> naive
+# and CD4 memory -> naive. If the new clock has differences substantially closer to 0, that is
+# an indicator of success.
+cd8_summary_type <- filtered_data[filtered_data$CellType=="Effector CD8+" | 
+                                filtered_data$CellType=="Naive CD8+",] %>% 
+  group_by(DonorID,CellType) %>% summarise(average_age = mean(Horvath))
+cd8_differences <- cd8_summary_type %>% group_by(DonorID)
+ggplot(cd8_differences,aes(x=CellType,y=average_age)) + 
+  geom_line(aes(group=DonorID)) + theme_classic()
+
+cd8_new_summary_type <- filtered_data[filtered_data$CellType=="Effector CD8+" | 
+                                filtered_data$CellType=="Naive CD8+",] %>% 
+  group_by(DonorID,CellType) %>% summarise(average_age = mean(new_predictions))
+cd8_new_differences <- cd8_new_summary_type %>% group_by(DonorID)
+ggplot(cd8_new_differences,aes(x=CellType,y=average_age)) + 
+  geom_line(aes(group=DonorID)) + theme_classic()
+
+cd8_old_changes<- na.omit(ave(cd8_differences$average_age, 
+                              factor(cd8_differences$DonorID), FUN=function(x) c(NA,diff(x))))
+cd8_new_changes<- na.omit(ave(cd8_new_differences$average_age, 
+                              factor(cd8_new_differences$DonorID), FUN=function(x) c(NA,diff(x))))
+cd8_old_mean <- mean(cd8_old_changes)
+cd8_old_se <- sd(cd8_old_changes)/sqrt(6)
+cd8_new_mean <- mean(cd8_new_changes)
+cd8_new_se <- sd(cd8_new_changes)/sqrt(6)
+
+cd8_quantifying_differences <- data.frame("Mean_Difference" = 1,
+                                      "Mean_SE" = 1)
+
+cd8_quantifying_differences <- rbind(cd8_quantifying_differences,
+                                     data.frame(Mean_Difference=cd8_old_mean,
+                                                Mean_SE=cd8_old_se))
+cd8_quantifying_differences <- rbind(cd8_quantifying_differences,
+                                     data.frame(Mean_Difference=cd8_new_mean,
+                                                Mean_SE=cd8_new_se))
+cd8_quantifying_differences <- cd8_quantifying_differences[-1,]
+cd8_quantifying_differences$Clock <- c("Horvath_Clock", "New_Clock")
+
+#CD8+ differentiation processed above. Will process CD4+ differentiation below.
+
+cd4_summary_type <- filtered_data[filtered_data$CellType=="Naive CD4+" | 
+                                    filtered_data$CellType=="Memory CD4+",] %>% 
+  group_by(DonorID,CellType) %>% summarise(average_age = mean(Horvath))
+cd4_summary_type <- cd4_summary_type[1:14,]
+cd4_differences <- cd4_summary_type %>% group_by(DonorID)
+ggplot(cd4_differences,aes(x=CellType,y=average_age)) + 
+  geom_line(aes(group=DonorID)) + theme_classic()
+
+cd4_new_summary_type <- filtered_data[filtered_data$CellType=="Naive CD4+" | 
+                                    filtered_data$CellType=="Memory CD4+",] %>% 
+  group_by(DonorID,CellType) %>% summarise(average_age = mean(new_predictions))
+cd4_new_summary_type <- cd4_new_summary_type[1:14,]
+cd4_new_differences <- cd4_new_summary_type %>% group_by(DonorID)
+ggplot(cd4_new_differences,aes(x=CellType,y=average_age)) + 
+  geom_line(aes(group=DonorID)) + theme_classic()
+
+cd4_old_changes<- na.omit(ave(cd4_differences$average_age, 
+                              factor(cd4_differences$DonorID), FUN=function(x) c(NA,diff(x))))
+cd4_new_changes<- na.omit(ave(cd4_new_differences$average_age, 
+                              factor(cd4_new_differences$DonorID), FUN=function(x) c(NA,diff(x))))
+cd4_old_mean <- mean(cd4_old_changes)
+cd4_old_se <- sd(cd4_old_changes)/sqrt(7)
+cd4_new_mean <- mean(cd4_new_changes)
+cd4_new_se <- sd(cd4_new_changes)/sqrt(7)
+
+cd4_quantifying_differences <- data.frame("Mean_Difference" = 1,
+                                      "Mean_SE" = 1)
+
+cd4_quantifying_differences <- rbind(cd4_quantifying_differences,
+                                     data.frame(Mean_Difference=cd4_old_mean,
+                                                Mean_SE=cd4_old_se))
+cd4_quantifying_differences <- rbind(cd4_quantifying_differences,
+                                     data.frame(Mean_Difference=cd4_new_mean,
+                                                Mean_SE=cd4_new_se))
+cd4_quantifying_differences <- cd4_quantifying_differences[-1,]
+cd4_quantifying_differences$Clock <- c("Horvath_Clock", "New_Clock")
+       
+cd8_quantifying_differences$Cell <- "CD8 EM - CD8 Naive"
+cd4_quantifying_differences$Cell <- "CD4 Memory - CD4 Naive"
+
+quantifying_differences <- rbind(cd8_quantifying_differences,
+                                 cd4_quantifying_differences)
+
+# Now plotting the differences in predicted age per differentiation state per clock.
+
+ggplot(quantifying_differences, aes(x=Clock,y=Mean_Difference,
+                                        ymin=Mean_Difference-Mean_SE,ymax=Mean_Difference+Mean_SE)) +
+  geom_point() + theme_classic() + geom_errorbar() + ylim(-25,25) + facet_wrap(~Cell) +
+  geom_hline(yintercept=0,linetype="dashed")
 
