@@ -109,7 +109,7 @@ fit_aging <- eBayes(fit_aging, robust=TRUE)
 summary(decideTests(fit_aging))
 diff_exp_aging <-topTable(fit_aging,coef=5,number=100000)
 diff_exp_aging_order <- diff_exp_aging[order(diff_exp_aging$adj.P.Val),]
-age_cpgs <- diff_exp_aging_order[diff_exp_aging_order$adj.P.Val < .05, ]
+age_cpgs <- diff_exp_aging_order[diff_exp_aging_order$adj.P.Val < .1, ]
 filtered_cpgs <- filtered_cpgs[rownames(filtered_cpgs) %in% rownames(age_cpgs),]
 
 #Quickly double-checking if UMAP now segregates cell types..

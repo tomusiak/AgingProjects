@@ -6,19 +6,23 @@ source("AgingProjects/Useful Scripts/generally_useful.R")
 setwd("Data/") #Sets directory.
 
 #Reading in necessary libraries.
+library(glmnet)
 library(readr)
 library(tidyr)
 library(caret)
-library(glmnet)
 library(MASS)
 
 #Reading in database data for training and testing.
 cpg_table <- read.csv("ClockConstruction/cpg_table.csv",row.names=1)
-cpg_table_rotated <- data.frame(t(cpg_table))
 permitted_cpgs <- read.csv("ClockConstruction/nodiff_cpgs.csv",row.names=1)[,1]
+sample_table <- read.csv("ClockConstruction/sample_table.csv",row.names=1)
+healthy_samples <- sample_table[sample_table$Condition=="Control",1]
+healthy_sample_table <- sample_table[sample_table$Condition=="Control",]
+cpg_table <- cpg_table[,colnames(cpg_table) %in% healthy_samples]
+cpg_table_rotated <- data.frame(t(cpg_table))
 
 #Annotating and splitting data.
-cpg_table_rotated$Age <- sample_table$Age
+cpg_table_rotated$Age <- healthy_sample_table$Age
 cpg_table_rotated <- cpg_table_rotated[,colnames(cpg_table_rotated) %in%
                                   permitted_cpgs | colnames(cpg_table_rotated) ==
                                   "Age"]
@@ -38,10 +42,10 @@ model <-train(Age ~ .,
       preProcess = c("center", "scale"),
       tuneLength = 25,
       trControl = train_control)
-fitted <- predict(model,test_set)
-fitted <- data.frame(fitted)
-fitted$ID <- rownames(fitted)
-sample_table_2 <- merge(sample_table,fitted,by="ID")
+predicted_age <- predict(model,test_set)
+predicted_age <- data.frame(predicted_age)
+predicted_age$ID <- rownames(predicted_age)
+sample_table_2 <- merge(sample_table,predicted_age,by="ID")
 
 #Useful script found online to create a ggplot with linear regression information.
 ggplotRegression <- function(fit){
@@ -53,11 +57,11 @@ ggplotRegression <- function(fit){
     labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
                        "Intercept =",signif(fit$coef[[1]],5 ),
                        " Slope =",signif(fit$coef[[2]], 5),
-                       " P =",signif(summary(fit)$coef[2,4], 5)))
+                       " P =",signif(summary(fit)$coef[2,4], 5))) 
 }
 
 #Plotting accuracy of the model.
-ggplotRegression(lm(Age ~ fitted, sample_table_2))
+ggplotRegression(lm(Age ~ predicted_age, sample_table_2))
 
 #Identifying which CpGs are important
 important_cpgs<-varImp(model)$importance

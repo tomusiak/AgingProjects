@@ -149,7 +149,9 @@ validation_cpg_table <- read.csv("ClockConstruction/validation_cpg_table.csv",ro
 predicted_ages_oldclock <- read.csv("ClockConstruction/predicted_ages_oldclock.csv",row.names=1)
 predicted_ages_newclock <- read.csv("ClockConstruction/predictions.csv",row.names=1)
 validation_sample_table$new_predictions <- predicted_ages_newclock$x
-merged_data <- merge(predicted_ages,validation_sample_table,by="ID")
+predicted_ages_newclock$ID <- rownames(predicted_ages_newclock)
+merged_data <- merge(predicted_ages_newclock,validation_sample_table,by="ID")
+merged_data <- merge(merged_data,predicted_ages_oldclock,by="ID")
 filtered_data <- merged_data[merged_data$Misc != "Activated",]
 
 #Going to investigate CD4s and CD8s and compare the "differences" between CD8+ effector -> naive
