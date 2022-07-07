@@ -2,7 +2,6 @@
 # T cell differentiation in a previous analysis. The clock is based on elastic net.
 
 #Some useful code.
-source("AgingProjects/Useful Scripts/generally_useful.R")
 setwd("Data/") #Sets directory.
 
 #Reading in necessary libraries.
@@ -11,6 +10,7 @@ library(readr)
 library(tidyr)
 library(caret)
 library(MASS)
+library(glmnetUtils)
 
 #Reading in database data for training and testing.
 cpg_table <- read.csv("ClockConstruction/cpg_table.csv",row.names=1)
@@ -18,17 +18,17 @@ permitted_cpgs <- read.csv("ClockConstruction/nodiff_cpgs.csv",row.names=1)[,1]
 sample_table <- read.csv("ClockConstruction/sample_table.csv",row.names=1)
 healthy_samples <- sample_table[sample_table$Condition=="Control",1]
 healthy_sample_table <- sample_table[sample_table$Condition=="Control",]
-cpg_table <- cpg_table[,colnames(cpg_table) %in% healthy_samples]
-cpg_table_rotated <- data.frame(t(cpg_table))
+healthy_cpg_table <- cpg_table[,colnames(cpg_table) %in% healthy_samples]
+healthy_cpg_table_rotated <- data.frame(t(healthy_cpg_table))
 
 #Annotating and splitting data.
-cpg_table_rotated$Age <- healthy_sample_table$Age
-cpg_table_rotated <- cpg_table_rotated[,colnames(cpg_table_rotated) %in%
-                                  permitted_cpgs | colnames(cpg_table_rotated) ==
+healthy_cpg_table_rotated$Age <- healthy_sample_table$Age
+healthy_cpg_table_rotated <- healthy_cpg_table_rotated[,colnames(healthy_cpg_table_rotated) %in%
+                                  permitted_cpgs | colnames(healthy_cpg_table_rotated) ==
                                   "Age"]
-splitting <- createDataPartition(cpg_table_rotated$Age,p=.67,list=FALSE)
-training_set <- cpg_table_rotated[splitting,]
-test_set <- cpg_table_rotated[-splitting,]
+splitting <- createDataPartition(healthy_cpg_table_rotated$Age,p=.67,list=FALSE)
+training_set <- healthy_cpg_table_rotated[splitting,]
+test_set <- healthy_cpg_table_rotated[-splitting,]
 
 #Training the model.
 train_control <- trainControl(method = "repeatedcv",
@@ -62,6 +62,7 @@ ggplotRegression <- function(fit){
 
 #Plotting accuracy of the model.
 ggplotRegression(lm(Age ~ predicted_age, sample_table_2))
+ggsave("ClockConstruction/clock_results_20220707.pdf")
 
 #Identifying which CpGs are important
 important_cpgs<-varImp(model)$importance

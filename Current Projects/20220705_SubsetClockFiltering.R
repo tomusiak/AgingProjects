@@ -58,7 +58,7 @@ beta_values <- beta_values[rownames(beta_values) %in% rownames(validation_cpg_ta
 #Going to perform UMAP analysis on overall data set to determine where most variation is
 # found. Intuitively, we will identify it in the T cell subsets that we assessed.
 beta_rotated <- t(beta_values)
-umap <- umap(beta_rotated)
+umap <- umap(beta_rotated,random_state=42)
 umap_plot_df <- data.frame(umap$layout) %>%
   tibble::rownames_to_column("SampleID") %>%
   dplyr::inner_join(all_data, by = "SampleID")
@@ -109,7 +109,7 @@ fit_aging <- eBayes(fit_aging, robust=TRUE)
 summary(decideTests(fit_aging))
 diff_exp_aging <-topTable(fit_aging,coef=5,number=100000)
 diff_exp_aging_order <- diff_exp_aging[order(diff_exp_aging$adj.P.Val),]
-age_cpgs <- diff_exp_aging_order[diff_exp_aging_order$adj.P.Val < .1, ]
+age_cpgs <- diff_exp_aging_order[diff_exp_aging_order$adj.P.Val < .2, ]
 filtered_cpgs <- filtered_cpgs[rownames(filtered_cpgs) %in% rownames(age_cpgs),]
 
 #Quickly double-checking if UMAP now segregates cell types..
