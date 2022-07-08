@@ -294,9 +294,59 @@ cpg_table <- cpg_table[,-1]
 # cpg_table <- cbind(cpg_table,muse2021_cpgs)
 
 # Blood data set.
+# konigsberg2021_unformatted_table <- read.table("Konigsberg2021/GSE167202_series_matrix.txt",
+#                                             comment = "!",
+#                                             skip=0,fill=TRUE,nrows = 6)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# konigsberg2021_formatted_samples <- strsplit(konigsberg2021_unformatted_table[1,2]," ")[[1]]
+# 
+# #Formatting ages.
+# konigsberg2021_unformatted_ages <- konigsberg2021_unformatted_table[4,-1]
+# konigsberg2021_formatted_ages <- as.numeric(str_sub(konigsberg2021_unformatted_ages, 5, 8))
+# 
+# #Formatting sex.
+# konigsberg2021_unformatted_sex <- konigsberg2021_unformatted_table[3,-1]
+# konigsberg2021_formatted_sex <- str_sub(konigsberg2021_unformatted_sex, 6, 15)
+# 
+# #Formatting condition and miscellaneous information.
+# konigsberg2021_unformatted_condition <- konigsberg2021_unformatted_table[2,-1]
+# konigsberg2021_formatted_condition <- str_sub(konigsberg2021_unformatted_condition, 15, 30)
+# konigsberg2021_formatted_condition[konigsberg2021_formatted_condition == "negative"] <- "Control"
+# konigsberg2021_formatted_condition[konigsberg2021_formatted_condition == "positive"] <- "COVID"
+# konigsberg2021_formatted_condition[konigsberg2021_formatted_condition == "other infection"] <-
+#   "Respiratory Illness"
+# 
+# konigsberg2021_IDs <- paste(rep("K",525),1:525,sep="")
+# 
+# konigsberg2021_samples <- data.frame(ID=konigsberg2021_formatted_samples,
+#                                     Author=rep("Konigsberg",525),
+#                                     Year=rep(2021,525),
+#                                     Tissue=rep("Blood",525),
+#                                     CellType=rep("PBMCs",525),
+#                                     Age=konigsberg2021_formatted_ages,
+#                                     Condition=konigsberg2021_formatted_condition,
+#                                     Sex=konigsberg2021_formatted_sex,
+#                                     DonorID=konigsberg2021_IDs,
+#                                     Misc=rep(NA,525))
+# 
+# konigsberg2021_cpgs <- data.table::fread("Konigsberg2021/GSE167202_ProcessedBetaValues.txt",
+#                                          header=TRUE) %>% 
+#                       as.data.frame()
+# konigsberg2021_cpgs <- konigsberg2021_cpgs[,-c(2:22)]
+# row.names(konigsberg2021_cpgs) <- konigsberg2021_cpgs$ID_REF
+# konigsberg2021_cpgs <- konigsberg2021_cpgs[,-1]
+# colnames(konigsberg2021_cpgs) <- konigsberg2021_formatted_samples
+# 
+# konigsberg2021_cpgs <- konigsberg2021_cpgs[rownames(konigsberg2021_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(konigsberg2021_cpgs),]
+# 
+# sample_table <- rbind(sample_table,konigsberg2021_samples)
+# cpg_table <- cbind(cpg_table,konigsberg2021_cpgs)
+
 konigsberg2021_unformatted_table <- read.table("Konigsberg2021/GSE167202_series_matrix.txt",
-                                            comment = "!",
-                                            skip=0,fill=TRUE,nrows = 6)
+                                               comment = "!",
+                                               skip=0,fill=TRUE,nrows = 6)
 
 #Formatting sample names, as the header text file is not arranged in a particularly easy way.
 konigsberg2021_formatted_samples <- strsplit(konigsberg2021_unformatted_table[1,2]," ")[[1]]
@@ -320,19 +370,19 @@ konigsberg2021_formatted_condition[konigsberg2021_formatted_condition == "other 
 konigsberg2021_IDs <- paste(rep("K",525),1:525,sep="")
 
 konigsberg2021_samples <- data.frame(ID=konigsberg2021_formatted_samples,
-                                    Author=rep("Konigsberg",525),
-                                    Year=rep(2021,525),
-                                    Tissue=rep("Blood",525),
-                                    CellType=rep("PBMCs",525),
-                                    Age=konigsberg2021_formatted_ages,
-                                    Condition=konigsberg2021_formatted_condition,
-                                    Sex=konigsberg2021_formatted_sex,
-                                    DonorID=konigsberg2021_IDs,
-                                    Misc=rep(NA,525))
+                                     Author=rep("Konigsberg",525),
+                                     Year=rep(2021,525),
+                                     Tissue=rep("Blood",525),
+                                     CellType=rep("PBMCs",525),
+                                     Age=konigsberg2021_formatted_ages,
+                                     Condition=konigsberg2021_formatted_condition,
+                                     Sex=konigsberg2021_formatted_sex,
+                                     DonorID=konigsberg2021_IDs,
+                                     Misc=rep(NA,525))
 
 konigsberg2021_cpgs <- data.table::fread("Konigsberg2021/GSE167202_ProcessedBetaValues.txt",
                                          header=TRUE) %>% 
-                      as.data.frame()
+  as.data.frame()
 konigsberg2021_cpgs <- konigsberg2021_cpgs[,-c(2:22)]
 row.names(konigsberg2021_cpgs) <- konigsberg2021_cpgs$ID_REF
 konigsberg2021_cpgs <- konigsberg2021_cpgs[,-1]

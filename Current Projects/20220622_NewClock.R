@@ -22,7 +22,7 @@ sample_table <- read.csv("ClockConstruction/healthy_sample_table.csv",row.names=
 
 #Annotating and splitting data.
 ml_cpg_table_rotated <- data.frame(t(ml_cpg_table))
-ml_cpg_table_rotated$Age <- ml_cpg_table_rotated$Age
+ml_cpg_table_rotated$Age <- sample_table$Age
 ml_cpg_table_rotated <- ml_cpg_table_rotated[,colnames(ml_cpg_table_rotated) %in%
                                   permitted_cpgs | colnames(ml_cpg_table_rotated) ==
                                   "Age"]
