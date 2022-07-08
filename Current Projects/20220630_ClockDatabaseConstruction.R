@@ -17,7 +17,10 @@ library(methylumi)
 library(minfi)
 
 sample_table <- read.csv("ClockConstruction/sample_table.csv",row.names=1)
-cpg_table <- read.csv("ClockConstruction/cpg_table.csv",row.names=1)
+cpg_table <- data.table::fread("ClockConstruction/cpg_table.csv",header=TRUE)  %>% as.data.frame()
+row.names(cpg_table) <- cpg_table$V1
+cpg_table <- cpg_table[,-1]
+
 # 
 # #Reading in the 450K dataset from Magnaye 2022 et al.
 # magnaye2022450k_unformatted_table <- read.table("Magnaye2022/GSE201872-GPL21145_series_matrix.txt",
@@ -291,59 +294,65 @@ cpg_table <- read.csv("ClockConstruction/cpg_table.csv",row.names=1)
 # cpg_table <- cbind(cpg_table,muse2021_cpgs)
 
 # Blood data set.
-konigsberg2021_unformatted_table <- read.table("Konigsberg2021/GSE169598_series_matrix.txt",
+konigsberg2021_unformatted_table <- read.table("Konigsberg2021/GSE167202_series_matrix.txt",
                                             comment = "!",
                                             skip=0,fill=TRUE,nrows = 6)
 
 #Formatting sample names, as the header text file is not arranged in a particularly easy way.
-konigsberg2021_unformatted_samples <- konigsberg2021_unformatted_table[1,-1]
-konigsberg2021_formatted_samples <- t(konigsberg2021_unformatted_samples)[,1]
+konigsberg2021_formatted_samples <- strsplit(konigsberg2021_unformatted_table[1,2]," ")[[1]]
 
 #Formatting ages.
-konigsberg2021_unformatted_ages <- konigsberg2021_unformatted_table[3,-1]
-konigsberg2021_formatted_ages <- as.numeric(str_sub(konigsberg2021_unformatted_ages, 13, 19))
+konigsberg2021_unformatted_ages <- konigsberg2021_unformatted_table[4,-1]
+konigsberg2021_formatted_ages <- as.numeric(str_sub(konigsberg2021_unformatted_ages, 5, 8))
 
 #Formatting sex.
-konigsberg2021_unformatted_sex <- konigsberg2021_unformatted_table[4,-1]
-konigsberg2021_formatted_sex <- str_sub(konigsberg2021_unformatted_sex, 6, 7)
-
-konigsberg2021_unformatted_donor <- konigsberg2021_unformatted_table[2,-1]
-konigsberg2021_unformatted_donor <- str_sub(konigsberg2021_unformatted_donor, 10,15)
-konigsberg2021_unformatted_donor <- as.numeric(factor(konigsberg2021_unformatted_donor))
-konigsberg2021_formatted_donor <- paste(rep("J",64),konigsberg2021_unformatted_donor,sep="")
+konigsberg2021_unformatted_sex <- konigsberg2021_unformatted_table[3,-1]
+konigsberg2021_formatted_sex <- str_sub(konigsberg2021_unformatted_sex, 6, 15)
 
 #Formatting condition and miscellaneous information.
-konigsberg2021_unformatted_condition <- konigsberg2021_unformatted_table[6,-1]
-konigsberg2021_formatted_condition <- str_sub(konigsberg2021_unformatted_condition, 17, 30)
-konigsberg2021_formatted_condition[konigsberg2021_formatted_condition == ""] <- "Control"
+konigsberg2021_unformatted_condition <- konigsberg2021_unformatted_table[2,-1]
+konigsberg2021_formatted_condition <- str_sub(konigsberg2021_unformatted_condition, 15, 30)
+konigsberg2021_formatted_condition[konigsberg2021_formatted_condition == "negative"] <- "Control"
+konigsberg2021_formatted_condition[konigsberg2021_formatted_condition == "positive"] <- "COVID"
+konigsberg2021_formatted_condition[konigsberg2021_formatted_condition == "other infection"] <-
+  "Respiratory Illness"
 
-konigsberg2021_IDs <- paste(rep("J",64),1:64,sep="")
+konigsberg2021_IDs <- paste(rep("K",525),1:525,sep="")
 
 konigsberg2021_samples <- data.frame(ID=konigsberg2021_formatted_samples,
-                                    Author=rep("Muse",64),
-                                    Year=rep(2021,64),
-                                    Tissue=rep("Skin",64),
-                                    CellType=rep("Epithelial",64),
+                                    Author=rep("Konigsberg",525),
+                                    Year=rep(2021,525),
+                                    Tissue=rep("Blood",525),
+                                    CellType=rep("PBMCs",525),
                                     Age=konigsberg2021_formatted_ages,
                                     Condition=konigsberg2021_formatted_condition,
                                     Sex=konigsberg2021_formatted_sex,
                                     DonorID=konigsberg2021_IDs,
-                                    Misc=rep(NA,64))
+                                    Misc=rep(NA,525))
 
-konigsberg2021_cpgs <- read.table("Konisberg2021/GSE188593_series_matrix.txt",
-                               comment = "!",
-                               skip=5,
-                               fill=TRUE)
-konigsberg2021_cpgs <- data.frame(konigsberg2021_cpgs)
-konigsberg2021_cpgs <- konigsberg2021_cpgs[-c(1:6),]
-rownames(konigsberg2021_cpgs) <- konigsberg2021_cpgs$V1
-konigsberg2021_cpgs <- data.frame(konigsberg2021_cpgs[,-1])
-colnames(konigsberg2021_cpgs) <- konigsberg2021_unformatted_samples
+konigsberg2021_cpgs <- data.table::fread("Konigsberg2021/GSE167202_ProcessedBetaValues.txt",
+                                         header=TRUE) %>% 
+                      as.data.frame()
+konigsberg2021_cpgs <- konigsberg2021_cpgs[,-c(2:22)]
+row.names(konigsberg2021_cpgs) <- konigsberg2021_cpgs$ID_REF
+konigsberg2021_cpgs <- konigsberg2021_cpgs[,-1]
+colnames(konigsberg2021_cpgs) <- konigsberg2021_formatted_samples
+
 konigsberg2021_cpgs <- konigsberg2021_cpgs[rownames(konigsberg2021_cpgs) %in% rownames(cpg_table),]
 cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(konigsberg2021_cpgs),]
 
 sample_table <- rbind(sample_table,konigsberg2021_samples)
 cpg_table <- cbind(cpg_table,konigsberg2021_cpgs)
 
-write.csv(cpg_table,"ClockConstruction/cpg_table.csv")
-write.csv(sample_table,"ClockConstruction/sample_table.csv")
+healthy_samples <- sample_table[sample_table$Condition=="Control",1]
+healthy_sample_table <- sample_table[sample_table$Condition=="Control",]
+healthy_cpg_table <- cpg_table[,colnames(cpg_table) %in% healthy_samples]
+
+data.table::fwrite(cpg_table,"ClockConstruction/cpg_table.csv", 
+                   row.names = TRUE)
+data.table::fwrite(sample_table,"ClockConstruction/sample_table.csv",
+                   row.names = TRUE)
+data.table::fwrite(healthy_cpg_table,"ClockConstruction/healthy_cpg_table.csv", 
+                   row.names = TRUE)
+data.table::fwrite(healthy_sample_table,"ClockConstruction/healthy_sample_table.csv",
+                   row.names = TRUE)

@@ -13,22 +13,22 @@ library(MASS)
 library(glmnetUtils)
 
 #Reading in database data for training and testing.
-cpg_table <- read.csv("ClockConstruction/cpg_table.csv",row.names=1)
+ml_cpg_table <- data.table::fread("ClockConstruction/healthy_cpg_table.csv",header=TRUE) %>% 
+  as.data.frame()
+row.names(ml_cpg_table) <- ml_cpg_table$V1
+ml_cpg_table <- ml_cpg_table[,-1]
 permitted_cpgs <- read.csv("ClockConstruction/nodiff_cpgs.csv",row.names=1)[,1]
-sample_table <- read.csv("ClockConstruction/sample_table.csv",row.names=1)
-healthy_samples <- sample_table[sample_table$Condition=="Control",1]
-healthy_sample_table <- sample_table[sample_table$Condition=="Control",]
-healthy_cpg_table <- cpg_table[,colnames(cpg_table) %in% healthy_samples]
-healthy_cpg_table_rotated <- data.frame(t(healthy_cpg_table))
+sample_table <- read.csv("ClockConstruction/healthy_sample_table.csv",row.names=1)
 
 #Annotating and splitting data.
-healthy_cpg_table_rotated$Age <- healthy_sample_table$Age
-healthy_cpg_table_rotated <- healthy_cpg_table_rotated[,colnames(healthy_cpg_table_rotated) %in%
-                                  permitted_cpgs | colnames(healthy_cpg_table_rotated) ==
+ml_cpg_table_rotated <- data.frame(t(ml_cpg_table))
+ml_cpg_table_rotated$Age <- ml_cpg_table_rotated$Age
+ml_cpg_table_rotated <- ml_cpg_table_rotated[,colnames(ml_cpg_table_rotated) %in%
+                                  permitted_cpgs | colnames(ml_cpg_table_rotated) ==
                                   "Age"]
-splitting <- createDataPartition(healthy_cpg_table_rotated$Age,p=.67,list=FALSE)
-training_set <- healthy_cpg_table_rotated[splitting,]
-test_set <- healthy_cpg_table_rotated[-splitting,]
+splitting <- createDataPartition(ml_cpg_table_rotated$Age,p=.67,list=FALSE)
+training_set <- ml_cpg_table_rotated[splitting,]
+test_set <- ml_cpg_table_rotated[-splitting,]
 
 #Training the model.
 train_control <- trainControl(method = "repeatedcv",
