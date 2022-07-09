@@ -131,7 +131,11 @@ library("methylclock")
 
 #Reading in tables.
 validation_sample_table <- read.csv("ClockConstruction/validation_sample_table.csv",row.names=1)
-validation_cpg_table <- read.csv("ClockConstruction/validation_cpg_table.csv",row.names=1)
+# validation_cpg_table <- data.table::fread("ClockConstruction/validation_cpg_table.csv",
+#                                           header=TRUE) %>% 
+#                                           as.data.frame()
+# row.names(validation_cpg_table) <- validation_cpg_table$V1
+# validation_cpg_table <- validation_cpg_table[,-1]
 
 # #Here - testing whether or not I can re-capitulate Jonkman 2022 results.
 # # Looks like results are similar. 
@@ -259,4 +263,4 @@ ggplot(quantifying_differences, aes(x=Clock,y=Mean_Difference,
                                         ymin=Mean_Difference-Mean_SE,ymax=Mean_Difference+Mean_SE)) +
   geom_point() + theme_classic() + geom_errorbar() + ylim(-25,25) + facet_wrap(~Cell) +
   geom_hline(yintercept=0,linetype="dashed")
-
+ggsave("ClockConstruction/validation_clock_results_20220707.pdf")

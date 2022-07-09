@@ -293,7 +293,7 @@ cpg_table <- cpg_table[,-1]
 # sample_table <- rbind(sample_table,muse2021_samples)
 # cpg_table <- cbind(cpg_table,muse2021_cpgs)
 
-# Blood data set.
+# #Blood data set.
 # konigsberg2021_unformatted_table <- read.table("Konigsberg2021/GSE167202_series_matrix.txt",
 #                                             comment = "!",
 #                                             skip=0,fill=TRUE,nrows = 6)
@@ -331,11 +331,14 @@ cpg_table <- cpg_table[,-1]
 #                                     Misc=rep(NA,525))
 # 
 # konigsberg2021_cpgs <- data.table::fread("Konigsberg2021/GSE167202_ProcessedBetaValues.txt",
-#                                          header=TRUE) %>% 
+#                                          header=TRUE) %>%
 #                       as.data.frame()
 # konigsberg2021_cpgs <- konigsberg2021_cpgs[,-c(2:22)]
+# konigsberg2021_sequence_ids <- konigsberg2021_unformatted_table[5,-1]
+# konigsberg2021_sequence_ids <- unlist(konigsberg2021_sequence_ids)
 # row.names(konigsberg2021_cpgs) <- konigsberg2021_cpgs$ID_REF
 # konigsberg2021_cpgs <- konigsberg2021_cpgs[,-1]
+# konigsberg2021_cpgs <- konigsberg2021_cpgs[,konigsberg2021_sequence_ids]
 # colnames(konigsberg2021_cpgs) <- konigsberg2021_formatted_samples
 # 
 # konigsberg2021_cpgs <- konigsberg2021_cpgs[rownames(konigsberg2021_cpgs) %in% rownames(cpg_table),]
@@ -344,55 +347,224 @@ cpg_table <- cpg_table[,-1]
 # sample_table <- rbind(sample_table,konigsberg2021_samples)
 # cpg_table <- cbind(cpg_table,konigsberg2021_cpgs)
 
-konigsberg2021_unformatted_table <- read.table("Konigsberg2021/GSE167202_series_matrix.txt",
-                                               comment = "!",
-                                               skip=0,fill=TRUE,nrows = 6)
+#Brain samples.
+# haghighi2022_unformatted_table <- read.table("Haghighi2022/GSE191200_series_matrix.txt",
+#                                                comment = "!",
+#                                                skip=0,fill=TRUE,nrows = 6)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# haghighi2022_formatted_samples <- strsplit(haghighi2022_unformatted_table[1,2]," ")[[1]]
+# 
+# #Formatting ages.
+# haghighi2022_unformatted_ages <- haghighi2022_unformatted_table[4,-1]
+# haghighi2022_formatted_ages <- as.numeric(str_sub(haghighi2022_unformatted_ages, 5, 8))
+# 
+# #Formatting sex.
+# haghighi2022_unformatted_sex <- haghighi2022_unformatted_table[5,-1]
+# haghighi2022_formatted_sex <- str_sub(haghighi2022_unformatted_sex, 6, 15)
+# 
+# #Formatting condition and miscellaneous information.
+# haghighi2022_unformatted_condition <- haghighi2022_unformatted_table[6,-1]
+# haghighi2022_formatted_condition <- str_sub(haghighi2022_unformatted_condition, 12, 30)
+# 
+# haghighi2022_unformatted_donor <- haghighi2022_unformatted_table[2,-1]
+# haghighi2022_unformatted_donor <- str_sub(haghighi2022_unformatted_donor,11,15)
+# haghighi2022_unformatted_donor <- as.numeric(factor(haghighi2022_unformatted_donor,
+#                                              labels=c(1:22)))
+# haghighi2022_formatted_donor <- paste(rep("L",56),haghighi2022_unformatted_donor,sep="")
+# 
+# haghighi2022_samples <- data.frame(ID=haghighi2022_formatted_samples,
+#                                      Author=rep("Haghighi",56),
+#                                      Year=rep(2022,56),
+#                                      Tissue=rep("Brain",56),
+#                                      CellType=rep("Microglia",56),
+#                                      Age=haghighi2022_formatted_ages,
+#                                      Condition=haghighi2022_formatted_condition,
+#                                      Sex=haghighi2022_formatted_sex,
+#                                      DonorID=haghighi2022_formatted_donor,
+#                                      Misc=rep(NA,56))
+# 
+# haghighi2022_cpgs <- read.table("Haghighi2022/GSE191200_series_matrix.txt",
+#                                                                 comment = "!",
+#                                                                 skip=7,
+#                                                                 fill=TRUE)
+# haghighi2022_cpgs <- haghighi2022_cpgs[-c(1:6),]
+# row.names(haghighi2022_cpgs) <- haghighi2022_cpgs$V1
+# haghighi2022_cpgs <- haghighi2022_cpgs[,-1]
+# colnames(haghighi2022_cpgs) <- haghighi2022_cpgs[1,]
+# haghighi2022_cpgs <- haghighi2022_cpgs[-1,]
+# 
+# haghighi2022_cpgs <- haghighi2022_cpgs[rownames(haghighi2022_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(haghighi2022_cpgs),]
+# 
+# sample_table <- rbind(sample_table,haghighi2022_samples)
+# cpg_table <- cbind(cpg_table,haghighi2022_cpgs)
 
-#Formatting sample names, as the header text file is not arranged in a particularly easy way.
-konigsberg2021_formatted_samples <- strsplit(konigsberg2021_unformatted_table[1,2]," ")[[1]]
+# #Colorectal samples.
+# chen2021_unformatted_table <- read.table("Chen2021/GSE159898_series_matrix.txt",
+#                                                comment = "!",
+#                                                skip=0,fill=TRUE,nrows = 6)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# chen2021_formatted_samples <- strsplit(chen2021_unformatted_table[1,2]," ")[[1]]
+# 
+# #Formatting ages.
+# chen2021_unformatted_ages <- chen2021_unformatted_table[3,-1]
+# chen2021_formatted_ages <- as.numeric(str_sub(chen2021_unformatted_ages, 5, 8))
+# 
+# #Formatting sex.
+# chen2021_unformatted_sex <- chen2021_unformatted_table[2,-1]
+# chen2021_formatted_sex <- str_sub(chen2021_unformatted_sex, 9, 15)
+# 
+# #Formatting condition and miscellaneous information.
+# chen2021_unformatted_condition <- chen2021_unformatted_table[4,-1]
+# chen2021_formatted_condition <- str_sub(chen2021_unformatted_condition, 14, 40)
+# chen2021_formatted_condition[chen2021_formatted_condition == "normal colorectal tissue"] <-
+#      "Control"
+# chen2021_formatted_condition[chen2021_formatted_condition == "colorectal cancer tissue"] <-
+#   "Colorectal Cancer"
+# 
+# chen2021_unformatted_donor <- chen2021_unformatted_table[5,-1]
+# chen2021_unformatted_donor <- str_sub(chen2021_unformatted_donor,11,15)
+# chen2021_unformatted_donor <- as.numeric(factor(chen2021_unformatted_donor,
+#                                              labels=c(1:21)))
+# chen2021_formatted_donor <- paste(rep("M",44),chen2021_unformatted_donor,sep="")
+# 
+# chen2021_samples <- data.frame(ID=chen2021_formatted_samples,
+#                                      Author=rep("Chen",44),
+#                                      Year=rep(2021,44),
+#                                      Tissue=rep("Colorectal",44),
+#                                      CellType=rep("Epithelial (Colorectal)",44),
+#                                      Age=chen2021_formatted_ages,
+#                                      Condition=chen2021_formatted_condition,
+#                                      Sex=chen2021_formatted_sex,
+#                                      DonorID=chen2021_formatted_donor,
+#                                      Misc=rep(NA,44))
+# 
+# chen2021_cpgs <- read.table("Chen2021/GSE159898_series_matrix.txt",
+#                                                                 comment = "!",
+#                                                                 skip=7,
+#                                                                 fill=TRUE)
+# chen2021_cpgs <- chen2021_cpgs[-c(1:5),]
+# row.names(chen2021_cpgs) <- chen2021_cpgs$V1
+# chen2021_cpgs <- chen2021_cpgs[,-1]
+# colnames(chen2021_cpgs) <- chen2021_cpgs[1,]
+# chen2021_cpgs <- chen2021_cpgs[-1,]
+# 
+# chen2021_cpgs <- chen2021_cpgs[rownames(chen2021_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(chen2021_cpgs),]
+# 
+# sample_table <- rbind(sample_table,chen2021_samples)
+# cpg_table <- cbind(cpg_table,chen2021_cpgs)
 
-#Formatting ages.
-konigsberg2021_unformatted_ages <- konigsberg2021_unformatted_table[4,-1]
-konigsberg2021_formatted_ages <- as.numeric(str_sub(konigsberg2021_unformatted_ages, 5, 8))
+#Skeletal Muscle samples
+# voisin2021_unformatted_table <- read.table("Voisin2021/GSE151407_series_matrix.txt",
+#                                          comment = "!",
+#                                          skip=0,fill=TRUE,nrows = 6)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# voisin2021_formatted_samples <- strsplit(voisin2021_unformatted_table[1,2]," ")[[1]]
+# 
+# #Formatting ages.
+# voisin2021_unformatted_ages <- voisin2021_unformatted_table[3,-1]
+# voisin2021_formatted_ages <- as.numeric(str_sub(voisin2021_unformatted_ages, 5, 8))
+# 
+# #Formatting sex.
+# voisin2021_unformatted_sex <- voisin2021_unformatted_table[4,-1]
+# voisin2021_formatted_sex <- str_sub(voisin2021_unformatted_sex, 6, 15)
+# 
+# #Formatting condition and miscellaneous information.
+# voisin2021_unformatted_condition <- voisin2021_unformatted_table[2,-1]
+# voisin2021_formatted_condition <- str_sub(voisin2021_unformatted_condition, 8, 10)
+# voisin2021_formatted_condition[voisin2021_formatted_condition == "PRE"] <-
+#   "Control"
+# voisin2021_formatted_condition[voisin2021_formatted_condition != "Control"] <-
+#   "HIIT"
+# 
+# voisin2021_unformatted_donor <- voisin2021_unformatted_table[2,-1]
+# voisin2021_unformatted_donor <- str_sub(voisin2021_unformatted_donor,-9,-6)
+# voisin2021_unformatted_donor <- sub("_", "", voisin2021_unformatted_donor)
+# voisin2021_unformatted_donor <- as.numeric(factor(voisin2021_unformatted_donor,
+#                                                 labels=c(1:25)))
+# voisin2021_formatted_donor <- paste(rep("N",78),voisin2021_unformatted_donor,sep="")
+# 
+# voisin2021_samples <- data.frame(ID=voisin2021_formatted_samples,
+#                                Author=rep("Voisin",78),
+#                                Year=rep(2021,78),
+#                                Tissue=rep("Skeletal Muscle",78),
+#                                CellType=rep("Muscle Cells",78),
+#                                Age=voisin2021_formatted_ages,
+#                                Condition=voisin2021_formatted_condition,
+#                                Sex=voisin2021_formatted_sex,
+#                                DonorID=voisin2021_formatted_donor,
+#                                Misc=rep(NA,78))
+# 
+# voisin2021_cpgs <- read.table("Voisin2021/GSE151407_series_matrix.txt",
+#                             comment = "!",
+#                             skip=7,
+#                             fill=TRUE)
+# voisin2021_cpgs <- voisin2021_cpgs[-c(1:4),]
+# row.names(voisin2021_cpgs) <- voisin2021_cpgs$V1
+# voisin2021_cpgs <- voisin2021_cpgs[,-1]
+# colnames(voisin2021_cpgs) <- voisin2021_cpgs[1,]
+# voisin2021_cpgs <- voisin2021_cpgs[-1,]
+# 
+# voisin2021_cpgs <- voisin2021_cpgs[rownames(voisin2021_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(voisin2021_cpgs),]
+# 
+# sample_table <- rbind(sample_table,voisin2021_samples)
+# cpg_table <- cbind(cpg_table,voisin2021_cpgs)
 
-#Formatting sex.
-konigsberg2021_unformatted_sex <- konigsberg2021_unformatted_table[3,-1]
-konigsberg2021_formatted_sex <- str_sub(konigsberg2021_unformatted_sex, 6, 15)
+# fries2019_unformatted_table <- read.table("Fries2019/GSE129428_series_matrix.txt",
+#                                          comment = "!",
+#                                          skip=0,fill=TRUE,nrows = 6)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# fries2019_formatted_samples <- strsplit(fries2019_unformatted_table[1,2]," ")[[1]]
+# 
+# #Formatting ages.
+# fries2019_unformatted_ages <- fries2019_unformatted_table[4,-1]
+# fries2019_formatted_ages <- as.numeric(str_sub(fries2019_unformatted_ages, 14, 19))
+# 
+# #Formatting sex.
+# fries2019_unformatted_sex <- fries2019_unformatted_table[2,-1]
+# fries2019_formatted_sex <- str_sub(fries2019_unformatted_sex, 6, 15)
+# 
+# #Formatting condition and miscellaneous information.
+# fries2019_unformatted_condition <- fries2019_unformatted_table[3,-1]
+# fries2019_formatted_condition <- str_sub(fries2019_unformatted_condition, 8, 100)
+# 
+# fries2019_formatted_donor <- paste(rep("O",64),c(1:64),sep="")
+# 
+# fries2019_samples <- data.frame(ID=fries2019_formatted_samples,
+#                                Author=rep("Fries",64),
+#                                Year=rep(2019,64),
+#                                Tissue=rep("Brain",64),
+#                                CellType=rep("Brain Cells",64),
+#                                Age=fries2019_formatted_ages,
+#                                Condition=fries2019_formatted_condition,
+#                                Sex=fries2019_formatted_sex,
+#                                DonorID=fries2019_formatted_donor,
+#                                Misc=rep(NA,64))
+# 
+# fries2019_cpgs <- read.table("Fries2019/GSE129428_series_matrix.txt",
+#                             comment = "!",
+#                             skip=7,
+#                             fill=TRUE)
+# fries2019_cpgs <- fries2019_cpgs[-c(1:4),]
+# row.names(fries2019_cpgs) <- fries2019_cpgs$V1
+# fries2019_cpgs <- fries2019_cpgs[,-1]
+# colnames(fries2019_cpgs) <- fries2019_cpgs[1,]
+# fries2019_cpgs <- fries2019_cpgs[-1,]
+# 
+# fries2019_cpgs <- fries2019_cpgs[rownames(fries2019_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(fries2019_cpgs),]
+# 
+# sample_table <- rbind(sample_table,fries2019_samples)
+# cpg_table <- cbind(cpg_table,fries2019_cpgs)
 
-#Formatting condition and miscellaneous information.
-konigsberg2021_unformatted_condition <- konigsberg2021_unformatted_table[2,-1]
-konigsberg2021_formatted_condition <- str_sub(konigsberg2021_unformatted_condition, 15, 30)
-konigsberg2021_formatted_condition[konigsberg2021_formatted_condition == "negative"] <- "Control"
-konigsberg2021_formatted_condition[konigsberg2021_formatted_condition == "positive"] <- "COVID"
-konigsberg2021_formatted_condition[konigsberg2021_formatted_condition == "other infection"] <-
-  "Respiratory Illness"
-
-konigsberg2021_IDs <- paste(rep("K",525),1:525,sep="")
-
-konigsberg2021_samples <- data.frame(ID=konigsberg2021_formatted_samples,
-                                     Author=rep("Konigsberg",525),
-                                     Year=rep(2021,525),
-                                     Tissue=rep("Blood",525),
-                                     CellType=rep("PBMCs",525),
-                                     Age=konigsberg2021_formatted_ages,
-                                     Condition=konigsberg2021_formatted_condition,
-                                     Sex=konigsberg2021_formatted_sex,
-                                     DonorID=konigsberg2021_IDs,
-                                     Misc=rep(NA,525))
-
-konigsberg2021_cpgs <- data.table::fread("Konigsberg2021/GSE167202_ProcessedBetaValues.txt",
-                                         header=TRUE) %>% 
-  as.data.frame()
-konigsberg2021_cpgs <- konigsberg2021_cpgs[,-c(2:22)]
-row.names(konigsberg2021_cpgs) <- konigsberg2021_cpgs$ID_REF
-konigsberg2021_cpgs <- konigsberg2021_cpgs[,-1]
-colnames(konigsberg2021_cpgs) <- konigsberg2021_formatted_samples
-
-konigsberg2021_cpgs <- konigsberg2021_cpgs[rownames(konigsberg2021_cpgs) %in% rownames(cpg_table),]
-cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(konigsberg2021_cpgs),]
-
-sample_table <- rbind(sample_table,konigsberg2021_samples)
-cpg_table <- cbind(cpg_table,konigsberg2021_cpgs)
+cpg_table <- na.omit(cpg_table)
+sample_table$Age <- as.numeric(sample_table$Age)
 
 healthy_samples <- sample_table[sample_table$Condition=="Control",1]
 healthy_sample_table <- sample_table[sample_table$Condition=="Control",]
