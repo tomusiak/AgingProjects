@@ -11,6 +11,7 @@ library(tidyr)
 library(caret)
 library(MASS)
 library(glmnetUtils)
+library(Rfast)
 
 #Reading in database data for training and testing.
 ml_cpg_table <- data.table::fread("ClockConstruction/healthy_cpg_table.csv",header=TRUE) %>% 
@@ -19,13 +20,16 @@ row.names(ml_cpg_table) <- ml_cpg_table$V1
 ml_cpg_table <- ml_cpg_table[,-1]
 permitted_cpgs <- read.csv("ClockConstruction/nodiff_cpgs.csv",row.names=1)[,1]
 ml_sample_table <- read.csv("ClockConstruction/healthy_sample_table.csv",row.names=1)
+ml_cpg_table <- ml_cpg_table[rownames(ml_cpg_table) %in% permitted_cpgs,]
+cpgs <- rownames(ml_cpg_table)
+samples <- colnames(ml_cpg_table)
+ml_cpg_table <- as.matrix(sapply(ml_cpg_table, as.numeric))  
 
 #Annotating and splitting data.
-ml_cpg_table_rotated <- data.frame(t(ml_cpg_table))
+ml_cpg_table_rotated <- data.frame(Rfast::transpose(ml_cpg_table))
+colnames(ml_cpg_table_rotated) <- cpgs
+rownames(ml_cpg_table_rotated) <- samples
 ml_cpg_table_rotated$Age <- ml_sample_table$Age
-ml_cpg_table_rotated <- ml_cpg_table_rotated[,colnames(ml_cpg_table_rotated) %in%
-                                  permitted_cpgs | colnames(ml_cpg_table_rotated) ==
-                                  "Age"]
 ml_cpg_table_rotated <- na.omit(ml_cpg_table_rotated)
 splitting <- createDataPartition(ml_cpg_table_rotated$Age,p=.67,list=FALSE)
 training_set <- ml_cpg_table_rotated[splitting,]

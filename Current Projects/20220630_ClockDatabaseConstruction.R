@@ -15,6 +15,7 @@ library(tidyr)
 library(dplyr)
 library(methylumi)
 library(minfi)
+library(stringr)
 
 sample_table <- read.csv("ClockConstruction/sample_table.csv",row.names=1)
 cpg_table <- data.table::fread("ClockConstruction/cpg_table.csv",header=TRUE)  %>% as.data.frame()
@@ -565,8 +566,221 @@ cpg_table <- cpg_table[,-1]
 # sample_table <- rbind(sample_table,fries2019_samples)
 # cpg_table <- cbind(cpg_table,fries2019_cpgs)
 
+#Samples from children.
+
+# islam2018_unformatted_table <- read.table("Islam2018/GSE124366_series_matrix.txt",
+#                                          comment = "!",
+#                                          skip=0,fill=TRUE,nrows = 6)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# islam2018_unformatted_samples <- islam2018_unformatted_table[6,]
+# islam2018_formatted_samples <- str_sub(islam2018_unformatted_table[6,],1,100)[2:216]
+# 
+# #Formatting ages.
+# islam2018_unformatted_ages <- islam2018_unformatted_table[4,-1]
+# islam2018_formatted_ages <- as.numeric(str_sub(islam2018_unformatted_ages, 35,100))
+# 
+# #Formatting sex.
+# islam2018_unformatted_sex <- islam2018_unformatted_table[3,-1]
+# islam2018_formatted_sex <- str_sub(islam2018_unformatted_sex, 6, 15)
+# 
+# #Formatting condition and miscellaneous information.
+# islam2018_formatted_condition <- rep("Control",215)
+# 
+# islam2018_unformatted_donor <- islam2018_unformatted_table[1,-1]
+# islam2018_unformatted_donor <- str_sub(islam2018_unformatted_donor,1,8)
+# islam2018_unformatted_donor <- as.numeric(factor(islam2018_unformatted_donor,
+#                                                 labels=c(1:201)))
+# islam2018_formatted_donor <- paste(rep("P",201),islam2018_unformatted_donor,sep="")
+# 
+# islam2018_unformatted_celltype <- islam2018_unformatted_table[2,-1]
+# islam2018_formatted_celltype <- str_sub(islam2018_unformatted_celltype, 9, 20)
+# 
+# islam2018_unformatted_tissue <- islam2018_formatted_celltype
+# islam2018_unformatted_tissue[islam2018_unformatted_tissue == "PBMC"] <- "Blood"
+# islam2018_formatted_tissue <- islam2018_unformatted_tissue
+# 
+# islam2018_samples <- data.frame(ID=islam2018_formatted_samples,
+#                                Author=rep("Islam",215),
+#                                Year=rep(2018,215),
+#                                Tissue=islam2018_formatted_tissue,
+#                                CellType=islam2018_formatted_celltype,
+#                                Age=islam2018_formatted_ages,
+#                                Condition=islam2018_formatted_condition,
+#                                Sex=islam2018_formatted_sex,
+#                                DonorID=islam2018_formatted_donor,
+#                                Misc=rep(NA,215))
+# 
+# islam2018_cpgs <- read.table("Islam2018/GSE124366_series_matrix.txt",
+#                             comment = "!",
+#                             skip=6,
+#                             fill=TRUE)
+# islam2018_cpgs <- islam2018_cpgs[-c(1:6),]
+# row.names(islam2018_cpgs) <- islam2018_cpgs$V1
+# islam2018_cpgs <- islam2018_cpgs[,-1]
+# colnames(islam2018_cpgs) <- islam2018_formatted_samples
+# 
+# islam2018_cpgs <- islam2018_cpgs[rownames(islam2018_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(islam2018_cpgs),]
+# 
+# sample_table <- rbind(sample_table,islam2018_samples)
+# cpg_table <- cbind(cpg_table,islam2018_cpgs)
+# 
+
+#Samples from breast tissue.
+
+# johnson2016_unformatted_table <- read.table("Johnson2016/GSE88883_series_matrix.txt",
+#                                           comment = "!",
+#                                           skip=0,fill=TRUE,nrows = 4)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# johnson2016_unformatted_samples <- johnson2016_unformatted_table[4,]
+# johnson2016_formatted_samples <- str_sub(johnson2016_unformatted_samples,1,100)[2:101]
+# 
+# #Formatting ages.
+# johnson2016_unformatted_ages <- johnson2016_unformatted_table[2,-1]
+# johnson2016_formatted_ages <- as.numeric(str_sub(johnson2016_unformatted_ages, 14,100))
+# 
+# #Formatting sex.
+# johnson2016_unformatted_sex <- johnson2016_unformatted_table[1,-1]
+# johnson2016_formatted_sex <- str_sub(johnson2016_unformatted_sex, 6, 15)
+# 
+# #Formatting condition and miscellaneous information.
+# johnson2016_formatted_condition <- rep("Control",100)
+# 
+# johnson2016_formatted_donor <- paste(rep("Q",100),c(1:100),sep="")
+# 
+# johnson2016_samples <- data.frame(ID=johnson2016_formatted_samples,
+#                                 Author=rep("Johnson",100),
+#                                 Year=rep(2016,100),
+#                                 Tissue=rep("Breast",100),
+#                                 CellType=rep("Breast",100),
+#                                 Age=johnson2016_formatted_ages,
+#                                 Condition=johnson2016_formatted_condition,
+#                                 Sex=johnson2016_formatted_sex,
+#                                 DonorID=johnson2016_formatted_donor,
+#                                 Misc=rep(NA,100))
+# 
+# johnson2016_cpgs <- read.table("Johnson2016/GSE88883_series_matrix.txt",
+#                              comment = "!",
+#                              skip=4,
+#                              fill=TRUE)
+# johnson2016_cpgs <- johnson2016_cpgs[-c(1:4),]
+# row.names(johnson2016_cpgs) <- johnson2016_cpgs$V1
+# johnson2016_cpgs <- johnson2016_cpgs[,-1]
+# colnames(johnson2016_cpgs) <- johnson2016_formatted_samples
+# 
+# johnson2016_cpgs <- johnson2016_cpgs[rownames(johnson2016_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(johnson2016_cpgs),]
+# 
+# sample_table <- rbind(sample_table,johnson2016_samples)
+# cpg_table <- cbind(cpg_table,johnson2016_cpgs)
+
+#Samples from liver.
+# 
+# horvath2014_unformatted_table <- read.table("Horvath2014/GSE61258_series_matrix.txt",
+#                                             comment = "!",
+#                                             skip=0,fill=TRUE,nrows = 4)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# horvath2014_unformatted_samples <- horvath2014_unformatted_table[4,]
+# horvath2014_formatted_samples <- str_sub(horvath2014_unformatted_samples,1,100)[2:80]
+# 
+# #Formatting ages.
+# horvath2014_unformatted_ages <- horvath2014_unformatted_table[2,-1]
+# horvath2014_formatted_ages <- as.numeric(str_sub(horvath2014_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# horvath2014_unformatted_sex <- horvath2014_unformatted_table[1,-1]
+# horvath2014_formatted_sex <- str_sub(horvath2014_unformatted_sex, 6, 15)
+# 
+# #Formatting condition and miscellaneous information.
+# horvath2014_formatted_condition <- rep("Control",79)
+# 
+# horvath2014_formatted_donor <- paste(rep("R",79),c(1:79),sep="")
+# 
+# horvath2014_samples <- data.frame(ID=horvath2014_formatted_samples,
+#                                   Author=rep("Horvath",79),
+#                                   Year=rep(2014,79),
+#                                   Tissue=rep("Liver",79),
+#                                   CellType=rep("Liver",79),
+#                                   Age=horvath2014_formatted_ages,
+#                                   Condition=horvath2014_formatted_condition,
+#                                   Sex=horvath2014_formatted_sex,
+#                                   DonorID=horvath2014_formatted_donor,
+#                                   Misc=rep(NA,79))
+# 
+# horvath2014_cpgs <- read.table("Horvath2014/GSE61258_series_matrix.txt",
+#                                comment = "!",
+#                                skip=4,
+#                                fill=TRUE)
+# horvath2014_cpgs <- horvath2014_cpgs[-c(1:4),]
+# row.names(horvath2014_cpgs) <- horvath2014_cpgs$V1
+# horvath2014_cpgs <- horvath2014_cpgs[,-1]
+# colnames(horvath2014_cpgs) <- horvath2014_formatted_samples
+# 
+# horvath2014_cpgs <- horvath2014_cpgs[rownames(horvath2014_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(horvath2014_cpgs),]
+# 
+# sample_table <- rbind(sample_table,horvath2014_samples)
+# cpg_table <- cbind(cpg_table,horvath2014_cpgs)
+
+#Samples from prostate tissue.
+
+pilsner2022_unformatted_table <- read.table("Pilsner2022/GSE76938_series_matrix.txt",
+                                            comment = "!",
+                                            skip=0,fill=TRUE,nrows = 4)
+
+#Formatting sample names, as the header text file is not arranged in a particularly easy way.
+pilsner2022_unformatted_samples <- pilsner2022_unformatted_table[4,]
+pilsner2022_formatted_samples <- str_sub(pilsner2022_unformatted_samples,1,100)[2:137]
+
+#Formatting ages.
+pilsner2022_unformatted_ages <- pilsner2022_unformatted_table[2,-1]
+pilsner2022_formatted_ages <- as.numeric(str_sub(pilsner2022_unformatted_ages, 5,100))
+
+#Formatting sex.
+pilsner2022_formatted_sex <- rep("Male",136)
+
+#Formatting condition and miscellaneous information.
+pilsner2022_unformatted_condition <- pilsner2022_unformatted_table[1,]
+pilsner2022_formatted_condition <- str_sub(pilsner2022_unformatted_condition,10,15)[2:137]
+pilsner2022_formatted_condition[pilsner2022_formatted_condition=="benign"] <- "Control"
+
+pilsner2022_formatted_donor <- paste(rep("S",136),c(1:136),sep="")
+
+pilsner2022_samples <- data.frame(ID=pilsner2022_formatted_samples,
+                                  Author=rep("Kirby",136),
+                                  Year=rep(2017,136),
+                                  Tissue=rep("Prostate",136),
+                                  CellType=rep("Prostate",136),
+                                  Age=pilsner2022_formatted_ages,
+                                  Condition=pilsner2022_formatted_condition,
+                                  Sex=pilsner2022_formatted_sex,
+                                  DonorID=pilsner2022_formatted_donor,
+                                  Misc=rep(NA,136))
+
+pilsner2022_samples <- pilsner2022_samples[!is.na(pilsner2022_samples$Age),]
+
+pilsner2022_cpgs <- read.table("Pilsner2022/GSE76938_series_matrix.txt",
+                               comment = "!",
+                               skip=4,
+                               fill=TRUE)
+pilsner2022_cpgs <- pilsner2022_cpgs[-c(1:4),]
+row.names(pilsner2022_cpgs) <- pilsner2022_cpgs$V1
+pilsner2022_cpgs <- pilsner2022_cpgs[,-1]
+colnames(pilsner2022_cpgs) <- pilsner2022_formatted_samples
+pilsner2022_cpgs <- pilsner2022_cpgs[,colnames(pilsner2022_cpgs) %in% pilsner2022_samples$ID]
+
+pilsner2022_cpgs <- pilsner2022_cpgs[rownames(pilsner2022_cpgs) %in% rownames(cpg_table),]
+cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(pilsner2022_cpgs),]
+
+sample_table <- rbind(sample_table,pilsner2022_samples)
+cpg_table <- cbind(cpg_table,pilsner2022_cpgs)
+
+###########################################################################
+
 cpg_table <- na.omit(cpg_table)
-sample_table$Age <- as.numeric(sample_table$Age)
 
 healthy_samples <- sample_table[sample_table$Condition=="Control",1]
 healthy_sample_table <- sample_table[sample_table$Condition=="Control",]
