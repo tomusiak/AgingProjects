@@ -781,55 +781,109 @@ cpg_table <- cpg_table[,-1]
 # sample_table <- rbind(sample_table,pilsner2022_samples)
 # cpg_table <- cbind(cpg_table,pilsner2022_cpgs)
 
-#Samples from liver.
+#Samples from nasal epithelia
 
-horvath2014_unformatted_table <- read.table("Horvath2014/GSE61258_series_matrix.txt",
+# davalos2022_unformatted_table <- read.table("Davalos2022/GSE193879_series_matrix.txt",
+#                                             comment = "!",
+#                                             skip=0,fill=TRUE,nrows = 4)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# davalos2022_unformatted_samples <- davalos2022_unformatted_table[1,]
+# davalos2022_formatted_samples <- str_sub(davalos2022_unformatted_samples,1,62)[2:128]
+# 
+# #Formatting ages.
+# davalos2022_unformatted_ages <- davalos2022_unformatted_table[4,-1]
+# davalos2022_formatted_ages <- as.numeric(str_sub(davalos2022_unformatted_ages, 13,100))
+# 
+# #Formatting sex.
+# davalos2022_unformatted_sex <- davalos2022_unformatted_table[3,-1]
+# davalos2022_formatted_sex <- str_sub(davalos2022_unformatted_sex, 17, 30)
+# 
+# #Formatting condition and miscellaneous information.
+# davalos2022_unformatted_condition <- davalos2022_unformatted_table[2,-1]
+# davalos2022_formatted_condition <- str_sub(davalos2022_unformatted_condition, 8,39)
+# 
+# davalos2022_formatted_donor <- paste(rep("U",127),c(1:127),sep="")
+# 
+# davalos2022_samples <- data.frame(ID=davalos2022_formatted_samples,
+#                                   Author=rep("Davalos",127),
+#                                   Year=rep(2022,127),
+#                                   Tissue=rep("Blood",127),
+#                                   CellType=rep("Blood",127),
+#                                   Age=davalos2022_formatted_ages,
+#                                   Condition=davalos2022_formatted_condition,
+#                                   Sex=davalos2022_formatted_sex,
+#                                   DonorID=davalos2022_formatted_donor,
+#                                   Misc=rep(NA,127))
+# 
+# davalos2022_samples <- davalos2022_samples[!is.na(davalos2022_samples$Age),]
+# 
+# davalos2022_cpgs <- data.table::fread("Davalos2022/GSE193879_Matrix_processed.csv",
+#                                                       header=FALSE)  %>% 
+#                                                       as.data.frame()
+# row.names(davalos2022_cpgs) <- davalos2022_cpgs$V1
+# davalos2022_cpgs <- davalos2022_cpgs[-1,-1]
+# davalos2022_cpgs <- davalos2022_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),127)]
+# colnames(davalos2022_cpgs) <- davalos2022_formatted_samples
+# davalos2022_cpgs <- davalos2022_cpgs[,colnames(davalos2022_cpgs) %in% davalos2022_samples$ID]
+# 
+# davalos2022_cpgs <- davalos2022_cpgs[rownames(davalos2022_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(davalos2022_cpgs),]
+# 
+# sample_table <- rbind(sample_table,davalos2022_samples)
+# cpg_table <- cbind(cpg_table,davalos2022_cpgs)
+
+
+hannon2021_unformatted_table <- read.table("Hannon2021/GSE152026_series_matrix.txt",
                                             comment = "!",
-                                            skip=0,fill=TRUE,nrows = 4)
+                                            skip=0,fill=TRUE,nrows = 6)
 
 #Formatting sample names, as the header text file is not arranged in a particularly easy way.
-horvath2014_unformatted_samples <- horvath2014_unformatted_table[4,]
-horvath2014_formatted_samples <- str_sub(horvath2014_unformatted_samples,1,100)[2:80]
+hannon2021_unformatted_samples <- hannon2021_unformatted_table[2,]
+hannon2021_formatted_samples <- str_sub(hannon2021_unformatted_samples,1,62)[2:935]
 
 #Formatting ages.
-horvath2014_unformatted_ages <- horvath2014_unformatted_table[2,-1]
-horvath2014_formatted_ages <- as.numeric(str_sub(horvath2014_unformatted_ages, 5,100))
+hannon2021_unformatted_ages <- hannon2021_unformatted_table[5,-1]
+hannon2021_formatted_ages <- as.numeric(str_sub(hannon2021_unformatted_ages, 5,100))
 
 #Formatting sex.
-horvath2014_unformatted_sex <- horvath2014_unformatted_table[1,-1]
-horvath2014_formatted_sex <- str_sub(horvath2014_unformatted_sex, 6, 15)
+hannon2021_unformatted_sex <- hannon2021_unformatted_table[4,-1]
+hannon2021_formatted_sex <- str_sub(hannon2021_unformatted_sex, 6, 30)
 
 #Formatting condition and miscellaneous information.
-horvath2014_formatted_condition <- rep("Control",79)
+hannon2021_unformatted_condition <- hannon2021_unformatted_table[3,-1]
+hannon2021_formatted_condition <- str_sub(hannon2021_unformatted_condition, 12,39)
+hannon2021_formatted_condition[hannon2021_formatted_condition=="Case"] <- "Schizophrenia"
 
-horvath2014_formatted_donor <- paste(rep("R",79),c(1:79),sep="")
+hannon2021_formatted_donor <- paste(rep("V",934),c(1:934),sep="")
 
-horvath2014_samples <- data.frame(ID=horvath2014_formatted_samples,
-                                  Author=rep("Horvath",79),
-                                  Year=rep(2014,79),
-                                  Tissue=rep("Liver",79),
-                                  CellType=rep("Liver",79),
-                                  Age=horvath2014_formatted_ages,
-                                  Condition=horvath2014_formatted_condition,
-                                  Sex=horvath2014_formatted_sex,
-                                  DonorID=horvath2014_formatted_donor,
-                                  Misc=rep(NA,79))
+hannon2021_samples <- data.frame(ID=hannon2021_formatted_samples,
+                                  Author=rep("Hannon",934),
+                                  Year=rep(2021,934),
+                                  Tissue=rep("Blood",934),
+                                  CellType=rep("Blood",934),
+                                  Age=hannon2021_formatted_ages,
+                                  Condition=hannon2021_formatted_condition,
+                                  Sex=hannon2021_formatted_sex,
+                                  DonorID=hannon2021_formatted_donor,
+                                  Misc=rep(NA,934))
 
-horvath2014_cpgs <- read.table("Horvath2014/GSE61258_series_matrix.txt",
-                               comment = "!",
-                               skip=4,
-                               fill=TRUE)
-horvath2014_cpgs <- horvath2014_cpgs[-c(1:4),]
-row.names(horvath2014_cpgs) <- horvath2014_cpgs$V1
-horvath2014_cpgs <- horvath2014_cpgs[,-1]
-colnames(horvath2014_cpgs) <- horvath2014_formatted_samples
+hannon2021_samples <- hannon2021_samples[!is.na(hannon2021_samples$Age),]
 
-horvath2014_cpgs <- horvath2014_cpgs[rownames(horvath2014_cpgs) %in% rownames(cpg_table),]
-cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(horvath2014_cpgs),]
+hannon2021_cpgs <- data.table::fread("Hannon2021/GSE152026_EUGEI_processed_signals.csv",
+                                      header=FALSE)  %>% 
+  as.data.frame()
+row.names(hannon2021_cpgs) <- hannon2021_cpgs$V1
+hannon2021_cpgs <- hannon2021_cpgs[-1,-1]
+hannon2021_cpgs <- hannon2021_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),127)]
+colnames(hannon2021_cpgs) <- hannon2021_formatted_samples
+hannon2021_cpgs <- hannon2021_cpgs[,colnames(hannon2021_cpgs) %in% hannon2021_samples$ID]
 
-sample_table <- rbind(sample_table,horvath2014_samples)
-cpg_table <- cbind(cpg_table,horvath2014_cpgs)
+hannon2021_cpgs <- hannon2021_cpgs[rownames(hannon2021_cpgs) %in% rownames(cpg_table),]
+cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(hannon2021_cpgs),]
 
+sample_table <- rbind(sample_table,hannon2021_samples)
+cpg_table <- cbind(cpg_table,hannon2021_cpgs)
 
 
 ###########################################################################
