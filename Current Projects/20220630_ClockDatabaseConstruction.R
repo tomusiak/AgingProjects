@@ -725,58 +725,112 @@ cpg_table <- cpg_table[,-1]
 # sample_table <- rbind(sample_table,horvath2014_samples)
 # cpg_table <- cbind(cpg_table,horvath2014_cpgs)
 
-#Samples from prostate tissue.
+#Samples from sperm tissue.
 
-pilsner2022_unformatted_table <- read.table("Pilsner2022/GSE76938_series_matrix.txt",
+# pilsner2022_unformatted_table <- read.table("Pilsner2022/GSE185445_series_matrix.txt",
+#                                             comment = "!",
+#                                             skip=0,fill=TRUE,nrows = 5)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# pilsner2022_unformatted_samples <- pilsner2022_unformatted_table[1,-1]
+# pilsner2022_formatted_samples <- str_sub(pilsner2022_unformatted_samples,1,100)[1:379]
+# 
+# #Formatting ages.
+# pilsner2022_unformatted_ages <- pilsner2022_unformatted_table[3,-1]
+# pilsner2022_formatted_ages <- as.numeric(str_sub(pilsner2022_unformatted_ages, 8,100))
+# 
+# #Formatting sex.
+# pilsner2022_formatted_sex <- rep("Male",379)
+# 
+# #Formatting condition and miscellaneous information.
+# pilsner2022_formatted_condition <- rep("Control",379)
+# 
+# pilsner2022_formatted_donor <- paste(rep("T",379),c(1:379),sep="")
+# 
+# pilsner2022_samples <- data.frame(ID=pilsner2022_formatted_samples,
+#                                   Author=rep("Pilsner",379),
+#                                   Year=rep(2022,379),
+#                                   Tissue=rep("Semen",379),
+#                                   CellType=rep("Sperm",379),
+#                                   Age=pilsner2022_formatted_ages,
+#                                   Condition=pilsner2022_formatted_condition,
+#                                   Sex=pilsner2022_formatted_sex,
+#                                   DonorID=pilsner2022_formatted_donor,
+#                                   Misc=rep(NA,379))
+# 
+# pilsner2022_unformatted_basenames <- pilsner2022_unformatted_table[2,-1]
+# pilsner2022_formatted_basenames <- str_sub(pilsner2022_unformatted_basenames,11,100)
+# 
+# pilsner2022_cpgs <- data.table::fread("Pilsner2022/GSE185445_processed_methylation_data_matrix.txt",
+#                                       header=FALSE)  %>% 
+#                                       as.data.frame()
+# 
+# pilsner2022_colnames <- data.frame(read_table2("Pilsner2022/colnames.csv", 
+#                         col_names = FALSE))
+# pilsner2022_colnames <- substr(pilsner2022_colnames,2,20)
+# 
+# row.names(pilsner2022_cpgs) <- pilsner2022_cpgs[,1]
+# pilsner2022_cpgs <- pilsner2022_cpgs[,-1]
+# colnames(pilsner2022_cpgs) <- pilsner2022_colnames
+# pilsner2022_cpgs <- pilsner2022_cpgs[,pilsner2022_formatted_basenames]
+# 
+# pilsner2022_cpgs <- pilsner2022_cpgs[rownames(pilsner2022_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(pilsner2022_cpgs),]
+# colnames(pilsner2022_cpgs) <- pilsner2022_formatted_samples
+# 
+# sample_table <- rbind(sample_table,pilsner2022_samples)
+# cpg_table <- cbind(cpg_table,pilsner2022_cpgs)
+
+#Samples from liver.
+
+horvath2014_unformatted_table <- read.table("Horvath2014/GSE61258_series_matrix.txt",
                                             comment = "!",
                                             skip=0,fill=TRUE,nrows = 4)
 
 #Formatting sample names, as the header text file is not arranged in a particularly easy way.
-pilsner2022_unformatted_samples <- pilsner2022_unformatted_table[4,]
-pilsner2022_formatted_samples <- str_sub(pilsner2022_unformatted_samples,1,100)[2:137]
+horvath2014_unformatted_samples <- horvath2014_unformatted_table[4,]
+horvath2014_formatted_samples <- str_sub(horvath2014_unformatted_samples,1,100)[2:80]
 
 #Formatting ages.
-pilsner2022_unformatted_ages <- pilsner2022_unformatted_table[2,-1]
-pilsner2022_formatted_ages <- as.numeric(str_sub(pilsner2022_unformatted_ages, 5,100))
+horvath2014_unformatted_ages <- horvath2014_unformatted_table[2,-1]
+horvath2014_formatted_ages <- as.numeric(str_sub(horvath2014_unformatted_ages, 5,100))
 
 #Formatting sex.
-pilsner2022_formatted_sex <- rep("Male",136)
+horvath2014_unformatted_sex <- horvath2014_unformatted_table[1,-1]
+horvath2014_formatted_sex <- str_sub(horvath2014_unformatted_sex, 6, 15)
 
 #Formatting condition and miscellaneous information.
-pilsner2022_unformatted_condition <- pilsner2022_unformatted_table[1,]
-pilsner2022_formatted_condition <- str_sub(pilsner2022_unformatted_condition,10,15)[2:137]
-pilsner2022_formatted_condition[pilsner2022_formatted_condition=="benign"] <- "Control"
+horvath2014_formatted_condition <- rep("Control",79)
 
-pilsner2022_formatted_donor <- paste(rep("S",136),c(1:136),sep="")
+horvath2014_formatted_donor <- paste(rep("R",79),c(1:79),sep="")
 
-pilsner2022_samples <- data.frame(ID=pilsner2022_formatted_samples,
-                                  Author=rep("Kirby",136),
-                                  Year=rep(2017,136),
-                                  Tissue=rep("Prostate",136),
-                                  CellType=rep("Prostate",136),
-                                  Age=pilsner2022_formatted_ages,
-                                  Condition=pilsner2022_formatted_condition,
-                                  Sex=pilsner2022_formatted_sex,
-                                  DonorID=pilsner2022_formatted_donor,
-                                  Misc=rep(NA,136))
+horvath2014_samples <- data.frame(ID=horvath2014_formatted_samples,
+                                  Author=rep("Horvath",79),
+                                  Year=rep(2014,79),
+                                  Tissue=rep("Liver",79),
+                                  CellType=rep("Liver",79),
+                                  Age=horvath2014_formatted_ages,
+                                  Condition=horvath2014_formatted_condition,
+                                  Sex=horvath2014_formatted_sex,
+                                  DonorID=horvath2014_formatted_donor,
+                                  Misc=rep(NA,79))
 
-pilsner2022_samples <- pilsner2022_samples[!is.na(pilsner2022_samples$Age),]
-
-pilsner2022_cpgs <- read.table("Pilsner2022/GSE76938_series_matrix.txt",
+horvath2014_cpgs <- read.table("Horvath2014/GSE61258_series_matrix.txt",
                                comment = "!",
                                skip=4,
                                fill=TRUE)
-pilsner2022_cpgs <- pilsner2022_cpgs[-c(1:4),]
-row.names(pilsner2022_cpgs) <- pilsner2022_cpgs$V1
-pilsner2022_cpgs <- pilsner2022_cpgs[,-1]
-colnames(pilsner2022_cpgs) <- pilsner2022_formatted_samples
-pilsner2022_cpgs <- pilsner2022_cpgs[,colnames(pilsner2022_cpgs) %in% pilsner2022_samples$ID]
+horvath2014_cpgs <- horvath2014_cpgs[-c(1:4),]
+row.names(horvath2014_cpgs) <- horvath2014_cpgs$V1
+horvath2014_cpgs <- horvath2014_cpgs[,-1]
+colnames(horvath2014_cpgs) <- horvath2014_formatted_samples
 
-pilsner2022_cpgs <- pilsner2022_cpgs[rownames(pilsner2022_cpgs) %in% rownames(cpg_table),]
-cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(pilsner2022_cpgs),]
+horvath2014_cpgs <- horvath2014_cpgs[rownames(horvath2014_cpgs) %in% rownames(cpg_table),]
+cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(horvath2014_cpgs),]
 
-sample_table <- rbind(sample_table,pilsner2022_samples)
-cpg_table <- cbind(cpg_table,pilsner2022_cpgs)
+sample_table <- rbind(sample_table,horvath2014_samples)
+cpg_table <- cbind(cpg_table,horvath2014_cpgs)
+
+
 
 ###########################################################################
 
