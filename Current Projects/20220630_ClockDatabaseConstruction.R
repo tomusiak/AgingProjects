@@ -940,19 +940,16 @@ martino2018_cpgs <- read.table("Martino2018/GSE114135-GPL23976_series_matrix.txt
                               skip=5,
                               fill=TRUE)
 
-martino2018_cpgs <- martino2018_cpgs[,-c(1:5)]
-row.names(martino2018_cpgs) <- martino2018_cpgs$V1
-martino2018_cpgs <- martino2018_cpgs[-1,-1]
-martino2018_cpgs <- martino2018_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),127)]
+martino2018_cpgs <- martino2018_cpgs[-c(1:5),]
+rownames(martino2018_cpgs) <- str_sub(martino2018_cpgs[,1],1,100)
+martino2018_cpgs <- martino2018_cpgs[,-1]
 colnames(martino2018_cpgs) <- martino2018_formatted_samples
-martino2018_cpgs <- martino2018_cpgs[,colnames(martino2018_cpgs) %in% martino2018_samples$ID]
 
 martino2018_cpgs <- martino2018_cpgs[rownames(martino2018_cpgs) %in% rownames(cpg_table),]
 cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(martino2018_cpgs),]
 
 sample_table <- rbind(sample_table,martino2018_samples)
 cpg_table <- cbind(cpg_table,martino2018_cpgs)
-
 
 ###########################################################################
 
