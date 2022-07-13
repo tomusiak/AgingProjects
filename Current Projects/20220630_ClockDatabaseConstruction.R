@@ -834,56 +834,124 @@ cpg_table <- cpg_table[,-1]
 # cpg_table <- cbind(cpg_table,davalos2022_cpgs)
 
 
-hannon2021_unformatted_table <- read.table("Hannon2021/GSE152026_series_matrix.txt",
+# hannon2021_unformatted_table <- read.table("Hannon2021/GSE152026_series_matrix.txt",
+#                                             comment = "!",
+#                                             skip=0,fill=TRUE,nrows = 6)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# hannon2021_unformatted_samples <- hannon2021_unformatted_table[2,]
+# hannon2021_formatted_samples <- str_sub(hannon2021_unformatted_samples,1,62)[2:935]
+# 
+# #Formatting ages.
+# hannon2021_unformatted_ages <- hannon2021_unformatted_table[5,-1]
+# hannon2021_formatted_ages <- as.numeric(str_sub(hannon2021_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# hannon2021_unformatted_sex <- hannon2021_unformatted_table[4,-1]
+# hannon2021_formatted_sex <- str_sub(hannon2021_unformatted_sex, 6, 30)
+# 
+# #Formatting condition and miscellaneous information.
+# hannon2021_unformatted_condition <- hannon2021_unformatted_table[3,-1]
+# hannon2021_formatted_condition <- str_sub(hannon2021_unformatted_condition, 12,39)
+# hannon2021_formatted_condition[hannon2021_formatted_condition=="Case"] <- "Schizophrenia"
+# 
+# hannon2021_formatted_donor <- paste(rep("V",934),c(1:934),sep="")
+# 
+# hannon2021_samples <- data.frame(ID=hannon2021_formatted_samples,
+#                                   Author=rep("Hannon",934),
+#                                   Year=rep(2021,934),
+#                                   Tissue=rep("Blood",934),
+#                                   CellType=rep("Blood",934),
+#                                   Age=hannon2021_formatted_ages,
+#                                   Condition=hannon2021_formatted_condition,
+#                                   Sex=hannon2021_formatted_sex,
+#                                   DonorID=hannon2021_formatted_donor,
+#                                   Misc=rep(NA,934))
+# 
+# hannon2021_samples <- hannon2021_samples[!is.na(hannon2021_samples$Age),]
+# hannon2021_sample_names <- str_sub(hannon2021_unformatted_table[1,-1],1,19)
+# 
+# hannon2021_cpgs <- data.table::fread("Hannon2021/GSE152026_EUGEI_processed_signals.csv",
+#                                       header=FALSE)  %>% 
+#   as.data.frame()
+# row.names(hannon2021_cpgs) <- hannon2021_cpgs$V1
+# hannon2021_cpgs <- hannon2021_cpgs[-1,-1]
+# hannon2021_cpgs <- hannon2021_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),934)]
+# colnames(hannon2021_cpgs) <- hannon2021_formatted_samples
+# hannon2021_cpgs <- hannon2021_cpgs[,colnames(hannon2021_cpgs) %in% hannon2021_samples$ID]
+# hannon2021_names <- read_csv("Hannon2021/target.txt", 
+#                              col_names = FALSE)
+# hannon2021_names <- str_sub(unlist(hannon2021_names),1,500)
+# hannon2021_names <- hannon2021_names[2:1869]
+# hannon2021_names <- hannon2021_names[rep(c(rep(TRUE, 2- 1), FALSE),934)]
+# colnames(hannon2021_cpgs) <- hannon2021_names
+# 
+# hannon2021_cpgs <- hannon2021_cpgs[rownames(hannon2021_cpgs) %in% rownames(cpg_table),]
+# 
+# hannon2021_changed_cpgs <- hannon2021_cpgs[,hannon2021_sample_names]
+# colnames(hannon2021_changed_cpgs) <- hannon2021_formatted_samples
+# hannon2021_changed_cpgs <- hannon2021_changed_cpgs[,colnames(hannon2021_changed_cpgs) %in% 
+#                                                      hannon2021_samples$ID]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(hannon2021_changed_cpgs),]
+# 
+# sample_table <- rbind(sample_table,hannon2021_samples)
+# cpg_table <- cbind(cpg_table,hannon2021_changed_cpgs)
+
+martino2018_unformatted_table <- read.table("Martino2018/GSE114135-GPL23976_series_matrix.txt",
                                             comment = "!",
-                                            skip=0,fill=TRUE,nrows = 6)
+                                            skip=0,fill=TRUE,nrows = 5)
 
 #Formatting sample names, as the header text file is not arranged in a particularly easy way.
-hannon2021_unformatted_samples <- hannon2021_unformatted_table[2,]
-hannon2021_formatted_samples <- str_sub(hannon2021_unformatted_samples,1,62)[2:935]
+martino2018_unformatted_samples <- martino2018_unformatted_table[5,-1]
+martino2018_formatted_samples <- str_sub(martino2018_unformatted_samples,1,62)[1:205]
 
 #Formatting ages.
-hannon2021_unformatted_ages <- hannon2021_unformatted_table[5,-1]
-hannon2021_formatted_ages <- as.numeric(str_sub(hannon2021_unformatted_ages, 5,100))
+martino2018_unformatted_ages <- martino2018_unformatted_table[2,-1]
+martino2018_formatted_ages <- as.numeric(str_sub(martino2018_unformatted_ages, 5,100))
 
 #Formatting sex.
-hannon2021_unformatted_sex <- hannon2021_unformatted_table[4,-1]
-hannon2021_formatted_sex <- str_sub(hannon2021_unformatted_sex, 6, 30)
+martino2018_unformatted_sex <- martino2018_unformatted_table[3,-1]
+martino2018_formatted_sex <- str_sub(martino2018_unformatted_sex, 6, 30)
 
 #Formatting condition and miscellaneous information.
-hannon2021_unformatted_condition <- hannon2021_unformatted_table[3,-1]
-hannon2021_formatted_condition <- str_sub(hannon2021_unformatted_condition, 12,39)
-hannon2021_formatted_condition[hannon2021_formatted_condition=="Case"] <- "Schizophrenia"
+martino2018_unformatted_condition <- martino2018_unformatted_table[4,-1]
+martino2018_formatted_condition <- str_sub(martino2018_unformatted_condition, -1,-1)
+martino2018_formatted_condition[martino2018_formatted_condition=="1"] <- "Stimulated"
+martino2018_formatted_condition[martino2018_formatted_condition=="0"] <- "Control"
 
-hannon2021_formatted_donor <- paste(rep("V",934),c(1:934),sep="")
+martino2018_unformatted_donor <- martino2018_unformatted_table[1,-1]
+martino2018_unformatted_donor <- str_sub(martino2018_unformatted_donor,1,6)
+martino2018_unformatted_donor <- as.numeric(factor(martino2018_unformatted_donor))
+martino2018_formatted_donor <- paste(rep("W",205),martino2018_unformatted_donor,sep="")
 
-hannon2021_samples <- data.frame(ID=hannon2021_formatted_samples,
-                                  Author=rep("Hannon",934),
-                                  Year=rep(2021,934),
-                                  Tissue=rep("Blood",934),
-                                  CellType=rep("Blood",934),
-                                  Age=hannon2021_formatted_ages,
-                                  Condition=hannon2021_formatted_condition,
-                                  Sex=hannon2021_formatted_sex,
-                                  DonorID=hannon2021_formatted_donor,
-                                  Misc=rep(NA,934))
+martino2018_samples <- data.frame(ID=martino2018_formatted_samples,
+                                  Author=rep("Martino",205),
+                                  Year=rep(2018,205),
+                                  Tissue=rep("Blood",205),
+                                  CellType=rep("CD4+",205),
+                                  Age=martino2018_formatted_ages,
+                                  Condition=martino2018_formatted_condition,
+                                  Sex=martino2018_formatted_sex,
+                                  DonorID=martino2018_formatted_donor,
+                                  Misc=rep(NA,205))
 
-hannon2021_samples <- hannon2021_samples[!is.na(hannon2021_samples$Age),]
+martino2018_cpgs <- read.table("Martino2018/GSE114135-GPL23976_series_matrix.txt",
+                              comment = "!",
+                              skip=5,
+                              fill=TRUE)
 
-hannon2021_cpgs <- data.table::fread("Hannon2021/GSE152026_EUGEI_processed_signals.csv",
-                                      header=FALSE)  %>% 
-  as.data.frame()
-row.names(hannon2021_cpgs) <- hannon2021_cpgs$V1
-hannon2021_cpgs <- hannon2021_cpgs[-1,-1]
-hannon2021_cpgs <- hannon2021_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),127)]
-colnames(hannon2021_cpgs) <- hannon2021_formatted_samples
-hannon2021_cpgs <- hannon2021_cpgs[,colnames(hannon2021_cpgs) %in% hannon2021_samples$ID]
+martino2018_cpgs <- martino2018_cpgs[,-c(1:5)]
+row.names(martino2018_cpgs) <- martino2018_cpgs$V1
+martino2018_cpgs <- martino2018_cpgs[-1,-1]
+martino2018_cpgs <- martino2018_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),127)]
+colnames(martino2018_cpgs) <- martino2018_formatted_samples
+martino2018_cpgs <- martino2018_cpgs[,colnames(martino2018_cpgs) %in% martino2018_samples$ID]
 
-hannon2021_cpgs <- hannon2021_cpgs[rownames(hannon2021_cpgs) %in% rownames(cpg_table),]
-cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(hannon2021_cpgs),]
+martino2018_cpgs <- martino2018_cpgs[rownames(martino2018_cpgs) %in% rownames(cpg_table),]
+cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(martino2018_cpgs),]
 
-sample_table <- rbind(sample_table,hannon2021_samples)
-cpg_table <- cbind(cpg_table,hannon2021_cpgs)
+sample_table <- rbind(sample_table,martino2018_samples)
+cpg_table <- cbind(cpg_table,martino2018_cpgs)
 
 
 ###########################################################################

@@ -88,3 +88,7 @@ test_set <- ml_cpg_table_rotated[-splitting,]
 # fitted_validation <- predict(model,validation_cpg_table_rotated)
 # write.csv(fitted_validation,"ClockConstruction/predictions.csv")
 
+write.csv(training_set,"ClockConstruction/training_set.csv")
+write.csv(test_set,"ClockConstruction/test_set.csv")
+
+
