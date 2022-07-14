@@ -11,6 +11,7 @@ library(tidyr)
 library(caret)
 library(MASS)
 library(glmnetUtils)
+library(random)
 library(Rfast)
 
 #Reading in database data for training and testing.
@@ -31,9 +32,18 @@ colnames(ml_cpg_table_rotated) <- cpgs
 rownames(ml_cpg_table_rotated) <- samples
 ml_cpg_table_rotated$Age <- ml_sample_table$Age
 ml_cpg_table_rotated <- na.omit(ml_cpg_table_rotated)
-splitting <- createDataPartition(ml_cpg_table_rotated$Age,p=.67,list=FALSE)
-training_set <- ml_cpg_table_rotated[splitting,]
-test_set <- ml_cpg_table_rotated[-splitting,]
+
+#Manually separating out datasets into training and test datasets.
+all_authors <- (ml_sample_table %>% group_by(Author) %>% summarize(n=n()))$Author
+training_set <- sample(c(1:length(all_authors)), (length(all_authors)*2/3))
+training_authors <- all_authors[training_set]
+test_authors <- all_authors[-training_set]
+training_samples <- ml_sample_table[ml_sample_table$Author %in% training_authors,]
+training_samples <- training_samples$ID
+test_samples <- ml_sample_table[ml_sample_table$Author %in% test_authors,]
+test_samples <- test_samples$ID
+training_set <- ml_cpg_table_rotated[training_samples,]
+test_set <- ml_cpg_table_rotated[test_samples,]
 
 # #Training the model.
 # train_control <- trainControl(method = "adaptive_LGOCV",
