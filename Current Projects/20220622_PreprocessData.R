@@ -13,6 +13,7 @@ library(MASS)
 library(glmnetUtils)
 library(random)
 library(Rfast)
+library(dplyr)
 
 #Reading in database data for training and testing.
 ml_cpg_table <- data.table::fread("ClockConstruction/healthy_cpg_table.csv",header=TRUE) %>% 
@@ -24,14 +25,25 @@ ml_sample_table <- read.csv("ClockConstruction/healthy_sample_table.csv",row.nam
 ml_cpg_table <- ml_cpg_table[rownames(ml_cpg_table) %in% permitted_cpgs,]
 cpgs <- rownames(ml_cpg_table)
 samples <- colnames(ml_cpg_table)
-ml_cpg_table <- as.matrix(sapply(ml_cpg_table, as.numeric))  
+ml_cpg_table <- as.matrix(sapply(ml_cpg_table, as.numeric)) 
 
 #Annotating and splitting data.
 ml_cpg_table_rotated <- data.frame(Rfast::transpose(ml_cpg_table))
 colnames(ml_cpg_table_rotated) <- cpgs
 rownames(ml_cpg_table_rotated) <- samples
 ml_cpg_table_rotated$Age <- ml_sample_table$Age
-ml_cpg_table_rotated <- na.omit(ml_cpg_table_rotated)
+
+#Reading in validation table of data from Jonkman 2022. Will be useful for comparing clock performance.
+validation_cpg_table <- data.table::fread("ClockConstruction/validation_cpg_table.csv",
+                                           header=TRUE) %>%
+                                           as.data.frame()
+row.names(validation_cpg_table) <- validation_cpg_table$V1
+validation_cpg_table <- validation_cpg_table[,-1]
+validation_cpg_table <- validation_cpg_table[rownames(validation_cpg_table) %in%
+                                               colnames(ml_cpg_table_rotated),]
+validation_cpg_table_rotated <- data.frame(t(validation_cpg_table))
+validation_cpg_table_rotated <- validation_cpg_table_rotated[,colnames(validation_cpg_table_rotated) %in%
+                                                               permitted_cpgs]
 
 #Manually separating out datasets into training and test datasets.
 all_authors <- (ml_sample_table %>% group_by(Author) %>% summarize(n=n()))$Author
@@ -81,24 +93,22 @@ test_set <- ml_cpg_table_rotated[test_samples,]
 # important_cpgs<-varImp(model)$importance
 # important_cpgs <- important_cpgs[order(important_cpgs$Overall,decreasing=TRUE),,drop=FALSE]
 # 
-# #Reading in validation table of data from Jonkman 2022. Will be useful for comparing clock performance.
-# validation_cpg_table <- data.table::fread("ClockConstruction/validation_cpg_table.csv",
-#                                            header=TRUE) %>% 
-#                                            as.data.frame()
-# row.names(validation_cpg_table) <- validation_cpg_table$V1
-# validation_cpg_table <- validation_cpg_table[,-1]
-# validation_cpg_table <- validation_cpg_table[rownames(validation_cpg_table) %in% 
-#                                                rownames(ml_cpg_table),]
-# validation_cpg_table_rotated <- data.frame(t(validation_cpg_table))
-# validation_cpg_table_rotated <- validation_cpg_table_rotated[,colnames(validation_cpg_table_rotated) %in%
-#                                                                permitted_cpgs]
 # 
 # #Fitting the Jonkman useful datasets to the model and exporting them to analyze whether they work for
 # # differentiation.
 # fitted_validation <- predict(model,validation_cpg_table_rotated)
 # write.csv(fitted_validation,"ClockConstruction/predictions.csv")
 
+training_set <- na.omit(training_set)
+test_set <- na.omit(test_set)
+validation_set <- na.omit(validation_cpg_table_rotated)
+
+training_set[,1:(ncol(training_set)-1)] <- scale(training_set[,1:(ncol(training_set)-1)])
+test_set[,1:(ncol(test_set)-1)] <- scale(test_set[,1:(ncol(test_set)-1)])
+validation_set <- scale(validation_set)
+
 write.csv(training_set,"ClockConstruction/training_set.csv")
 write.csv(test_set,"ClockConstruction/test_set.csv")
+write.csv(validation_set, "ClockConstruction/validation_set.csv")
 
 

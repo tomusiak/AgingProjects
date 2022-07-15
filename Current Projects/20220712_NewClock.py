@@ -17,6 +17,7 @@ from numpy import absolute
 from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import ElasticNetCV
 from sklearn.linear_model import ElasticNet
+from sklearn.linear_model import MultiTaskElasticNetCV
 from sklearn.metrics import mean_squared_error
 import sklearn.metrics
 
@@ -29,29 +30,28 @@ def main():
 
     training_set_data = training_set.values
     x_training, y_training = training_set_data[:, :-1], training_set_data[:, -1]
-    x_training = sklearn.preprocessing.scale(x_training)
 
     test_set_data = test_set.values
     x_test, y_test = test_set_data[:, :-1], test_set_data[:, -1]
-    x_test = sklearn.preprocessing.scale(x_test)
 
     validation_set_data = validation_set.values
     x_validation=validation_set_data[:,:]
-    x_validation = sklearn.preprocessing.scale(validation_set_data)
 
     model = ElasticNetCV()
     model.fit(x_training,y_training)
     predicted_training_set_y = model.predict(x_training)
     r2_score_training = sklearn.metrics.r2_score(y_training,predicted_training_set_y)
+    print("R^2 test for training data")
+    print(r2_score_training)
 
     predicted_test_set_y = model.predict(x_test)
     r2_score_test = sklearn.metrics.r2_score(predicted_test_set_y,y_test)
+    print("R^2 test for test data:")
+    print(r2_score_test)
     np.savetxt("training_set_predictions.csv",predicted_test_set_y,delimiter=",")
 
     predicted_validation_set_y = model.predict(x_validation)
-    np.savetxt("validation_set_predictions.csv",predicted_validation_set_y,delimeter=",")
-
-    print("nothing")
+    np.savetxt("validation_set_predictions.csv",predicted_validation_set_y,delimiter=",")
 
 def regressionNNPrediction(x_train, y_train, x_test, y_test):
     prediction = regressionNN(x_train, y_train, x_test)

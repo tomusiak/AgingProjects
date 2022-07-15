@@ -897,59 +897,121 @@ cpg_table <- cpg_table[,-1]
 # sample_table <- rbind(sample_table,hannon2021_samples)
 # cpg_table <- cbind(cpg_table,hannon2021_changed_cpgs)
 
-martino2018_unformatted_table <- read.table("Martino2018/GSE114135-GPL23976_series_matrix.txt",
+# martino2018_unformatted_table <- read.table("Martino2018/GSE114135-GPL23976_series_matrix.txt",
+#                                             comment = "!",
+#                                             skip=0,fill=TRUE,nrows = 5)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# martino2018_unformatted_samples <- martino2018_unformatted_table[5,-1]
+# martino2018_formatted_samples <- str_sub(martino2018_unformatted_samples,1,62)[1:205]
+# 
+# #Formatting ages.
+# martino2018_unformatted_ages <- martino2018_unformatted_table[2,-1]
+# martino2018_formatted_ages <- as.numeric(str_sub(martino2018_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# martino2018_unformatted_sex <- martino2018_unformatted_table[3,-1]
+# martino2018_formatted_sex <- str_sub(martino2018_unformatted_sex, 6, 30)
+# 
+# #Formatting condition and miscellaneous information.
+# martino2018_unformatted_condition <- martino2018_unformatted_table[4,-1]
+# martino2018_formatted_condition <- str_sub(martino2018_unformatted_condition, -1,-1)
+# martino2018_formatted_condition[martino2018_formatted_condition=="1"] <- "Stimulated"
+# martino2018_formatted_condition[martino2018_formatted_condition=="0"] <- "Control"
+# 
+# martino2018_unformatted_donor <- martino2018_unformatted_table[1,-1]
+# martino2018_unformatted_donor <- str_sub(martino2018_unformatted_donor,1,6)
+# martino2018_unformatted_donor <- as.numeric(factor(martino2018_unformatted_donor))
+# martino2018_formatted_donor <- paste(rep("W",205),martino2018_unformatted_donor,sep="")
+# 
+# martino2018_samples <- data.frame(ID=martino2018_formatted_samples,
+#                                   Author=rep("Martino",205),
+#                                   Year=rep(2018,205),
+#                                   Tissue=rep("Blood",205),
+#                                   CellType=rep("CD4+",205),
+#                                   Age=martino2018_formatted_ages,
+#                                   Condition=martino2018_formatted_condition,
+#                                   Sex=martino2018_formatted_sex,
+#                                   DonorID=martino2018_formatted_donor,
+#                                   Misc=rep(NA,205))
+# 
+# martino2018_cpgs <- read.table("Martino2018/GSE114135-GPL23976_series_matrix.txt",
+#                               comment = "!",
+#                               skip=5,
+#                               fill=TRUE)
+# 
+# martino2018_cpgs <- martino2018_cpgs[-c(1:5),]
+# rownames(martino2018_cpgs) <- str_sub(martino2018_cpgs[,1],1,100)
+# martino2018_cpgs <- martino2018_cpgs[,-1]
+# colnames(martino2018_cpgs) <- martino2018_formatted_samples
+# 
+# martino2018_cpgs <- martino2018_cpgs[rownames(martino2018_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(martino2018_cpgs),]
+# 
+# sample_table <- rbind(sample_table,martino2018_samples)
+# cpg_table <- cbind(cpg_table,martino2018_cpgs)
+
+
+thompson2020_unformatted_table <- read.table("Thompson2020/GSE146376_series_matrix.txt",
                                             comment = "!",
-                                            skip=0,fill=TRUE,nrows = 5)
+                                            skip=0,fill=TRUE,nrows = 7)
 
 #Formatting sample names, as the header text file is not arranged in a particularly easy way.
-martino2018_unformatted_samples <- martino2018_unformatted_table[5,-1]
-martino2018_formatted_samples <- str_sub(martino2018_unformatted_samples,1,62)[1:205]
+thompson2020_unformatted_samples <- thompson2020_unformatted_table[7,-1]
+thompson2020_formatted_samples <- str_sub(thompson2020_unformatted_samples,1,62)[1:280]
 
 #Formatting ages.
-martino2018_unformatted_ages <- martino2018_unformatted_table[2,-1]
-martino2018_formatted_ages <- as.numeric(str_sub(martino2018_unformatted_ages, 5,100))
+thompson2020_unformatted_ages <- thompson2020_unformatted_table[3,-1]
+thompson2020_formatted_ages <- as.numeric(str_sub(thompson2020_unformatted_ages, 5,100))
 
 #Formatting sex.
-martino2018_unformatted_sex <- martino2018_unformatted_table[3,-1]
-martino2018_formatted_sex <- str_sub(martino2018_unformatted_sex, 6, 30)
+thompson2020_unformatted_sex <- thompson2020_unformatted_table[4,-1]
+thompson2020_formatted_sex <- str_sub(thompson2020_unformatted_sex, 6, 30)
 
 #Formatting condition and miscellaneous information.
-martino2018_unformatted_condition <- martino2018_unformatted_table[4,-1]
-martino2018_formatted_condition <- str_sub(martino2018_unformatted_condition, -1,-1)
-martino2018_formatted_condition[martino2018_formatted_condition=="1"] <- "Stimulated"
-martino2018_formatted_condition[martino2018_formatted_condition=="0"] <- "Control"
+thompson2020_unformatted_condition <- thompson2020_unformatted_table[2,-1]
+thompson2020_formatted_condition <- str_sub(thompson2020_unformatted_condition, 12, 30)
+thompson2020_formatted_condition[thompson2020_formatted_condition=="Vehicle"] <- "Control"
 
-martino2018_unformatted_donor <- martino2018_unformatted_table[1,-1]
-martino2018_unformatted_donor <- str_sub(martino2018_unformatted_donor,1,6)
-martino2018_unformatted_donor <- as.numeric(factor(martino2018_unformatted_donor))
-martino2018_formatted_donor <- paste(rep("W",205),martino2018_unformatted_donor,sep="")
+thompson2020_unformatted_donor <- thompson2020_unformatted_table[1,-1]
+thompson2020_unformatted_donor <- str_sub(thompson2020_unformatted_donor,8,10)
+thompson2020_formatted_donor <- paste(rep("X",280),thompson2020_unformatted_donor,sep="")
 
-martino2018_samples <- data.frame(ID=martino2018_formatted_samples,
-                                  Author=rep("Martino",205),
-                                  Year=rep(2018,205),
-                                  Tissue=rep("Blood",205),
-                                  CellType=rep("CD4+",205),
-                                  Age=martino2018_formatted_ages,
-                                  Condition=martino2018_formatted_condition,
-                                  Sex=martino2018_formatted_sex,
-                                  DonorID=martino2018_formatted_donor,
-                                  Misc=rep(NA,205))
+thompson2020_unformatted_arrangement <- thompson2020_unformatted_table[5,-1]
+thompson2020_formatted_arrangement <- str_sub(thompson2020_unformatted_arrangement,1,100)
 
-martino2018_cpgs <- read.table("Martino2018/GSE114135-GPL23976_series_matrix.txt",
-                              comment = "!",
-                              skip=5,
-                              fill=TRUE)
+thompson2020_samples <- data.frame(ID=thompson2020_formatted_samples,
+                                  Author=rep("Thompson",280),
+                                  Year=rep(2020,280),
+                                  Tissue=rep("Lung",56),
+                                  CellType=rep("Airway Smooth Muscle",56),
+                                  Age=thompson2020_formatted_ages,
+                                  Condition=thompson2020_formatted_condition,
+                                  Sex=thompson2020_formatted_sex,
+                                  DonorID=thompson2020_formatted_donor,
+                                  Misc=rep(NA,280))
 
-martino2018_cpgs <- martino2018_cpgs[-c(1:5),]
-rownames(martino2018_cpgs) <- str_sub(martino2018_cpgs[,1],1,100)
-martino2018_cpgs <- martino2018_cpgs[,-1]
-colnames(martino2018_cpgs) <- martino2018_formatted_samples
+thompson2020_cpgs <- data.table::fread("Thompson2020/GSE146376_ProcessedMethData_70_ForGEO.csv",
+                                      header=FALSE)  %>%
+                                      as.data.frame()
+row.names(thompson2020_cpgs) <- thompson2020_cpgs$V1
+thompson2020_cpgs <- thompson2020_cpgs[,-1]
+thompson2020_cpgs <- thompson2020_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),280)]
 
-martino2018_cpgs <- martino2018_cpgs[rownames(martino2018_cpgs) %in% rownames(cpg_table),]
-cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(martino2018_cpgs),]
+thompson2020_colnames <- read_csv("Thompson2020/colnames.csv", 
+                     col_names = FALSE)
+thompson2020_colnames <- str_sub(unlist(thompson2020_colnames[1,]),1,100)
+thompson2020_colnames <- thompson2020_colnames[-1]
+thompson2020_colnames <- thompson2020_colnames[rep(c(rep(TRUE, 2- 1), FALSE),280)]
+colnames(thompson2020_cpgs) <- thompson2020_colnames
 
-sample_table <- rbind(sample_table,martino2018_samples)
-cpg_table <- cbind(cpg_table,martino2018_cpgs)
+colnames(thompson2020_cpgs) <- thompson2020_formatted_samples
+
+thompson2020_cpgs <- thompson2020_cpgs[rownames(thompson2020_cpgs) %in% rownames(cpg_table),]
+cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(thompson2020_cpgs),]
+
+sample_table <- rbind(sample_table,thompson2020_samples)
+cpg_table <- cbind(cpg_table,thompson2020_cpgs)
 
 ###########################################################################
 
