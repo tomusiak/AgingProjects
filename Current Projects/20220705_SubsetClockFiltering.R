@@ -67,8 +67,8 @@ umap_plot_df$type <- factor(umap_plot_df$type, levels=c("naive", "central_memory
                                                         "effector_memory","temra"))
 ggplot(
   umap_plot_df,
-  aes(x = X1, y = X2, color=type)) +
-  labs(x="UMAP Component 1", y="UMAP Component 2", title = "UMAP Visualization") +
+  aes(x = X1, y = X2, color=age)) +
+  labs(x="UMAP Component 1", y="UMAP Component 2", title = "UMAP Visualization - Before Filtering") +
   theme_classic() +
   geom_point() # Plot individual points to make a scatterplot
 ggplot(umap_plot_df,aes(x=type,y=X1, color=age)) + 
@@ -126,10 +126,10 @@ nodiff_umap_plot_df$type <- factor(nodiff_umap_plot_df$type,
 ggplot(
   nodiff_umap_plot_df,
   aes(x = X1, y = X2, color=age )) +
-  labs(x="UMAP Component 1", y="UMAP Component 2", title = "UMAP Visualization") +
+  labs(x="UMAP Component 1", y="UMAP Component 2", title = "UMAP Visualization - After Filtering") +
   theme_classic() +
   geom_point() # Plot individual points to make a scatterplot
-ggplot(nodiff_umap_plot_df,aes(x=X2,y=Age)) + 
+ggplot(nodiff_umap_plot_df,aes(x=X1,y=X2, fill=type)) + 
   theme_classic() +
   labs(x="UMAP Component 2", y="Age",title="UMAP Component 2 Tracks Age") +
   geom_point()
