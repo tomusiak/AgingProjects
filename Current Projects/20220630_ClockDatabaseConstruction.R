@@ -951,67 +951,162 @@ cpg_table <- cpg_table[,-1]
 # sample_table <- rbind(sample_table,martino2018_samples)
 # cpg_table <- cbind(cpg_table,martino2018_cpgs)
 
+# zannas2019_unformatted_table <- read.table("zannas2019/GSE146376_series_matrix.txt",
+#                                             comment = "!",
+#                                             skip=0,fill=TRUE,nrows = 7)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# zannas2019_unformatted_samples <- zannas2019_unformatted_table[7,-1]
+# zannas2019_formatted_samples <- str_sub(zannas2019_unformatted_samples,1,62)[1:280]
+# 
+# #Formatting ages.
+# zannas2019_unformatted_ages <- zannas2019_unformatted_table[3,-1]
+# zannas2019_formatted_ages <- as.numeric(str_sub(zannas2019_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# zannas2019_unformatted_sex <- zannas2019_unformatted_table[4,-1]
+# zannas2019_formatted_sex <- str_sub(zannas2019_unformatted_sex, 6, 30)
+# 
+# #Formatting condition and miscellaneous information.
+# zannas2019_unformatted_condition <- zannas2019_unformatted_table[2,-1]
+# zannas2019_formatted_condition <- str_sub(zannas2019_unformatted_condition, 12, 30)
+# zannas2019_formatted_condition[zannas2019_formatted_condition=="Vehicle"] <- "Control"
+# 
+# zannas2019_unformatted_donor <- zannas2019_unformatted_table[1,-1]
+# zannas2019_unformatted_donor <- str_sub(zannas2019_unformatted_donor,8,10)
+# zannas2019_formatted_donor <- paste(rep("X",280),zannas2019_unformatted_donor,sep="")
+# 
+# zannas2019_unformatted_arrangement <- zannas2019_unformatted_table[5,-1]
+# zannas2019_formatted_arrangement <- str_sub(zannas2019_unformatted_arrangement,1,100)
+# 
+# zannas2019_samples <- data.frame(ID=zannas2019_formatted_samples,
+#                                   Author=rep("Thompson",280),
+#                                   Year=rep(2020,280),
+#                                   Tissue=rep("Lung",56),
+#                                   CellType=rep("Airway Smooth Muscle",56),
+#                                   Age=zannas2019_formatted_ages,
+#                                   Condition=zannas2019_formatted_condition,
+#                                   Sex=zannas2019_formatted_sex,
+#                                   DonorID=zannas2019_formatted_donor,
+#                                   Misc=rep(NA,280))
+# 
+# zannas2019_cpgs <- data.table::fread("zannas2019/GSE146376_ProcessedMethData_70_ForGEO.csv",
+#                                       header=FALSE)  %>%
+#                                       as.data.frame()
+# row.names(zannas2019_cpgs) <- zannas2019_cpgs$V1
+# zannas2019_cpgs <- zannas2019_cpgs[,-1]
+# zannas2019_cpgs <- zannas2019_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),280)]
+# 
+# zannas2019_colnames <- read_csv("zannas2019/colnames.csv", 
+#                      col_names = FALSE)
+# zannas2019_colnames <- str_sub(unlist(zannas2019_colnames[1,]),1,100)
+# zannas2019_colnames <- zannas2019_colnames[-1]
+# zannas2019_colnames <- zannas2019_colnames[rep(c(rep(TRUE, 2- 1), FALSE),280)]
+# colnames(zannas2019_cpgs) <- zannas2019_colnames
+# 
+# colnames(zannas2019_cpgs) <- zannas2019_formatted_samples
+# 
+# zannas2019_cpgs <- zannas2019_cpgs[rownames(zannas2019_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(zannas2019_cpgs),]
+# 
+# sample_table <- rbind(sample_table,zannas2019_samples)
+# cpg_table <- cbind(cpg_table,zannas2019_cpgs)
 
-thompson2020_unformatted_table <- read.table("Thompson2020/GSE146376_series_matrix.txt",
+# nicodemus2017_unformatted_table <- read.table("Nicodemus2017/GSE85566_series_matrix.txt",
+#                                              comment = "!",
+#                                              skip=0,fill=TRUE,nrows = 7)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# nicodemus2017_unformatted_samples <- nicodemus2017_unformatted_table[4,-1]
+# nicodemus2017_formatted_samples <- str_sub(nicodemus2017_unformatted_samples,1,62)[1:115]
+# 
+# #Formatting ages.
+# nicodemus2017_unformatted_ages <- nicodemus2017_unformatted_table[1,-1]
+# nicodemus2017_formatted_ages <- as.numeric(str_sub(nicodemus2017_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# nicodemus2017_unformatted_sex <- nicodemus2017_unformatted_table[3,-1]
+# nicodemus2017_formatted_sex <- str_sub(nicodemus2017_unformatted_sex, 9, 30)
+# 
+# #Formatting condition and miscellaneous information.
+# nicodemus2017_unformatted_condition <- nicodemus2017_unformatted_table[2,-1]
+# nicodemus2017_formatted_condition <- str_sub(nicodemus2017_unformatted_condition, 17, 30)
+# 
+# nicodemus2017_formatted_donor <- paste(rep("Z",115),c(1:115),sep="")
+# 
+# nicodemus2017_samples <- data.frame(ID=nicodemus2017_formatted_samples,
+#                                    Author=rep("Nicodemus",115),
+#                                    Year=rep(2017,115),
+#                                    Tissue=rep("Lung",115),
+#                                    CellType=rep("Epithelial Cells",115),
+#                                    Age=nicodemus2017_formatted_ages,
+#                                    Condition=nicodemus2017_formatted_condition,
+#                                    Sex=nicodemus2017_formatted_sex,
+#                                    DonorID=nicodemus2017_formatted_donor,
+#                                    Misc=rep(NA,115))
+# 
+# nicodemus2017_cpgs <- read.table("Nicodemus2017/GSE85566_series_matrix.txt",
+#                               comment = "!",
+#                               skip=5,
+#                               fill=TRUE)
+# nicodemus2017_cpgs <- nicodemus2017_cpgs[-c(1:4),]
+# rownames(nicodemus2017_cpgs) <- nicodemus2017_cpgs[,1]
+# nicodemus2017_cpgs <- nicodemus2017_cpgs[,-1]
+# colnames(nicodemus2017_cpgs) <- nicodemus2017_formatted_samples
+# 
+# nicodemus2017_cpgs <- nicodemus2017_cpgs[rownames(nicodemus2017_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(nicodemus2017_cpgs),]
+# 
+# sample_table <- rbind(sample_table,nicodemus2017_samples)
+# cpg_table <- cbind(cpg_table,nicodemus2017_cpgs)
+
+langevin2016_unformatted_table <- read.table("Langevin2016/GSE70977_series_matrix.txt",
                                             comment = "!",
                                             skip=0,fill=TRUE,nrows = 7)
 
 #Formatting sample names, as the header text file is not arranged in a particularly easy way.
-thompson2020_unformatted_samples <- thompson2020_unformatted_table[7,-1]
-thompson2020_formatted_samples <- str_sub(thompson2020_unformatted_samples,1,62)[1:280]
+langevin2016_unformatted_samples <- langevin2016_unformatted_table[5,-1]
+langevin2016_formatted_samples <- str_sub(langevin2016_unformatted_samples,1,62)[1:223]
 
 #Formatting ages.
-thompson2020_unformatted_ages <- thompson2020_unformatted_table[3,-1]
-thompson2020_formatted_ages <- as.numeric(str_sub(thompson2020_unformatted_ages, 5,100))
+langevin2016_unformatted_ages <- langevin2016_unformatted_table[2,-1]
+langevin2016_formatted_ages <- as.numeric(str_sub(langevin2016_unformatted_ages, 26,100))
 
 #Formatting sex.
-thompson2020_unformatted_sex <- thompson2020_unformatted_table[4,-1]
-thompson2020_formatted_sex <- str_sub(thompson2020_unformatted_sex, 6, 30)
+langevin2016_unformatted_sex <- langevin2016_unformatted_table[3,-1]
+langevin2016_formatted_sex <- str_sub(langevin2016_unformatted_sex, 6, 30)
 
 #Formatting condition and miscellaneous information.
-thompson2020_unformatted_condition <- thompson2020_unformatted_table[2,-1]
-thompson2020_formatted_condition <- str_sub(thompson2020_unformatted_condition, 12, 30)
-thompson2020_formatted_condition[thompson2020_formatted_condition=="Vehicle"] <- "Control"
+langevin2016_unformatted_condition <- langevin2016_unformatted_table[1,-1]
+langevin2016_formatted_condition <- str_sub(langevin2016_unformatted_condition, 8, 30)
 
-thompson2020_unformatted_donor <- thompson2020_unformatted_table[1,-1]
-thompson2020_unformatted_donor <- str_sub(thompson2020_unformatted_donor,8,10)
-thompson2020_formatted_donor <- paste(rep("X",280),thompson2020_unformatted_donor,sep="")
+langevin2016_formatted_donor <- paste(rep("AA",223),c(1:223),sep="")
 
-thompson2020_unformatted_arrangement <- thompson2020_unformatted_table[5,-1]
-thompson2020_formatted_arrangement <- str_sub(thompson2020_unformatted_arrangement,1,100)
+langevin2016_samples <- data.frame(ID=langevin2016_formatted_samples,
+                                  Author=rep("Langevin",223),
+                                  Year=rep(2016,223),
+                                  Tissue=rep("Mouth",223),
+                                  CellType=rep("Epithelial",223),
+                                  Age=langevin2016_formatted_ages,
+                                  Condition=langevin2016_formatted_condition,
+                                  Sex=langevin2016_formatted_sex,
+                                  DonorID=langevin2016_formatted_donor,
+                                  Misc=rep(NA,223))
 
-thompson2020_samples <- data.frame(ID=thompson2020_formatted_samples,
-                                  Author=rep("Thompson",280),
-                                  Year=rep(2020,280),
-                                  Tissue=rep("Lung",56),
-                                  CellType=rep("Airway Smooth Muscle",56),
-                                  Age=thompson2020_formatted_ages,
-                                  Condition=thompson2020_formatted_condition,
-                                  Sex=thompson2020_formatted_sex,
-                                  DonorID=thompson2020_formatted_donor,
-                                  Misc=rep(NA,280))
+langevin2016_cpgs <- read.table("Langevin2016/GSE70977_series_matrix.txt",
+                               comment = "!",
+                               skip=7,
+                               fill=TRUE)
+langevin2016_cpgs <- langevin2016_cpgs[-c(1:5),]
+rownames(langevin2016_cpgs) <- langevin2016_cpgs[,1]
+langevin2016_cpgs <- langevin2016_cpgs[,-1]
+colnames(langevin2016_cpgs) <- langevin2016_formatted_samples
 
-thompson2020_cpgs <- data.table::fread("Thompson2020/GSE146376_ProcessedMethData_70_ForGEO.csv",
-                                      header=FALSE)  %>%
-                                      as.data.frame()
-row.names(thompson2020_cpgs) <- thompson2020_cpgs$V1
-thompson2020_cpgs <- thompson2020_cpgs[,-1]
-thompson2020_cpgs <- thompson2020_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),280)]
+langevin2016_cpgs <- langevin2016_cpgs[rownames(langevin2016_cpgs) %in% rownames(cpg_table),]
+cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(langevin2016_cpgs),]
 
-thompson2020_colnames <- read_csv("Thompson2020/colnames.csv", 
-                     col_names = FALSE)
-thompson2020_colnames <- str_sub(unlist(thompson2020_colnames[1,]),1,100)
-thompson2020_colnames <- thompson2020_colnames[-1]
-thompson2020_colnames <- thompson2020_colnames[rep(c(rep(TRUE, 2- 1), FALSE),280)]
-colnames(thompson2020_cpgs) <- thompson2020_colnames
-
-colnames(thompson2020_cpgs) <- thompson2020_formatted_samples
-
-thompson2020_cpgs <- thompson2020_cpgs[rownames(thompson2020_cpgs) %in% rownames(cpg_table),]
-cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(thompson2020_cpgs),]
-
-sample_table <- rbind(sample_table,thompson2020_samples)
-cpg_table <- cbind(cpg_table,thompson2020_cpgs)
+sample_table <- rbind(sample_table,langevin2016_samples)
+cpg_table <- cbind(cpg_table,langevin2016_cpgs)
 
 ###########################################################################
 

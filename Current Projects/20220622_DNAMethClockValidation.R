@@ -151,11 +151,9 @@ validation_sample_table <- read.csv("ClockConstruction/validation_sample_table.c
 # write.csv(predicted_ages,"ClockConstruction/predicted_ages_oldclock.csv")
 
 predicted_ages_oldclock <- read.csv("ClockConstruction/predicted_ages_oldclock.csv",row.names=1)
-predicted_ages_newclock <- read.csv("ClockConstruction/predictions.csv",row.names=1)
-validation_sample_table$new_predictions <- predicted_ages_newclock$x
-predicted_ages_newclock$ID <- rownames(predicted_ages_newclock)
-merged_data <- merge(predicted_ages_newclock,validation_sample_table,by="ID")
-merged_data <- merge(merged_data,predicted_ages_oldclock,by="ID")
+predicted_ages_newclock <- read.table("~/Data/ClockConstruction/validation_set_predictions.csv", quote="\"", comment.char="")$V1
+validation_sample_table$new_predictions <- predicted_ages_newclock
+merged_data <- merge(validation_sample_table,predicted_ages_oldclock,by="ID")
 filtered_data <- merged_data[merged_data$Misc != "Activated",]
 
 #Going to investigate CD4s and CD8s and compare the "differences" between CD8+ effector -> naive
@@ -264,3 +262,34 @@ ggplot(quantifying_differences, aes(x=Clock,y=Mean_Difference,
   geom_point() + theme_classic() + geom_errorbar() + ylim(-25,25) + facet_wrap(~Cell) +
   geom_hline(yintercept=0,linetype="dashed")
 ggsave("ClockConstruction/validation_clock_results_20220707.pdf")
+
+#####################################################################################################
+
+# We want to test the effectiveness of the clock. Most easily done by R^2 and a MSE measurement.
+
+test_set <- data.table::fread("ClockConstruction/test_set.csv",header=TRUE) %>% 
+  as.data.frame()
+
+predicted_ages_test_set <- read.table("~/Data/ClockConstruction/test_set_predictions.csv", quote="\"", comment.char="")$V1
+test_set_age <- test_set$Age
+predictions <- data.frame(Age=test_set_age,
+                          Predicted_Age=predicted_ages_test_set)
+
+#Useful script found online to create a ggplot with linear regression information.
+ggplotRegression <- function(fit){
+  require(ggplot2)
+  ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) +
+    geom_point() +
+    stat_smooth(method = "lm", col = "red") +
+    theme_classic() +
+    labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
+                       "ME = ",mean(sqrt(fit$residuals^2)),
+                       "Intercept =",signif(fit$coef[[1]],5 ),
+                       " Slope =",signif(fit$coef[[2]], 5),
+                       " P =",signif(summary(fit)$coef[2,4], 5)))
+}
+
+#Plotting accuracy of the model.
+ggplotRegression(lm(Predicted_Age ~ Age, predictions))
+ggsave("ClockConstruction/clock_results_20220707.pdf")
+

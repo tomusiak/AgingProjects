@@ -20,8 +20,14 @@ from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import MultiTaskElasticNetCV
 from sklearn.metrics import mean_squared_error
 import sklearn.metrics
+from warnings import simplefilter
+from sklearn.exceptions import ConvergenceWarning
+simplefilter("ignore", category=ConvergenceWarning)
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import LeaveOneOut
 
 def main():
+    os.environ["PYTHONWARNINGS"] = "ignore" # Also affect subprocesses
     os.chdir("../../Data/ClockConstruction")
     ml_sample_table = pd.read_csv('healthy_sample_table.csv',index_col=0)
     test_set = pd.read_csv("test_set.csv",index_col=0)
@@ -30,26 +36,36 @@ def main():
 
     training_set_data = training_set.values
     x_training, y_training = training_set_data[:, :-1], training_set_data[:, -1]
+    trans = StandardScaler()
+    x_training = trans.fit_transform(x_training)
 
     test_set_data = test_set.values
     x_test, y_test = test_set_data[:, :-1], test_set_data[:, -1]
+    x_test = trans.fit_transform(x_test)
 
     validation_set_data = validation_set.values
     x_validation=validation_set_data[:,:]
+    x_validation = trans.fit_transform(x_validation)
 
-    model = ElasticNetCV()
+    cv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=1)
+    # define model
+
+    parametersGrid = {"max_iter": [1, 5, 10],
+                      "alpha": [0.0001, 0.001, 0.01, 0.1, 1, 10, 100],
+                      "l1_ratio": np.arange(0.0, 1.0, 0.1)}
+
+    eNet = ElasticNet()
+    model = GridSearchCV(eNet, parametersGrid, scoring='neg_mean_squared_error', cv=1000,n_jobs=-1)
     model.fit(x_training,y_training)
     predicted_training_set_y = model.predict(x_training)
     r2_score_training = sklearn.metrics.r2_score(y_training,predicted_training_set_y)
     print("R^2 test for training data")
     print(r2_score_training)
-
     predicted_test_set_y = model.predict(x_test)
     r2_score_test = sklearn.metrics.r2_score(predicted_test_set_y,y_test)
     print("R^2 test for test data:")
     print(r2_score_test)
-    np.savetxt("training_set_predictions.csv",predicted_test_set_y,delimiter=",")
-
+    np.savetxt("test_set_predictions.csv",predicted_test_set_y,delimiter=",")
     predicted_validation_set_y = model.predict(x_validation)
     np.savetxt("validation_set_predictions.csv",predicted_validation_set_y,delimiter=",")
 

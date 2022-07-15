@@ -72,22 +72,6 @@ test_set <- ml_cpg_table_rotated[test_samples,]
 # predicted_age$ID <- rownames(predicted_age)
 # sample_table_2 <- merge(ml_sample_table,predicted_age,by="ID")
 # 
-# #Useful script found online to create a ggplot with linear regression information.
-# ggplotRegression <- function(fit){
-#   require(ggplot2)
-#   ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
-#     geom_point() +
-#     stat_smooth(method = "lm", col = "red") +
-#     theme_classic() +
-#     labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
-#                        "Intercept =",signif(fit$coef[[1]],5 ),
-#                        " Slope =",signif(fit$coef[[2]], 5),
-#                        " P =",signif(summary(fit)$coef[2,4], 5))) 
-# }
-# 
-# #Plotting accuracy of the model.
-# ggplotRegression(lm(Age ~ predicted_age, sample_table_2))
-# ggsave("ClockConstruction/clock_results_20220707.pdf")
 # 
 # #Identifying which CpGs are important
 # important_cpgs<-varImp(model)$importance
@@ -102,10 +86,6 @@ test_set <- ml_cpg_table_rotated[test_samples,]
 training_set <- na.omit(training_set)
 test_set <- na.omit(test_set)
 validation_set <- na.omit(validation_cpg_table_rotated)
-
-training_set[,1:(ncol(training_set)-1)] <- scale(training_set[,1:(ncol(training_set)-1)])
-test_set[,1:(ncol(test_set)-1)] <- scale(test_set[,1:(ncol(test_set)-1)])
-validation_set <- scale(validation_set)
 
 write.csv(training_set,"ClockConstruction/training_set.csv")
 write.csv(test_set,"ClockConstruction/test_set.csv")
