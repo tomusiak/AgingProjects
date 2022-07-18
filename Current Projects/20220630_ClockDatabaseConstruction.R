@@ -1060,57 +1060,55 @@ cpg_table <- cpg_table[,-1]
 # sample_table <- rbind(sample_table,nicodemus2017_samples)
 # cpg_table <- cbind(cpg_table,nicodemus2017_cpgs)
 
-langevin2016_unformatted_table <- read.table("Langevin2016/GSE70977_series_matrix.txt",
-                                            comment = "!",
-                                            skip=0,fill=TRUE,nrows = 7)
-
-#Formatting sample names, as the header text file is not arranged in a particularly easy way.
-langevin2016_unformatted_samples <- langevin2016_unformatted_table[5,-1]
-langevin2016_formatted_samples <- str_sub(langevin2016_unformatted_samples,1,62)[1:223]
-
-#Formatting ages.
-langevin2016_unformatted_ages <- langevin2016_unformatted_table[2,-1]
-langevin2016_formatted_ages <- as.numeric(str_sub(langevin2016_unformatted_ages, 26,100))
-
-#Formatting sex.
-langevin2016_unformatted_sex <- langevin2016_unformatted_table[3,-1]
-langevin2016_formatted_sex <- str_sub(langevin2016_unformatted_sex, 6, 30)
-
-#Formatting condition and miscellaneous information.
-langevin2016_unformatted_condition <- langevin2016_unformatted_table[1,-1]
-langevin2016_formatted_condition <- str_sub(langevin2016_unformatted_condition, 8, 30)
-
-langevin2016_formatted_donor <- paste(rep("AA",223),c(1:223),sep="")
-
-langevin2016_samples <- data.frame(ID=langevin2016_formatted_samples,
-                                  Author=rep("Langevin",223),
-                                  Year=rep(2016,223),
-                                  Tissue=rep("Mouth",223),
-                                  CellType=rep("Epithelial",223),
-                                  Age=langevin2016_formatted_ages,
-                                  Condition=langevin2016_formatted_condition,
-                                  Sex=langevin2016_formatted_sex,
-                                  DonorID=langevin2016_formatted_donor,
-                                  Misc=rep(NA,223))
-
-langevin2016_cpgs <- read.table("Langevin2016/GSE70977_series_matrix.txt",
-                               comment = "!",
-                               skip=7,
-                               fill=TRUE)
-langevin2016_cpgs <- langevin2016_cpgs[-c(1:5),]
-rownames(langevin2016_cpgs) <- langevin2016_cpgs[,1]
-langevin2016_cpgs <- langevin2016_cpgs[,-1]
-colnames(langevin2016_cpgs) <- langevin2016_formatted_samples
-
-langevin2016_cpgs <- langevin2016_cpgs[rownames(langevin2016_cpgs) %in% rownames(cpg_table),]
-cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(langevin2016_cpgs),]
-
-sample_table <- rbind(sample_table,langevin2016_samples)
-cpg_table <- cbind(cpg_table,langevin2016_cpgs)
+# langevin2016_unformatted_table <- read.table("Langevin2016/GSE70977_series_matrix.txt",
+#                                             comment = "!",
+#                                             skip=0,fill=TRUE,nrows = 7)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# langevin2016_unformatted_samples <- langevin2016_unformatted_table[5,-1]
+# langevin2016_formatted_samples <- str_sub(langevin2016_unformatted_samples,1,62)[1:223]
+# 
+# #Formatting ages.
+# langevin2016_unformatted_ages <- langevin2016_unformatted_table[2,-1]
+# langevin2016_formatted_ages <- as.numeric(str_sub(langevin2016_unformatted_ages, 26,100))
+# 
+# #Formatting sex.
+# langevin2016_unformatted_sex <- langevin2016_unformatted_table[3,-1]
+# langevin2016_formatted_sex <- str_sub(langevin2016_unformatted_sex, 6, 30)
+# 
+# #Formatting condition and miscellaneous information.
+# langevin2016_unformatted_condition <- langevin2016_unformatted_table[1,-1]
+# langevin2016_formatted_condition <- str_sub(langevin2016_unformatted_condition, 8, 30)
+# 
+# langevin2016_formatted_donor <- paste(rep("AA",223),c(1:223),sep="")
+# 
+# langevin2016_samples <- data.frame(ID=langevin2016_formatted_samples,
+#                                   Author=rep("Langevin",223),
+#                                   Year=rep(2016,223),
+#                                   Tissue=rep("Mouth",223),
+#                                   CellType=rep("Epithelial",223),
+#                                   Age=langevin2016_formatted_ages,
+#                                   Condition=langevin2016_formatted_condition,
+#                                   Sex=langevin2016_formatted_sex,
+#                                   DonorID=langevin2016_formatted_donor,
+#                                   Misc=rep(NA,223))
+# 
+# langevin2016_cpgs <- read.table("Langevin2016/GSE70977_series_matrix.txt",
+#                                comment = "!",
+#                                skip=7,
+#                                fill=TRUE)
+# langevin2016_cpgs <- langevin2016_cpgs[-c(1:5),]
+# rownames(langevin2016_cpgs) <- langevin2016_cpgs[,1]
+# langevin2016_cpgs <- langevin2016_cpgs[,-1]
+# colnames(langevin2016_cpgs) <- langevin2016_formatted_samples
+# 
+# langevin2016_cpgs <- langevin2016_cpgs[rownames(langevin2016_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(langevin2016_cpgs),]
+# 
+# sample_table <- rbind(sample_table,langevin2016_samples)
+# cpg_table <- cbind(cpg_table,langevin2016_cpgs)
 
 ###########################################################################
-
-cpg_table <- na.omit(cpg_table)
 
 healthy_samples <- sample_table[sample_table$Condition=="Control",1]
 healthy_sample_table <- sample_table[sample_table$Condition=="Control",]

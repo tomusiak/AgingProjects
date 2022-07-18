@@ -93,7 +93,7 @@ summary(decideTests(fit.reduced))
 diff_exp <-topTable(fit.reduced,coef=8,number=1000000)
 
 #Now we can remove all CpGs that change with differentiation.
-changed_cpgs <- diff_exp[diff_exp$adj.P.Val < .10, ]
+changed_cpgs <- diff_exp[diff_exp$adj.P.Val < .05, ]
 `%!in%` <- Negate(`%in%`)
 filtered_cpgs <- beta_values[(rownames(beta_values) %!in% rownames(changed_cpgs)),]
 
@@ -129,10 +129,15 @@ ggplot(
   labs(x="UMAP Component 1", y="UMAP Component 2", title = "UMAP Visualization - After Filtering") +
   theme_classic() +
   geom_point() # Plot individual points to make a scatterplot
-ggplot(nodiff_umap_plot_df,aes(x=X1,y=X2, fill=type)) + 
+ggplot(nodiff_umap_plot_df,aes(x=X1,y=X2, color=type)) + 
   theme_classic() +
   labs(x="UMAP Component 2", y="Age",title="UMAP Component 2 Tracks Age") +
+  geom_point()
+ggplot(nodiff_umap_plot_df,aes(x=age,y=X1)) + 
+  theme_classic() +
+  labs(x="Age", y="UMAP Component 1",title="UMAP Component 1 Tracks Age") +
   geom_point()
 
 #Writes list of candidate CpGs to be used for new clock construction.
 write.csv(rownames(filtered_cpgs),"ClockConstruction/nodiff_cpgs.csv")
+
