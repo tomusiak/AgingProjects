@@ -53,8 +53,11 @@ def main():
 
     eNet = sklearn.linear_model.ElasticNet()
     params = dict()
-    params['alpha'] =  np.logspace(-2, 2, 100, endpoint=True)
-    model = sklearn.model_selection.RandomizedSearchCV(eNet, param_distributions=params,n_iter=20, verbose=3,cv=20,n_jobs=-1)
+    alphas = [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 0.0, 1.0, 10.0, 100.0]
+    repeated_k_fold = sklearn.model_selection.RepeatedKFold(n_splits=10,n_repeats=10)
+    ratios = np.arange(0, 1, 0.01)
+    alphas = [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 0.0, 1.0, 10.0, 100.0]
+    model = ElasticNetCV(l1_ratio=ratios, alphas=alphas, cv=repeated_k_fold, n_jobs=-1)
     model.fit(x_training,y_training)
     predicted_training_set_y = model.predict(x_training)
     r2_score_training = sklearn.metrics.r2_score(y_training,predicted_training_set_y)
@@ -67,6 +70,7 @@ def main():
     np.savetxt("test_set_predictions.csv",predicted_test_set_y,delimiter=",")
     predicted_validation_set_y = model.predict(x_validation)
     np.savetxt("validation_set_predictions.csv",predicted_validation_set_y,delimiter=",")
+    print(model.best_params_)
 
 def regressionNNPrediction(x_train, y_train, x_test, y_test):
     prediction = regressionNN(x_train, y_train, x_test)

@@ -15,6 +15,8 @@ library(random)
 library(Rfast)
 library(dplyr)
 library(limma)
+library(MASS)
+library(sva)
 
 #Reading in database data for training and testing.
 ml_cpg_table <- data.table::fread("ClockConstruction/healthy_cpg_table.csv",header=TRUE) %>% 
@@ -23,22 +25,27 @@ row.names(ml_cpg_table) <- ml_cpg_table$V1
 ml_cpg_table <- ml_cpg_table[,-1]
 permitted_cpgs <- read.csv("ClockConstruction/nodiff_cpgs.csv",row.names=1)[,1]
 ml_sample_table <- read.csv("ClockConstruction/healthy_sample_table.csv",row.names=1)
-ml_cpg_table <- ml_cpg_table[rownames(ml_cpg_table) %in% permitted_cpgs,]
+# ml_cpg_table <- ml_cpg_table[rownames(ml_cpg_table) %in% permitted_cpgs,]
 
-ml_cpg_table[ml_cpg_table == "NULL"] = NA
-ml_cpg_table <- na.omit(ml_cpg_table)
+ml_cpg_table[ml_cpg_table == "NULL"] <- NA
+ml_cpg_table[ml_cpg_table == "null"] <- NA
+ml_cpg_table <- ml_cpg_table[rowSums(is.na(ml_cpg_table))==0,]
+ml_cpg_table <- drop_na(ml_cpg_table)
 ml_sample_table <- ml_sample_table[ml_sample_table$ID %in% colnames(ml_cpg_table),]
 
 cpgs <- rownames(ml_cpg_table)
 samples <- colnames(ml_cpg_table)
 ml_cpg_table <- as.matrix(sapply(ml_cpg_table, as.numeric)) 
-ml_cpg_table <- scale(ml_cpg_table)
+ml_cpg_table <- ComBat(ml_cpg_table,ml_sample_table$Author,mean.only=TRUE)
+
+#ml_cpg_table <- scale(ml_cpg_table)
 
 #Annotating and splitting data.
 ml_cpg_table_rotated <- data.frame(Rfast::transpose(ml_cpg_table))
 colnames(ml_cpg_table_rotated) <- cpgs
 rownames(ml_cpg_table_rotated) <- samples
 
+ml_cpg_table_rotated <- ml_cpg_table_rotated[ rownames(ml_cpg_table_rotated)%in% ml_sample_table$ID ,]
 ml_cpg_table_rotated$Age <- ml_sample_table$Age
 
 # adult_age <- 20
@@ -79,16 +86,21 @@ training_set_alternate <- na.omit(training_set)
 test_set_alternate <- na.omit(test_set_alternate)
 
 #Training the model.
-train_control <- trainControl(method = "adaptive_LGOCV",
-                              search = "random",
-                              verboseIter = TRUE)
+
+fit_control <- trainControl(
+      method = "repeatedcv",
+      number = 2,
+      repeats = 2,
+      verboseIter=TRUE)
+
 model <-train(Age ~ .,
-      data = training_set,
+      data = training_set_alternate,
       method = "glmnet",
-      preProcess = c("center", "scale"),
       tuneLength = 25,
-      trControl = train_control)
-predicted_age <- predict(model,test_set)
+      preProcess= c("center","scale"),
+      trControl = fit_control)
+
+predicted_age <- predict(model,test_set_alternate)
 predicted_age <- data.frame(predicted_age)
 predicted_age$ID <- rownames(predicted_age)
 sample_table_2 <- merge(ml_sample_table,predicted_age,by="ID")
@@ -96,7 +108,7 @@ sample_table_2 <- merge(ml_sample_table,predicted_age,by="ID")
 #Plotting accuracy of the model.
 fit = lm(predicted_age ~ Age, sample_table_2)
 ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) +
-  geom_point(aes(color=sample_table_2$Tissue)) +
+  geom_point(aes(color=sample_table_2$Author)) +
   stat_smooth(method = "lm", col = "red") +
   theme_classic() +
   labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
@@ -120,8 +132,8 @@ training_set <- na.omit(training_set)
 test_set <- na.omit(test_set)
 validation_set <- na.omit(validation_cpg_table_rotated)
 
-write.csv(training_set,"ClockConstruction/training_set.csv")
-write.csv(test_set,"ClockConstruction/test_set.csv")
+write.csv(training_set_alternate,"ClockConstruction/training_set.csv")
+write.csv(test_set_alternate,"ClockConstruction/test_set.csv")
 write.csv(validation_set, "ClockConstruction/validation_set.csv")
 
 

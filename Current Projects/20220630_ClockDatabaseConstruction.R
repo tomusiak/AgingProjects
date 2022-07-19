@@ -4,8 +4,6 @@
 # metadata in columns. The possible cpgs will be filtered on those that do not change with 
 # T cell differentiation.
 
-#NOTE: EPIC samples are 450k samples and vice versa.
-
 source("AgingProjects/Useful Scripts/generally_useful.R") #Helper functions
 
 #Packages
@@ -22,39 +20,79 @@ cpg_table <- data.table::fread("ClockConstruction/cpg_table.csv",header=TRUE)  %
 row.names(cpg_table) <- cpg_table$V1
 cpg_table <- cpg_table[,-1]
 
-# 
 # #Reading in the 450K dataset from Magnaye 2022 et al.
-# magnaye2022450k_unformatted_table <- read.table("Magnaye2022/GSE201872-GPL21145_series_matrix.txt",
+# magnaye2022EPIC_unformatted_table <- read.table("Magnaye2022/GSE201872-GPL21145_series_matrix.txt",
 #                                             comment = "!",
 #                                             skip=5,fill=TRUE,nrows = 5)
 # 
 # #Formatting sample names, as the header text file is not arranged in a particularly easy way.
-# magnaye2022450k_unformatted_samples <- magnaye2022450k_unformatted_table[2,-1]
+# magnaye2022EPIC_unformatted_samples <- magnaye2022EPIC_unformatted_table[2,-1]
+# magnaye2022EPIC_formatted_samples <- t(magnaye2022EPIC_unformatted_samples)[,1]
+# 
+# #Formatting ages.
+# magnaye2022EPIC_unformatted_ages <- magnaye2022EPIC_unformatted_table[3,-1]
+# magnaye2022EPIC_formatted_ages <- as.numeric(str_sub(magnaye2022EPIC_unformatted_ages, 6, 7))
+# 
+# #Formatting sex.
+# magnaye2022EPIC_unformatted_sex <- magnaye2022EPIC_unformatted_table[4,-1]
+# magnaye2022EPIC_formatted_sex <- str_sub(magnaye2022EPIC_unformatted_sex, 6, 15)
+# 
+# #Formatting condition.
+# magnaye2022EPIC_unformatted_condition <- magnaye2022EPIC_unformatted_table[5,-1]
+# magnaye2022EPIC_formatted_condition <- str_sub(magnaye2022EPIC_unformatted_condition, 9, 18)
+# 
+# #Looks like the values provided are heavily pre-processed m-values. To ensure consistency,
+# # I will process raw data to generate normalized beta values.
+# magnaye2022EPIC_list_of_files<-list.files(file.path("Magnaye2022/raw_data"))
+# magnaye2022EPIC_list_of_files <- magnaye2022EPIC_list_of_files[231:length(magnaye2022EPIC_list_of_files)]
+# magnaye2022EPIC_parsed_list_of_files <- substr(magnaye2022EPIC_list_of_files,1,30)
+# magnaye2022EPIC_parsed_list_of_files <- unique(magnaye2022EPIC_parsed_list_of_files)
+# magnaye2022EPIC_samplesheet <- data.frame(Sample=magnaye2022EPIC_formatted_samples,each=2,
+#                                        Ages = magnaye2022EPIC_formatted_ages,each=2,
+#                                        Sex= magnaye2022EPIC_formatted_sex,each=2,
+#                                        Condition = magnaye2022EPIC_formatted_condition,each=2,
+#                                        Basename = magnaye2022EPIC_parsed_list_of_files)
+# setwd("Magnaye2022/raw_data")
+# magnaye2022EPIC_RGSet <- read.metharray.exp(targets = magnaye2022EPIC_samplesheet)
+# magnaye2022EPIC_MSet <- preprocessSWAN(magnaye2022EPIC_RGSet)
+# magnaye2022EPIC_cpgs <- getBeta(magnaye2022EPIC_MSet)
+# setwd("..")
+# setwd("..")
+# colnames(magnaye2022EPIC_cpgs) <- magnaye2022EPIC_formatted_samples
+# magnaye2022EPIC_cpgs <- data.frame(magnaye2022EPIC_cpgs)
+# 
+# #Reading in the EPIC dataset from Magnaye 2022 et al.
+# magnaye2022450k_unformatted_table <- read.table("Magnaye2022/GSE201872-GPL13534_series_matrix.txt",
+#                                                 comment = "!",
+#                                                 skip=5,fill=TRUE,nrows = 5)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# magnaye2022450k_unformatted_samples <- magnaye2022450k_unformatted_table[1,-1]
 # magnaye2022450k_formatted_samples <- t(magnaye2022450k_unformatted_samples)[,1]
 # 
 # #Formatting ages.
-# magnaye2022450k_unformatted_ages <- magnaye2022450k_unformatted_table[3,-1]
+# magnaye2022450k_unformatted_ages <- magnaye2022450k_unformatted_table[2,-1]
 # magnaye2022450k_formatted_ages <- as.numeric(str_sub(magnaye2022450k_unformatted_ages, 6, 7))
 # 
 # #Formatting sex.
-# magnaye2022450k_unformatted_sex <- magnaye2022450k_unformatted_table[4,-1]
+# magnaye2022450k_unformatted_sex <- magnaye2022450k_unformatted_table[3,-1]
 # magnaye2022450k_formatted_sex <- str_sub(magnaye2022450k_unformatted_sex, 6, 15)
 # 
 # #Formatting condition.
-# magnaye2022450k_unformatted_condition <- magnaye2022450k_unformatted_table[5,-1]
+# magnaye2022450k_unformatted_condition <- magnaye2022450k_unformatted_table[4,-1]
 # magnaye2022450k_formatted_condition <- str_sub(magnaye2022450k_unformatted_condition, 9, 18)
 # 
 # #Looks like the values provided are heavily pre-processed m-values. To ensure consistency,
 # # I will process raw data to generate normalized beta values.
 # magnaye2022450k_list_of_files<-list.files(file.path("Magnaye2022/raw_data"))
-# magnaye2022450k_list_of_files <- magnaye2022450k_list_of_files[231:length(magnaye2022450k_list_of_files)]
-# magnaye2022450k_parsed_list_of_files <- substr(magnaye2022450k_list_of_files,1,30)
+# magnaye2022450k_list_of_files <- magnaye2022450k_list_of_files[7:230]
+# magnaye2022450k_parsed_list_of_files <- substr(magnaye2022450k_list_of_files,1,28)
 # magnaye2022450k_parsed_list_of_files <- unique(magnaye2022450k_parsed_list_of_files)
 # magnaye2022450k_samplesheet <- data.frame(Sample=magnaye2022450k_formatted_samples,each=2,
-#                                        Ages = magnaye2022450k_formatted_ages,each=2,
-#                                        Sex= magnaye2022450k_formatted_sex,each=2,
-#                                        Condition = magnaye2022450k_formatted_condition,each=2,
-#                                        Basename = magnaye2022450k_parsed_list_of_files)
+#                                           Ages = magnaye2022450k_formatted_ages,each=2,
+#                                           Sex= magnaye2022450k_formatted_sex,each=2,
+#                                           Condition = magnaye2022450k_formatted_condition,each=2,
+#                                           Basename = magnaye2022450k_parsed_list_of_files)
 # setwd("Magnaye2022/raw_data")
 # magnaye2022450k_RGSet <- read.metharray.exp(targets = magnaye2022450k_samplesheet)
 # magnaye2022450k_MSet <- preprocessSWAN(magnaye2022450k_RGSet)
@@ -64,46 +102,6 @@ cpg_table <- cpg_table[,-1]
 # colnames(magnaye2022450k_cpgs) <- magnaye2022450k_formatted_samples
 # magnaye2022450k_cpgs <- data.frame(magnaye2022450k_cpgs)
 # 
-# #Reading in the EPIC dataset from Magnaye 2022 et al.
-# magnaye2022EPIC_unformatted_table <- read.table("Magnaye2022/GSE201872-GPL13534_series_matrix.txt",
-#                                                 comment = "!",
-#                                                 skip=5,fill=TRUE,nrows = 5)
-# 
-# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
-# magnaye2022EPIC_unformatted_samples <- magnaye2022EPIC_unformatted_table[1,-1]
-# magnaye2022EPIC_formatted_samples <- t(magnaye2022EPIC_unformatted_samples)[,1]
-# 
-# #Formatting ages.
-# magnaye2022EPIC_unformatted_ages <- magnaye2022EPIC_unformatted_table[2,-1]
-# magnaye2022EPIC_formatted_ages <- as.numeric(str_sub(magnaye2022EPIC_unformatted_ages, 6, 7))
-# 
-# #Formatting sex.
-# magnaye2022EPIC_unformatted_sex <- magnaye2022EPIC_unformatted_table[3,-1]
-# magnaye2022EPIC_formatted_sex <- str_sub(magnaye2022EPIC_unformatted_sex, 6, 15)
-# 
-# #Formatting condition.
-# magnaye2022EPIC_unformatted_condition <- magnaye2022EPIC_unformatted_table[4,-1]
-# magnaye2022EPIC_formatted_condition <- str_sub(magnaye2022EPIC_unformatted_condition, 9, 18)
-# 
-# #Looks like the values provided are heavily pre-processed m-values. To ensure consistency,
-# # I will process raw data to generate normalized beta values.
-# magnaye2022EPIC_list_of_files<-list.files(file.path("Magnaye2022/raw_data"))
-# magnaye2022EPIC_list_of_files <- magnaye2022EPIC_list_of_files[7:230]
-# magnaye2022EPIC_parsed_list_of_files <- substr(magnaye2022EPIC_list_of_files,1,28)
-# magnaye2022EPIC_parsed_list_of_files <- unique(magnaye2022EPIC_parsed_list_of_files)
-# magnaye2022EPIC_samplesheet <- data.frame(Sample=magnaye2022EPIC_formatted_samples,each=2,
-#                                           Ages = magnaye2022EPIC_formatted_ages,each=2,
-#                                           Sex= magnaye2022EPIC_formatted_sex,each=2,
-#                                           Condition = magnaye2022EPIC_formatted_condition,each=2,
-#                                           Basename = magnaye2022EPIC_parsed_list_of_files)
-# setwd("Magnaye2022/raw_data")
-# magnaye2022EPIC_RGSet <- read.metharray.exp(targets = magnaye2022EPIC_samplesheet)
-# magnaye2022EPIC_MSet <- preprocessSWAN(magnaye2022EPIC_RGSet)
-# magnaye2022EPIC_cpgs <- getBeta(magnaye2022EPIC_MSet)
-# setwd("..")
-# setwd("..")
-# colnames(magnaye2022EPIC_cpgs) <- magnaye2022EPIC_formatted_samples
-# magnaye2022EPIC_cpgs <- data.frame(magnaye2022EPIC_cpgs)
 # magnaye2022EPIC_cpgs <- magnaye2022EPIC_cpgs[rownames(magnaye2022EPIC_cpgs) %in%
 #                                                rownames(magnaye2022450k_cpgs),]
 # magnaye2022450k_cpgs <- magnaye2022450k_cpgs[rownames(magnaye2022450k_cpgs) %in%
@@ -121,30 +119,29 @@ cpg_table <- cpg_table[,-1]
 #                            DonorID=character(),
 #                            Misc=character())
 # magnayefirst_IDs <- paste(rep("F",30),1:30,sep="")
-# magnayefirst_samples <- data.frame(ID=magnaye2022450k_formatted_samples,
+# magnayefirst_samples <- data.frame(ID=magnaye2022EPIC_formatted_samples,
 #                                    Author=rep("Magnaye",30),
 #                                    Year=rep(2022,30),
 #                                    Tissue=rep("Bronchi",30),
 #                                    CellType=rep("Epithelial",30),
-#                                    Age=magnaye2022450k_formatted_ages,
-#                                    Condition=magnaye2022450k_formatted_condition,
-#                                    Sex=magnaye2022450k_formatted_sex,
+#                                    Age=magnaye2022EPIC_formatted_ages,
+#                                    Condition=magnaye2022EPIC_formatted_condition,
+#                                    Sex=magnaye2022EPIC_formatted_sex,
 #                                    DonorID=magnayefirst_IDs,
 #                                    Misc=rep("",30))
 # magnayesecond_IDs <- paste(rep("G",112),1:112,sep="")
-# magnayesecond_samples <- data.frame(ID=magnaye2022EPIC_formatted_samples,
+# magnayesecond_samples <- data.frame(ID=magnaye2022450k_formatted_samples,
 #                                    Author=rep("Magnaye",112),
 #                                    Year=rep(2022,112),
 #                                    Tissue=rep("Bronchi",112),
 #                                    CellType=rep("Epithelial",112),
-#                                    Age=magnaye2022EPIC_formatted_ages,
-#                                    Condition=magnaye2022EPIC_formatted_condition,
-#                                    Sex=magnaye2022EPIC_formatted_sex,
+#                                    Age=magnaye2022450k_formatted_ages,
+#                                    Condition=magnaye2022450k_formatted_condition,
+#                                    Sex=magnaye2022450k_formatted_sex,
 #                                    DonorID=magnayesecond_IDs,
 #                                    Misc=rep("",112))
 # sample_table <- rbind(magnayefirst_samples,magnayesecond_samples)
 # cpg_table <- cbind(magnaye2022450k_cpgs,magnaye2022EPIC_cpgs)
-# 
 # 
 # # Time for a monocyte data set.
 # estupinan2022_unformatted_table <- read.table("Estupinan2022/GSE201752_series_matrix.txt",
@@ -188,9 +185,9 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,estupinan2022_samples)
 # cpg_table <- cbind(cpg_table,estupinan2022_cpgs)
-# 
-# 
-# #Time for a blood data set.
+# #
+# #
+# # #Time for a blood data set.
 # okereke2021_unformatted_table <- read.table("Okereke2021/GSE190540_series_matrix.txt",
 #                                             comment = "!",
 #                                             skip=0,fill=TRUE,nrows = 6)
@@ -238,8 +235,8 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,okereke2021_samples)
 # cpg_table <- cbind(cpg_table,okereke2021_cpgs)
-# 
-# # Skin data set.
+# #
+# # # Skin data set.
 # muse2021_unformatted_table <- read.table("Muse2021/GSE188593_series_matrix.txt",
 #                                             comment = "!",
 #                                             skip=0,fill=TRUE,nrows = 6)
@@ -293,8 +290,8 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,muse2021_samples)
 # cpg_table <- cbind(cpg_table,muse2021_cpgs)
-
-# #Blood data set.
+# 
+# # #Blood data set.
 # konigsberg2021_unformatted_table <- read.table("Konigsberg2021/GSE167202_series_matrix.txt",
 #                                             comment = "!",
 #                                             skip=0,fill=TRUE,nrows = 6)
@@ -347,8 +344,8 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,konigsberg2021_samples)
 # cpg_table <- cbind(cpg_table,konigsberg2021_cpgs)
-
-#Brain samples.
+# 
+# #Brain samples.
 # haghighi2022_unformatted_table <- read.table("Haghighi2022/GSE191200_series_matrix.txt",
 #                                                comment = "!",
 #                                                skip=0,fill=TRUE,nrows = 6)
@@ -400,8 +397,8 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,haghighi2022_samples)
 # cpg_table <- cbind(cpg_table,haghighi2022_cpgs)
-
-# #Colorectal samples.
+# 
+# # #Colorectal samples.
 # chen2021_unformatted_table <- read.table("Chen2021/GSE159898_series_matrix.txt",
 #                                                comment = "!",
 #                                                skip=0,fill=TRUE,nrows = 6)
@@ -457,8 +454,8 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,chen2021_samples)
 # cpg_table <- cbind(cpg_table,chen2021_cpgs)
-
-#Skeletal Muscle samples
+# 
+# #Skeletal Muscle samples
 # voisin2021_unformatted_table <- read.table("Voisin2021/GSE151407_series_matrix.txt",
 #                                          comment = "!",
 #                                          skip=0,fill=TRUE,nrows = 6)
@@ -515,9 +512,9 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,voisin2021_samples)
 # cpg_table <- cbind(cpg_table,voisin2021_cpgs)
-
-# More brain. Note - I am somewhat apprehensive about this following dataset.
-
+# 
+# # More brain. Note - I am somewhat apprehensive about this following dataset.
+# 
 # fries2019_unformatted_table <- read.table("Fries2019/GSE129428_series_matrix.txt",
 #                                          comment = "!",
 #                                          skip=0,fill=TRUE,nrows = 6)
@@ -565,9 +562,9 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,fries2019_samples)
 # cpg_table <- cbind(cpg_table,fries2019_cpgs)
-
-#Samples from children.
-
+# 
+# #Samples from children.
+# 
 # islam2018_unformatted_table <- read.table("Islam2018/GSE124366_series_matrix.txt",
 #                                          comment = "!",
 #                                          skip=0,fill=TRUE,nrows = 6)
@@ -625,10 +622,10 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,islam2018_samples)
 # cpg_table <- cbind(cpg_table,islam2018_cpgs)
+# #
 # 
-
-#Samples from breast tissue.
-
+# #Samples from breast tissue.
+# 
 # johnson2016_unformatted_table <- read.table("Johnson2016/GSE88883_series_matrix.txt",
 #                                           comment = "!",
 #                                           skip=0,fill=TRUE,nrows = 4)
@@ -675,8 +672,8 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,johnson2016_samples)
 # cpg_table <- cbind(cpg_table,johnson2016_cpgs)
-
-#Samples from liver.
+# 
+# #Samples from liver.
 # 
 # horvath2014_unformatted_table <- read.table("Horvath2014/GSE61258_series_matrix.txt",
 #                                             comment = "!",
@@ -724,9 +721,9 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,horvath2014_samples)
 # cpg_table <- cbind(cpg_table,horvath2014_cpgs)
-
-#Samples from sperm tissue.
-
+# 
+# #Samples from sperm tissue.
+# 
 # pilsner2022_unformatted_table <- read.table("Pilsner2022/GSE185445_series_matrix.txt",
 #                                             comment = "!",
 #                                             skip=0,fill=TRUE,nrows = 5)
@@ -762,10 +759,10 @@ cpg_table <- cpg_table[,-1]
 # pilsner2022_formatted_basenames <- str_sub(pilsner2022_unformatted_basenames,11,100)
 # 
 # pilsner2022_cpgs <- data.table::fread("Pilsner2022/GSE185445_processed_methylation_data_matrix.txt",
-#                                       header=FALSE)  %>% 
+#                                       header=FALSE)  %>%
 #                                       as.data.frame()
 # 
-# pilsner2022_colnames <- data.frame(read_table2("Pilsner2022/colnames.csv", 
+# pilsner2022_colnames <- data.frame(read_table2("Pilsner2022/colnames.csv",
 #                         col_names = FALSE))
 # pilsner2022_colnames <- substr(pilsner2022_colnames,2,20)
 # 
@@ -780,9 +777,9 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,pilsner2022_samples)
 # cpg_table <- cbind(cpg_table,pilsner2022_cpgs)
-
-#Samples from nasal epithelia
-
+# 
+# #Samples from nasal epithelia
+# 
 # davalos2022_unformatted_table <- read.table("Davalos2022/GSE193879_series_matrix.txt",
 #                                             comment = "!",
 #                                             skip=0,fill=TRUE,nrows = 4)
@@ -819,7 +816,7 @@ cpg_table <- cpg_table[,-1]
 # davalos2022_samples <- davalos2022_samples[!is.na(davalos2022_samples$Age),]
 # 
 # davalos2022_cpgs <- data.table::fread("Davalos2022/GSE193879_Matrix_processed.csv",
-#                                                       header=FALSE)  %>% 
+#                                                       header=FALSE)  %>%
 #                                                       as.data.frame()
 # row.names(davalos2022_cpgs) <- davalos2022_cpgs$V1
 # davalos2022_cpgs <- davalos2022_cpgs[-1,-1]
@@ -832,8 +829,8 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,davalos2022_samples)
 # cpg_table <- cbind(cpg_table,davalos2022_cpgs)
-
-
+# 
+# 
 # hannon2021_unformatted_table <- read.table("Hannon2021/GSE152026_series_matrix.txt",
 #                                             comment = "!",
 #                                             skip=0,fill=TRUE,nrows = 6)
@@ -872,14 +869,14 @@ cpg_table <- cpg_table[,-1]
 # hannon2021_sample_names <- str_sub(hannon2021_unformatted_table[1,-1],1,19)
 # 
 # hannon2021_cpgs <- data.table::fread("Hannon2021/GSE152026_EUGEI_processed_signals.csv",
-#                                       header=FALSE)  %>% 
+#                                       header=FALSE)  %>%
 #   as.data.frame()
 # row.names(hannon2021_cpgs) <- hannon2021_cpgs$V1
 # hannon2021_cpgs <- hannon2021_cpgs[-1,-1]
 # hannon2021_cpgs <- hannon2021_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),934)]
 # colnames(hannon2021_cpgs) <- hannon2021_formatted_samples
 # hannon2021_cpgs <- hannon2021_cpgs[,colnames(hannon2021_cpgs) %in% hannon2021_samples$ID]
-# hannon2021_names <- read_csv("Hannon2021/target.txt", 
+# hannon2021_names <- read_csv("Hannon2021/target.txt",
 #                              col_names = FALSE)
 # hannon2021_names <- str_sub(unlist(hannon2021_names),1,500)
 # hannon2021_names <- hannon2021_names[2:1869]
@@ -890,13 +887,13 @@ cpg_table <- cpg_table[,-1]
 # 
 # hannon2021_changed_cpgs <- hannon2021_cpgs[,hannon2021_sample_names]
 # colnames(hannon2021_changed_cpgs) <- hannon2021_formatted_samples
-# hannon2021_changed_cpgs <- hannon2021_changed_cpgs[,colnames(hannon2021_changed_cpgs) %in% 
+# hannon2021_changed_cpgs <- hannon2021_changed_cpgs[,colnames(hannon2021_changed_cpgs) %in%
 #                                                      hannon2021_samples$ID]
 # cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(hannon2021_changed_cpgs),]
 # 
 # sample_table <- rbind(sample_table,hannon2021_samples)
 # cpg_table <- cbind(cpg_table,hannon2021_changed_cpgs)
-
+# 
 # martino2018_unformatted_table <- read.table("Martino2018/GSE114135-GPL23976_series_matrix.txt",
 #                                             comment = "!",
 #                                             skip=0,fill=TRUE,nrows = 5)
@@ -950,7 +947,7 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,martino2018_samples)
 # cpg_table <- cbind(cpg_table,martino2018_cpgs)
-
+# 
 # zannas2019_unformatted_table <- read.table("zannas2019/GSE146376_series_matrix.txt",
 #                                             comment = "!",
 #                                             skip=0,fill=TRUE,nrows = 7)
@@ -997,7 +994,7 @@ cpg_table <- cpg_table[,-1]
 # zannas2019_cpgs <- zannas2019_cpgs[,-1]
 # zannas2019_cpgs <- zannas2019_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),280)]
 # 
-# zannas2019_colnames <- read_csv("zannas2019/colnames.csv", 
+# zannas2019_colnames <- read_csv("zannas2019/colnames.csv",
 #                      col_names = FALSE)
 # zannas2019_colnames <- str_sub(unlist(zannas2019_colnames[1,]),1,100)
 # zannas2019_colnames <- zannas2019_colnames[-1]
@@ -1011,7 +1008,7 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,zannas2019_samples)
 # cpg_table <- cbind(cpg_table,zannas2019_cpgs)
-
+# 
 # nicodemus2017_unformatted_table <- read.table("Nicodemus2017/GSE85566_series_matrix.txt",
 #                                              comment = "!",
 #                                              skip=0,fill=TRUE,nrows = 7)
@@ -1059,7 +1056,7 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,nicodemus2017_samples)
 # cpg_table <- cbind(cpg_table,nicodemus2017_cpgs)
-
+# 
 # langevin2016_unformatted_table <- read.table("Langevin2016/GSE70977_series_matrix.txt",
 #                                             comment = "!",
 #                                             skip=0,fill=TRUE,nrows = 7)
@@ -1107,8 +1104,624 @@ cpg_table <- cpg_table[,-1]
 # 
 # sample_table <- rbind(sample_table,langevin2016_samples)
 # cpg_table <- cbind(cpg_table,langevin2016_cpgs)
+# 
+# 
+# pai2019_unformatted_table <- read.table("Pai2019/GSE112179_series_matrix.txt",
+#                                              comment = "!",
+#                                              skip=0,fill=TRUE,nrows = 5)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# pai2019_unformatted_samples <- pai2019_unformatted_table[5,-1]
+# pai2019_formatted_samples <- str_sub(pai2019_unformatted_samples,1,62)[1:100]
+# 
+# #Formatting ages.
+# pai2019_unformatted_ages <- pai2019_unformatted_table[1,-1]
+# pai2019_formatted_ages <- as.numeric(str_sub(pai2019_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# pai2019_unformatted_sex <- pai2019_unformatted_table[2,-1]
+# pai2019_formatted_sex <- str_sub(pai2019_unformatted_sex, 6, 30)
+# 
+# #Formatting condition and miscellaneous information.
+# pai2019_unformatted_condition <- pai2019_unformatted_table[3,-1]
+# pai2019_formatted_condition <- str_sub(pai2019_unformatted_condition, 10, 30)
+# 
+# pai2019_formatted_donor <- paste(rep("AB",100),c(1:100),sep="")
+# 
+# pai2019_samples <- data.frame(ID=pai2019_formatted_samples,
+#                                    Author=rep("Pai",100),
+#                                    Year=rep(2019,100),
+#                                    Tissue=rep("Brain",100),
+#                                    CellType=rep("Neurons",100),
+#                                    Age=pai2019_formatted_ages,
+#                                    Condition=pai2019_formatted_condition,
+#                                    Sex=pai2019_formatted_sex,
+#                                    DonorID=pai2019_formatted_donor,
+#                                    Misc=rep(NA,100))
+# 
+# pai2019_cpgs <- read.table("Pai2019/GSE112179_series_matrix.txt",
+#                               comment = "!",
+#                               skip=5,
+#                               fill=TRUE)
+# pai2019_cpgs <- pai2019_cpgs[-c(1:5),]
+# rownames(pai2019_cpgs) <- pai2019_cpgs[,1]
+# pai2019_cpgs <- pai2019_cpgs[,-1]
+# colnames(pai2019_cpgs) <- pai2019_formatted_samples
+# 
+# pai2019_cpgs <- pai2019_cpgs[rownames(pai2019_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(pai2019_cpgs),]
+# 
+# sample_table <- rbind(sample_table,pai2019_samples)
+# cpg_table <- cbind(cpg_table,pai2019_cpgs)
+# 
+# cobben2019_unformatted_table <- read.table("Cobben2019/GSE112987_series_matrix.txt",
+#                                              comment = "!",
+#                                              skip=0,fill=TRUE,nrows = 5)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# cobben2019_unformatted_samples <- cobben2019_unformatted_table[5,-1]
+# cobben2019_formatted_samples <- str_sub(cobben2019_unformatted_samples,1,62)[1:103]
+# 
+# #Formatting ages.
+# cobben2019_unformatted_ages <- cobben2019_unformatted_table[3,-1]
+# cobben2019_formatted_ages <- as.numeric(str_sub(cobben2019_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# cobben2019_unformatted_sex <- cobben2019_unformatted_table[1,-1]
+# cobben2019_formatted_sex <- str_sub(cobben2019_unformatted_sex, 9, 30)
+# 
+# #Formatting condition and miscellaneous information.
+# cobben2019_unformatted_condition <- cobben2019_unformatted_table[2,-1]
+# cobben2019_formatted_condition <- str_sub(cobben2019_unformatted_condition, 16, 30)
+# cobben2019_formatted_condition[cobben2019_formatted_condition=="control"] <- "Control"
+# 
+# cobben2019_formatted_donor <- paste(rep("AC",103),c(1:103),sep="")
+# 
+# cobben2019_samples <- data.frame(ID=cobben2019_formatted_samples,
+#                                    Author=rep("Cobben",103),
+#                                    Year=rep(2019,103),
+#                                    Tissue=rep("Blood",103),
+#                                    CellType=rep("Blood",103),
+#                                    Age=cobben2019_formatted_ages,
+#                                    Condition=cobben2019_formatted_condition,
+#                                    Sex=cobben2019_formatted_sex,
+#                                    DonorID=cobben2019_formatted_donor,
+#                                    Misc=rep(NA,103))
+# 
+# cobben2019_cpgs <- read.table("Cobben2019/GSE112987_series_matrix.txt",
+#                               comment = "!",
+#                               skip=5,
+#                               fill=TRUE)
+# cobben2019_cpgs <- cobben2019_cpgs[-c(1:5),]
+# rownames(cobben2019_cpgs) <- cobben2019_cpgs[,1]
+# cobben2019_cpgs <- cobben2019_cpgs[,-1]
+# colnames(cobben2019_cpgs) <- cobben2019_formatted_samples
+# 
+# cobben2019_cpgs <- cobben2019_cpgs[rownames(cobben2019_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(cobben2019_cpgs),]
+# 
+# sample_table <- rbind(sample_table,cobben2019_samples)
+# cpg_table <- cbind(cpg_table,cobben2019_cpgs)
+# 
+# husquin2019_unformatted_table <- read.table("Husquin2019/GSE120610_series_matrix.txt",
+#                                             comment = "!",
+#                                             skip=0,fill=TRUE,nrows = 5)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# husquin2019_unformatted_samples <- husquin2019_unformatted_table[5,-1]
+# husquin2019_formatted_samples <- str_sub(husquin2019_unformatted_samples,1,62)[1:156]
+# 
+# #Formatting ages.
+# husquin2019_unformatted_ages <- husquin2019_unformatted_table[1,-1]
+# husquin2019_formatted_ages <- as.numeric(str_sub(husquin2019_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# husquin2019_unformatted_sex <- husquin2019_unformatted_table[2,-1]
+# husquin2019_formatted_sex <- str_sub(husquin2019_unformatted_sex, 9, 15)
+# 
+# #Formatting condition and miscellaneous information.
+# husquin2019_formatted_condition <- rep("Control",156)
+# 
+# husquin2019_formatted_donor <- paste(rep("AD",156),c(1:156),sep="")
+# 
+# husquin2019_unformatted_arrangement <- husquin2019_unformatted_table[3,-1]
+# husquin2019_formatted_arrangement <- str_sub(husquin2019_unformatted_arrangement,8,100)
+# 
+# husquin2019_samples <- data.frame(ID=husquin2019_formatted_samples,
+#                                   Author=rep("Husquin",156),
+#                                   Year=rep(2019,156),
+#                                   Tissue=rep("Blood",156),
+#                                   CellType=rep("Monocytes",156),
+#                                   Age=husquin2019_formatted_ages,
+#                                   Condition=husquin2019_formatted_condition,
+#                                   Sex=husquin2019_formatted_sex,
+#                                   DonorID=husquin2019_formatted_donor,
+#                                   Misc=rep(NA,156))
+# 
+# husquin2019_cpgs <- data.table::fread("Husquin2019/GSE120610_Matrix_processed.csv",
+#                                       header=FALSE)  %>%
+#                                       as.data.frame()
+# row.names(husquin2019_cpgs) <- husquin2019_cpgs$V1
+# husquin2019_cpgs <- husquin2019_cpgs[,-1]
+# husquin2019_cpgs <- husquin2019_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),156)]
+# 
+# colnames(husquin2019_cpgs) <- str_sub(husquin2019_cpgs[1,],7,15)
+# colnames(husquin2019_cpgs) <- husquin2019_formatted_samples
+# husquin2019_cpgs <- husquin2019_cpgs[-1,]
+# 
+# husquin2019_cpgs <- husquin2019_cpgs[rownames(husquin2019_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(husquin2019_cpgs),]
+# 
+# sample_table <- rbind(sample_table,husquin2019_samples)
+# cpg_table <- cbind(cpg_table,husquin2019_cpgs)
+# 
+# gasparoni2018_unformatted_table <- read.table("Gasparoni2018/GSE66351_series_matrix.txt",
+#                                             comment = "!",
+#                                             skip=0,fill=TRUE,nrows = 8)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# gasparoni2018_unformatted_samples <- gasparoni2018_unformatted_table[8,-1]
+# gasparoni2018_formatted_samples <- str_sub(gasparoni2018_unformatted_samples,1,62)[1:190]
+# 
+# #Formatting ages.
+# gasparoni2018_unformatted_ages <- gasparoni2018_unformatted_table[4,-1]
+# gasparoni2018_formatted_ages <- as.numeric(str_sub(gasparoni2018_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# gasparoni2018_unformatted_sex <- gasparoni2018_unformatted_table[5,-1]
+# gasparoni2018_formatted_sex <- str_sub(gasparoni2018_unformatted_sex, 6, 15)
+# 
+# #Formatting condition and miscellaneous information.
+# gasparoni2018_unformatted_condition <- gasparoni2018_unformatted_table[2,-1]
+# gasparoni2018_unformatted_condition <- str_sub(gasparoni2018_unformatted_condition,12,20)
+# gasparoni2018_unformatted_condition[gasparoni2018_unformatted_condition=="CTRL"] <- "Control"
+# gasparoni2018_unformatted_condition[gasparoni2018_unformatted_condition=="AD"] <- "Alzheimers"
+# gasparoni2018_formatted_condition <- gasparoni2018_unformatted_condition
+# 
+# gasparoni2018_unformatted_donor <- gasparoni2018_unformatted_table[6,-1]
+# gasparoni2018_unformatted_donor <- str_sub(gasparoni2018_unformatted_donor,11,30)
+# gasparoni2018_unformatted_donor <- as.numeric(factor(gasparoni2018_unformatted_donor))
+# gasparoni2018_formatted_donor <- paste(rep("AE",190),gasparoni2018_unformatted_donor,sep="")
+# 
+# gasparoni2018_unformatted_misc <- gasparoni2018_unformatted_table[3,-1]
+# gasparoni2018_formatted_misc <- str_sub(gasparoni2018_unformatted_misc,15,200)
+# 
+# gasparoni2018_samples <- data.frame(ID=gasparoni2018_formatted_samples,
+#                                   Author=rep("Gasparoni",190),
+#                                   Year=rep(2018,190),
+#                                   Tissue=rep("Brain",190),
+#                                   CellType=rep("Brain",190),
+#                                   Age=gasparoni2018_formatted_ages,
+#                                   Condition=gasparoni2018_formatted_condition,
+#                                   Sex=gasparoni2018_formatted_sex,
+#                                   DonorID=gasparoni2018_formatted_donor,
+#                                   Misc=gasparoni2018_formatted_misc)
+# 
+# gasparoni2018_cpgs <- read.table("Gasparoni2018/GSE66351_series_matrix.txt",
+#                               comment = "!",
+#                               skip=8,
+#                               fill=TRUE)
+# gasparoni2018_cpgs <- gasparoni2018_cpgs[-c(1:8),]
+# rownames(gasparoni2018_cpgs) <- gasparoni2018_cpgs[,1]
+# gasparoni2018_cpgs <- gasparoni2018_cpgs[,-1]
+# colnames(gasparoni2018_cpgs) <- gasparoni2018_formatted_samples
+# 
+# gasparoni2018_cpgs <- gasparoni2018_cpgs[rownames(gasparoni2018_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(gasparoni2018_cpgs),]
+# 
+# sample_table <- rbind(sample_table,gasparoni2018_samples)
+# cpg_table <- cbind(cpg_table,gasparoni2018_cpgs)
+# 
+# liu2018_unformatted_table <- read.table("Liu2018/GSE106648_series_matrix.txt",
+#                                               comment = "!",
+#                                               skip=0,fill=TRUE,nrows = 5)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# liu2018_unformatted_samples <- liu2018_unformatted_table[5,-1]
+# liu2018_formatted_samples <- str_sub(liu2018_unformatted_samples,1,62)[1:279]
+# 
+# #Formatting ages.
+# liu2018_unformatted_ages <- liu2018_unformatted_table[3,-1]
+# liu2018_formatted_ages <- as.numeric(str_sub(liu2018_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# liu2018_unformatted_sex <- liu2018_unformatted_table[2,-1]
+# liu2018_formatted_sex <- str_sub(liu2018_unformatted_sex, 9, 15)
+# 
+# #Formatting condition and miscellaneous information.
+# liu2018_unformatted_condition <- liu2018_unformatted_table[1,-1]
+# liu2018_unformatted_condition <- str_sub(liu2018_unformatted_condition,17,40)
+# liu2018_unformatted_condition[liu2018_unformatted_condition=="Healthy control"] = "Control"
+# liu2018_unformatted_condition[liu2018_unformatted_condition=="MS case"] = "MS"
+# liu2018_formatted_condition <- liu2018_unformatted_condition
+# 
+# liu2018_formatted_donor <- paste(rep("AF",279),c(279),sep="")
+# 
+# liu2018_samples <- data.frame(ID=liu2018_formatted_samples,
+#                                     Author=rep("Liu",279),
+#                                     Year=rep(2018,279),
+#                                     Tissue=rep("Blood",279),
+#                                     CellType=rep("Blood",279),
+#                                     Age=liu2018_formatted_ages,
+#                                     Condition=liu2018_formatted_condition,
+#                                     Sex=liu2018_formatted_sex,
+#                                     DonorID=liu2018_formatted_donor,
+#                                     Misc=rep(NA,279))
+# 
+# liu2018_cpgs <- read.table("Liu2018/GSE106648_series_matrix.txt",
+#                                  comment = "!",
+#                                  skip=5,
+#                                  fill=TRUE)
+# liu2018_cpgs <- liu2018_cpgs[-c(1:5),]
+# rownames(liu2018_cpgs) <- liu2018_cpgs[,1]
+# liu2018_cpgs <- liu2018_cpgs[,-1]
+# colnames(liu2018_cpgs) <- liu2018_formatted_samples
+# 
+# liu2018_cpgs <- liu2018_cpgs[rownames(liu2018_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(liu2018_cpgs),]
+# 
+# sample_table <- rbind(sample_table,liu2018_samples)
+# cpg_table <- cbind(cpg_table,liu2018_cpgs)
+# 
+# 
+# somineni2018_unformatted_table <- read.table("Somineni2018/GSE112611_series_matrix.txt",
+#                                         comment = "!",
+#                                         skip=0,fill=TRUE,nrows = 6)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# somineni2018_unformatted_samples <- somineni2018_unformatted_table[6,-1]
+# somineni2018_formatted_samples <- str_sub(somineni2018_unformatted_samples,1,62)[1:402]
+# 
+# #Formatting ages.
+# somineni2018_unformatted_ages <- somineni2018_unformatted_table[2,-1]
+# somineni2018_formatted_ages <- as.numeric(str_sub(somineni2018_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# somineni2018_unformatted_sex <- somineni2018_unformatted_table[1,-1]
+# somineni2018_formatted_sex <- str_sub(somineni2018_unformatted_sex, 9, 15)
+# 
+# #Formatting condition and miscellaneous information.
+# somineni2018_unformatted_condition <- somineni2018_unformatted_table[3,-1]
+# somineni2018_unformatted_condition <- str_sub(somineni2018_unformatted_condition,12,40)
+# somineni2018_unformatted_condition[somineni2018_unformatted_condition=="non-IBD control"] = "Control"
+# somineni2018_formatted_condition <- somineni2018_unformatted_condition
+# 
+# somineni2018_formatted_donor <- paste(rep("AG",402),c(1:402),sep="")
+# 
+# somineni2018_formatted_location <- str_sub(somineni2018_unformatted_table[4,-1],1,100)
+# 
+# somineni2018_samples <- data.frame(ID=somineni2018_formatted_samples,
+#                               Author=rep("Somineni",402),
+#                               Year=rep(2018,402),
+#                               Tissue=rep("Blood",402),
+#                               CellType=rep("Blood",402),
+#                               Age=somineni2018_formatted_ages,
+#                               Condition=somineni2018_formatted_condition,
+#                               Sex=somineni2018_formatted_sex,
+#                               DonorID=somineni2018_formatted_donor,
+#                               Misc=rep(NA,402))
+# 
+# somineni2018_cpgs <- data.table::fread("Somineni2018/GSE112611_beta_values.txt",
+#                                       header=FALSE)  %>%
+#                                       as.data.frame()
+# row.names(somineni2018_cpgs) <- somineni2018_cpgs$V1
+# somineni2018_cpgs <- somineni2018_cpgs[,-1]
+# somineni2018_cpgs <- somineni2018_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),402)]
+# colnames(somineni2018_cpgs) <- somineni2018_cpgs[1,]
+# somineni2018_cpgs <- somineni2018_cpgs[-1,]
+# 
+# colnames(somineni2018_cpgs) <- somineni2018_formatted_samples
+# 
+# somineni2018_cpgs <- somineni2018_cpgs[rownames(somineni2018_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(somineni2018_cpgs),]
+# 
+# sample_table <- rbind(sample_table,somineni2018_samples)
+# cpg_table <- cbind(cpg_table,somineni2018_cpgs)
+# 
+# roos2017_unformatted_table <- read.table("Roos2017/GSE90124_series_matrix.txt",
+#                                              comment = "!",
+#                                              skip=0,fill=TRUE,nrows = 6)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# roos2017_unformatted_samples <- roos2017_unformatted_table[3,-1]
+# roos2017_formatted_samples <- str_sub(roos2017_unformatted_samples,1,62)[1:322]
+# 
+# #Formatting ages.
+# roos2017_unformatted_ages <- roos2017_unformatted_table[1,-1]
+# roos2017_formatted_ages <- as.numeric(str_sub(roos2017_unformatted_ages, 15,100))
+# 
+# #Formatting sex.
+# roos2017_formatted_sex <- rep("Female",322)
+# 
+# #Formatting condition and miscellaneous information.
+# roos2017_formatted_condition <- rep("Control",322)
+# 
+# roos2017_formatted_donor <- paste(rep("AH",322),c(1:322),sep="")
+# 
+# roos2017_samples <- data.frame(ID=roos2017_formatted_samples,
+#                                    Author=rep("Roos",322),
+#                                    Year=rep(2017,322),
+#                                    Tissue=rep("Skin",322),
+#                                    CellType=rep("Epithelial",322),
+#                                    Age=roos2017_formatted_ages,
+#                                    Condition=roos2017_formatted_condition,
+#                                    Sex=roos2017_formatted_sex,
+#                                    DonorID=roos2017_formatted_donor,
+#                                    Misc=rep(NA,322))
+# 
+# roos2017_cpgs <- read.table("Roos2017/GSE90124_series_matrix.txt",
+#                                  comment = "!",
+#                                  skip=3,
+#                                  fill=TRUE)
+# roos2017_cpgs <- roos2017_cpgs[-c(1:3),]
+# rownames(roos2017_cpgs) <- roos2017_cpgs[,1]
+# roos2017_cpgs <- roos2017_cpgs[,-1]
+# colnames(roos2017_cpgs) <- roos2017_formatted_samples
+# 
+# roos2017_cpgs <- roos2017_cpgs[rownames(roos2017_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(roos2017_cpgs),]
+# 
+# sample_table <- rbind(sample_table,roos2017_samples)
+# cpg_table <- cbind(cpg_table,roos2017_cpgs)
+# 
+# 
+# kananen2016_unformatted_table <- read.table("Kananen2016/GSE69270_series_matrix.txt",
+#                                          comment = "!",
+#                                          skip=0,fill=TRUE,nrows = 4)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# kananen2016_unformatted_samples <- kananen2016_unformatted_table[4,-1]
+# kananen2016_formatted_samples <- str_sub(kananen2016_unformatted_samples,1,62)[1:184]
+# 
+# #Formatting ages.
+# kananen2016_unformatted_ages <- kananen2016_unformatted_table[1,-1]
+# kananen2016_formatted_ages <- as.numeric(str_sub(kananen2016_unformatted_ages, 14,100))
+# 
+# #Formatting sex.
+# kananen2016_unformatted_sex <- kananen2016_unformatted_table[2,-1]
+# kananen2016_unformatted_sex <- str_sub(kananen2016_unformatted_sex,-1,-1)
+# kananen2016_unformatted_sex[kananen2016_unformatted_sex=="1"] <- "Female"
+# kananen2016_unformatted_sex[kananen2016_unformatted_sex=="0"] <- "Male"
+# kananen2016_formatted_sex <- kananen2016_unformatted_sex
+# 
+# #Formatting condition and miscellaneous information.
+# kananen2016_formatted_condition <- rep("Control",184)
+# 
+# kananen2016_formatted_donor <- paste(rep("AI",184),c(1:184),sep="")
+# 
+# kananen2016_samples <- data.frame(ID=kananen2016_formatted_samples,
+#                                Author=rep("Kananen",184),
+#                                Year=rep(2016,184),
+#                                Tissue=rep("Blood",184),
+#                                CellType=rep("Leukocytes",184),
+#                                Age=kananen2016_formatted_ages,
+#                                Condition=kananen2016_formatted_condition,
+#                                Sex=kananen2016_formatted_sex,
+#                                DonorID=kananen2016_formatted_donor,
+#                                Misc=rep(NA,184))
+# 
+# kananen2016_cpgs <- read.table("Kananen2016/GSE69270_series_matrix.txt",
+#                             comment = "!",
+#                             skip=4,
+#                             fill=TRUE)
+# kananen2016_cpgs <- kananen2016_cpgs[-c(1:4),]
+# rownames(kananen2016_cpgs) <- kananen2016_cpgs[,1]
+# kananen2016_cpgs <- kananen2016_cpgs[,-1]
+# colnames(kananen2016_cpgs) <- kananen2016_formatted_samples
+# 
+# kananen2016_cpgs <- kananen2016_cpgs[rownames(kananen2016_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(kananen2016_cpgs),]
+# 
+# sample_table <- rbind(sample_table,kananen2016_samples)
+# cpg_table <- cbind(cpg_table,kananen2016_cpgs)
+# 
+# cerapio2021_unformatted_table <- read.table("Cerapio2021/GSE136583_series_matrix.txt",
+#                                              comment = "!",
+#                                              skip=0,fill=TRUE,nrows = 5)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# cerapio2021_unformatted_samples <- cerapio2021_unformatted_table[5,-1]
+# cerapio2021_formatted_samples <- str_sub(cerapio2021_unformatted_samples,1,62)[1:62]
+# 
+# #Formatting ages.
+# cerapio2021_unformatted_ages <- cerapio2021_unformatted_table[2,-1]
+# cerapio2021_formatted_ages <- as.numeric(str_sub(cerapio2021_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# cerapio2021_unformatted_sex <- cerapio2021_unformatted_table[3,-1]
+# cerapio2021_unformatted_sex <- str_sub(cerapio2021_unformatted_sex,9,30)
+# cerapio2021_formatted_sex <- cerapio2021_unformatted_sex
+# 
+# #Formatting condition and miscellaneous information.
+# cerapio2021_unformatted_condition <- cerapio2021_unformatted_table[1,-1]
+# cerapio2021_unformatted_condition <- str_sub(cerapio2021_unformatted_condition,9,50)
+# cerapio2021_unformatted_condition[cerapio2021_unformatted_condition=="non-tumor liver"] <- "Control"
+# cerapio2021_formatted_condition <- cerapio2021_unformatted_condition
+# 
+# cerapio2021_formatted_donor <- paste(rep("AJ",62),c(1:62),sep="")
+# 
+# cerapio2021_samples <- data.frame(ID=cerapio2021_formatted_samples,
+#                                    Author=rep("Cerapio",62),
+#                                    Year=rep(2021,62),
+#                                    Tissue=rep("Liver",62),
+#                                    CellType=rep("Hepatocytes",62),
+#                                    Age=cerapio2021_formatted_ages,
+#                                    Condition=cerapio2021_formatted_condition,
+#                                    Sex=cerapio2021_formatted_sex,
+#                                    DonorID=cerapio2021_formatted_donor,
+#                                    Misc=rep(NA,62))
+# 
+# cerapio2021_cpgs <- read.table("Cerapio2021/GSE136583_series_matrix.txt",
+#                                 comment = "!",
+#                                 skip=5,
+#                                 fill=TRUE)
+# cerapio2021_cpgs <- cerapio2021_cpgs[-c(1:5),]
+# rownames(cerapio2021_cpgs) <- cerapio2021_cpgs[,1]
+# cerapio2021_cpgs <- cerapio2021_cpgs[,-1]
+# colnames(cerapio2021_cpgs) <- cerapio2021_formatted_samples
+# 
+# cerapio2021_cpgs <- cerapio2021_cpgs[rownames(cerapio2021_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(cerapio2021_cpgs),]
+# 
+# sample_table <- rbind(sample_table,cerapio2021_samples)
+# cpg_table <- cbind(cpg_table,cerapio2021_cpgs)
+# 
+# 
+# hearn2020_unformatted_table <- read.table("Hearn2020/GSE119078_series_matrix.txt",
+#                                             comment = "!",
+#                                             skip=0,fill=TRUE,nrows = 5)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# hearn2020_unformatted_samples <- hearn2020_unformatted_table[5,-1]
+# hearn2020_formatted_samples <- str_sub(hearn2020_unformatted_samples,1,62)[1:59]
+# 
+# #Formatting ages.
+# hearn2020_unformatted_ages <- hearn2020_unformatted_table[2,-1]
+# hearn2020_formatted_ages <- as.numeric(str_sub(hearn2020_unformatted_ages, 5,100))
+# 
+# #Formatting sex.
+# hearn2020_unformatted_sex <- hearn2020_unformatted_table[1,-1]
+# hearn2020_unformatted_sex <- str_sub(hearn2020_unformatted_sex,9,100)
+# hearn2020_formatted_sex <- hearn2020_unformatted_sex
+# 
+# #Formatting condition and miscellaneous information.
+# hearn2020_unformatted_condition <- hearn2020_unformatted_table[3,-1]
+# hearn2020_unformatted_condition <- str_sub(hearn2020_unformatted_condition,17,40)
+# hearn2020_formatted_condition <- hearn2020_unformatted_condition
+# 
+# hearn2020_formatted_donor <- paste(rep("AK",59),c(1:59),sep="")
+# 
+# hearn2020_samples <- data.frame(ID=hearn2020_formatted_samples,
+#                                   Author=rep("Hearn",59),
+#                                   Year=rep(2020,59),
+#                                   Tissue=rep("Saliva",59),
+#                                   CellType=rep("Epithelial",59),
+#                                   Age=hearn2020_formatted_ages,
+#                                   Condition=hearn2020_formatted_condition,
+#                                   Sex=hearn2020_formatted_sex,
+#                                   DonorID=hearn2020_formatted_donor,
+#                                   Misc=rep(NA,59))
+# 
+# hearn2020_cpgs <- read.table("Hearn2020/GSE119078_series_matrix.txt",
+#                                comment = "!",
+#                                skip=5,
+#                                fill=TRUE)
+# hearn2020_cpgs <- hearn2020_cpgs[-c(1:4),]
+# rownames(hearn2020_cpgs) <- hearn2020_cpgs[,1]
+# hearn2020_cpgs <- hearn2020_cpgs[,-1]
+# colnames(hearn2020_cpgs) <- hearn2020_formatted_samples
+# 
+# hearn2020_cpgs <- hearn2020_cpgs[rownames(hearn2020_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(hearn2020_cpgs),]
+# 
+# sample_table <- rbind(sample_table,hearn2020_samples)
+# cpg_table <- cbind(cpg_table,hearn2020_cpgs)
+# 
+# hong2017_unformatted_table <- read.table("Hong2017/GSE92767_series_matrix.txt",
+#                                           comment = "!",
+#                                           skip=0,fill=TRUE,nrows = 4)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# hong2017_unformatted_samples <- hong2017_unformatted_table[4,-1]
+# hong2017_formatted_samples <- str_sub(hong2017_unformatted_samples,1,62)[1:54]
+# 
+# #Formatting ages.
+# hong2017_unformatted_ages <- hong2017_unformatted_table[1,-1]
+# hong2017_formatted_ages <- as.numeric(str_sub(hong2017_unformatted_ages, 6,100))
+# 
+# #Formatting sex.
+# hong2017_unformatted_sex <- hong2017_unformatted_table[2,-1]
+# hong2017_unformatted_sex <- str_sub(hong2017_unformatted_sex,9,15)
+# hong2017_formatted_sex <- hong2017_unformatted_sex
+# 
+# #Formatting condition and miscellaneous information.
+# hong2017_formatted_condition <- rep("Control",54)
+# 
+# hong2017_formatted_donor <- paste(rep("AL",54),c(1:54),sep="")
+# 
+# hong2017_samples <- data.frame(ID=hong2017_formatted_samples,
+#                                 Author=rep("Hong",54),
+#                                 Year=rep(2017,54),
+#                                 Tissue=rep("Saliva",54),
+#                                 CellType=rep("Epithelial",54),
+#                                 Age=hong2017_formatted_ages,
+#                                 Condition=hong2017_formatted_condition,
+#                                 Sex=hong2017_formatted_sex,
+#                                 DonorID=hong2017_formatted_donor,
+#                                 Misc=rep(NA,54))
+# 
+# hong2017_cpgs <- read.table("Hong2017/GSE92767_series_matrix.txt",
+#                              comment = "!",
+#                              skip=4,
+#                              fill=TRUE)
+# hong2017_cpgs <- hong2017_cpgs[-c(1:4),]
+# rownames(hong2017_cpgs) <- hong2017_cpgs[,1]
+# hong2017_cpgs <- hong2017_cpgs[,-1]
+# colnames(hong2017_cpgs) <- hong2017_formatted_samples
+# 
+# hong2017_cpgs <- hong2017_cpgs[rownames(hong2017_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(hong2017_cpgs),]
+# 
+# sample_table <- rbind(sample_table,hong2017_samples)
+# cpg_table <- cbind(cpg_table,hong2017_cpgs)
+# 
+# 
+# gopalan2017_unformatted_table <- read.table("Gopalan2017/GSE99091-GPL13534_series_matrix.txt",
+#                                          comment = "!",
+#                                          skip=0,fill=TRUE,nrows = 4)
+# 
+# #Formatting sample names, as the header text file is not arranged in a particularly easy way.
+# gopalan2017_unformatted_samples <- gopalan2017_unformatted_table[4,-1]
+# gopalan2017_formatted_samples <- str_sub(gopalan2017_unformatted_samples,1,62)[1:57]
+# 
+# #Formatting ages.
+# gopalan2017_unformatted_ages <- gopalan2017_unformatted_table[2,-1]
+# gopalan2017_formatted_ages <- as.numeric(str_sub(gopalan2017_unformatted_ages, 6,100))
+# 
+# #Formatting sex.
+# gopalan2017_unformatted_sex <- gopalan2017_unformatted_table[1,-1]
+# gopalan2017_unformatted_sex <- str_sub(gopalan2017_unformatted_sex,9,60)
+# gopalan2017_unformatted_sex[gopalan2017_unformatted_sex=="female"] <- "Female"
+# gopalan2017_unformatted_sex[gopalan2017_unformatted_sex=="male"] <- "Male"
+# gopalan2017_formatted_sex <- gopalan2017_unformatted_sex
+# 
+# #Formatting condition and miscellaneous information.
+# gopalan2017_formatted_condition <- rep("Control",57)
+# 
+# gopalan2017_formatted_donor <- paste(rep("AM",57),c(1:57),sep="")
+# 
+# gopalan2017_samples <- data.frame(ID=gopalan2017_formatted_samples,
+#                                Author=rep("Gopalan",57),
+#                                Year=rep(2017,57),
+#                                Tissue=rep("Saliva",57),
+#                                CellType=rep("Epithelial",57),
+#                                Age=gopalan2017_formatted_ages,
+#                                Condition=gopalan2017_formatted_condition,
+#                                Sex=gopalan2017_formatted_sex,
+#                                DonorID=gopalan2017_formatted_donor,
+#                                Misc=rep(NA,57))
+# 
+# gopalan2017_cpgs <- read.table("Gopalan2017/GSE99091-GPL13534_series_matrix.txt",
+#                             comment = "!",
+#                             skip=4,
+#                             fill=TRUE)
+# gopalan2017_cpgs <- gopalan2017_cpgs[-c(1:4),]
+# rownames(gopalan2017_cpgs) <- gopalan2017_cpgs[,1]
+# gopalan2017_cpgs <- gopalan2017_cpgs[,-1]
+# colnames(gopalan2017_cpgs) <- gopalan2017_formatted_samples
+# 
+# gopalan2017_cpgs <- gopalan2017_cpgs[rownames(gopalan2017_cpgs) %in% rownames(cpg_table),]
+# cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(gopalan2017_cpgs),]
+# 
+# sample_table <- rbind(sample_table,gopalan2017_samples)
+# cpg_table <- cbind(cpg_table,gopalan2017_cpgs)
 
 ###########################################################################
+
+cpg_table <- na.omit(cpg_table)
+sample_table <- sample_table[sample_table$ID %in% colnames(cpg_table),]
+cpg_table <- cpg_table[,colnames(cpg_table) %in% sample_table$ID]
+cpg_table <- cpg_table[,unique(colnames(cpg_table))]
 
 healthy_samples <- sample_table[sample_table$Condition=="Control",1]
 healthy_sample_table <- sample_table[sample_table$Condition=="Control",]

@@ -93,7 +93,7 @@ summary(decideTests(fit.reduced))
 diff_exp <-topTable(fit.reduced,coef=8,number=1000000)
 
 #Now we can remove all CpGs that change with differentiation.
-changed_cpgs <- diff_exp[diff_exp$adj.P.Val < .05, ]
+changed_cpgs <- diff_exp[diff_exp$adj.P.Val < .1, ]
 `%!in%` <- Negate(`%in%`)
 filtered_cpgs <- beta_values[(rownames(beta_values) %!in% rownames(changed_cpgs)),]
 
