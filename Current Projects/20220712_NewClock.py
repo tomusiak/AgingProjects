@@ -52,9 +52,9 @@ def main():
     x_validation = trans.fit_transform(x_validation)
 
     eNet = sklearn.linear_model.ElasticNet()
-    repeated_k_fold = sklearn.model_selection.RepeatedKFold(n_splits=10,n_repeats=10)
+    repeated_k_fold = sklearn.model_selection.RepeatedKFold(n_splits=100,n_repeats=10)
     ratios = [.5]
-    alphas = [1e-3, 1e-2, 1e-1, 1.0, 10.0]
+    alphas = [1e-3, 1e-2, 1e-1]
     model = ElasticNetCV(l1_ratio=ratios, alphas=alphas, cv=repeated_k_fold, verbose = 1,n_jobs=-1)
     model.fit(x_training,y_training)
     predicted_training_set_y = model.predict(x_training)
