@@ -104,9 +104,9 @@ colnames(magnaye2022450k_cpgs) <- magnaye2022450k_formatted_samples
 magnaye2022450k_cpgs <- data.frame(magnaye2022450k_cpgs)
 
 magnaye2022EPIC_cpgs <- magnaye2022EPIC_cpgs[rownames(magnaye2022EPIC_cpgs) %in%
-                                                rownames(magnaye2022450k_cpgs),]
+                                               rownames(magnaye2022450k_cpgs),]
 magnaye2022450k_cpgs <- magnaye2022450k_cpgs[rownames(magnaye2022450k_cpgs) %in%
-                                                rownames(magnaye2022EPIC_cpgs),]
+                                               rownames(magnaye2022EPIC_cpgs),]
 shared_cpgs <- rownames(magnaye2022450k_cpgs)
 #Initialize sample table.
 sample_table <- data.frame(ID=character(),
@@ -911,20 +911,17 @@ hannon2021_names <- str_sub(unlist(hannon2021_names),1,500)
 hannon2021_names <- hannon2021_names[2:1869]
 hannon2021_names <- hannon2021_names[rep(c(rep(TRUE, 2- 1), FALSE),934)]
 colnames(hannon2021_cpgs) <- hannon2021_names
-hannon2021_cpgs <- hannon2021_cpgs[,colnames(hannon2021_cpgs) %in% hannon2021_samples$ID]
 
+hannon2021_cpgs <- hannon2021_cpgs[,hannon2021_sample_names]
+colnames(hannon2021_cpgs) <- hannon2021_formatted_samples
+hannon2021_cpgs <- hannon2021_cpgs[,colnames(hannon2021_cpgs) %in%
+                                     hannon2021_samples$ID]
 hannon2021_cpgs <- hannon2021_cpgs[rownames(hannon2021_cpgs) %in% shared_cpgs,]
-
-hannon2021_changed_cpgs <- hannon2021_cpgs[,hannon2021_sample_names]
-colnames(hannon2021_changed_cpgs) <- hannon2021_formatted_samples
-hannon2021_changed_cpgs <- hannon2021_changed_cpgs[,colnames(hannon2021_changed_cpgs) %in%
-                                                     hannon2021_samples$ID]
 # cpg_table <- cpg_table[rownames(cpg_table) %in% rownames(hannon2021_changed_cpgs),]
-
-hannon2021_changed_cpgs$cpg <- rownames(hannon2021_changed_cpgs)
-hannon2021_changed_cpgs <- data.table(hannon2021_changed_cpgs)
+hannon2021_cpgs$cpg <- rownames(hannon2021_cpgs)
+hannon2021_cpgs <- data.table(hannon2021_cpgs)
 sample_table <- rbind(sample_table,hannon2021_samples)
-cpg_table <- merge(cpg_table,hannon2021_changed_cpgs, all=TRUE)
+cpg_table <- merge(cpg_table,hannon2021_cpgs, all=TRUE)
 
 martino2018_unformatted_table <- read.table("Martino2018/GSE114135-GPL23976_series_matrix.txt",
                                             comment = "!",
@@ -983,8 +980,8 @@ sample_table <- rbind(sample_table,martino2018_samples)
 cpg_table <- merge(cpg_table,martino2018_cpgs, all=TRUE)
 
 thompson2020_unformatted_table <- read.table("Thompson2020/GSE146376_series_matrix.txt",
-                                           comment = "!",
-                                           skip=0,fill=TRUE,nrows = 7)
+                                             comment = "!",
+                                             skip=0,fill=TRUE,nrows = 7)
 
 #Formatting sample names, as the header text file is not arranged in a particularly easy way.
 thompson2020_unformatted_samples <- thompson2020_unformatted_table[7,-1]
@@ -1011,30 +1008,30 @@ thompson2020_unformatted_arrangement <- thompson2020_unformatted_table[5,-1]
 thompson2020_formatted_arrangement <- str_sub(thompson2020_unformatted_arrangement,1,100)
 
 thompson2020_samples <- data.frame(ID=thompson2020_formatted_samples,
-                                 Author=rep("Thompson",280),
-                                 Year=rep(2020,280),
-                                 Tissue=rep("Lung",280),
-                                 CellType=rep("Airway Smooth Muscle",280),
-                                 Age=thompson2020_formatted_ages,
-                                 Condition=thompson2020_formatted_condition,
-                                 Sex=thompson2020_formatted_sex,
-                                 DonorID=thompson2020_formatted_donor,
-                                 Misc=rep(NA,280))
+                                   Author=rep("Thompson",280),
+                                   Year=rep(2020,280),
+                                   Tissue=rep("Lung",280),
+                                   CellType=rep("Airway Smooth Muscle",280),
+                                   Age=thompson2020_formatted_ages,
+                                   Condition=thompson2020_formatted_condition,
+                                   Sex=thompson2020_formatted_sex,
+                                   DonorID=thompson2020_formatted_donor,
+                                   Misc=rep(NA,280))
 
 thompson2020_cpgs <- data.table::fread("Thompson2020/GSE146376_ProcessedMethData_70_ForGEO.csv",
-                                     header=FALSE)  %>%
+                                       header=FALSE)  %>%
   as.data.frame()
 row.names(thompson2020_cpgs) <- thompson2020_cpgs$V1
 thompson2020_cpgs <- thompson2020_cpgs[,-1]
 thompson2020_cpgs <- thompson2020_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),280)]
 
-thompson2020_colnames <- read_csv("thompson2020/colnames.csv",
-                                col_names = FALSE)
+thompson2020_colnames <- read_csv("Thompson2020/colnames.csv",
+                                  col_names = FALSE)
 thompson2020_colnames <- str_sub(unlist(thompson2020_colnames[1,]),1,100)
 thompson2020_colnames <- thompson2020_colnames[-1]
 thompson2020_colnames <- thompson2020_colnames[rep(c(rep(TRUE, 2- 1), FALSE),280)]
 colnames(thompson2020_cpgs) <- thompson2020_colnames
-
+thompson2020_formatted_arrangement == colnames(thompson2020_cpgs)
 colnames(thompson2020_cpgs) <- thompson2020_formatted_samples
 
 thompson2020_cpgs <- thompson2020_cpgs[rownames(thompson2020_cpgs) %in% shared_cpgs,]
@@ -1047,12 +1044,12 @@ cpg_table <- merge(cpg_table,thompson2020_cpgs, all=TRUE)
 
 
 zannas2019_unformatted_table <- read.table("Zannas2019/GSE128235_series_matrix.txt",
-                                             comment = "!",
-                                             skip=0,fill=TRUE,nrows = 7)
+                                           comment = "!",
+                                           skip=0,fill=TRUE,nrows = 6)
 
 #Formatting sample names, as the header text file is not arranged in a particularly easy way.
-zannas2019_unformatted_samples <- zannas2019_unformatted_table[7,-1]
-zannas2019_formatted_samples <- str_sub(zannas2019_unformatted_samples,1,62)[1:280]
+zannas2019_unformatted_samples <- zannas2019_unformatted_table[6,-1]
+zannas2019_formatted_samples <- str_sub(zannas2019_unformatted_samples,1,62)[1:537]
 
 #Formatting ages.
 zannas2019_unformatted_ages <- zannas2019_unformatted_table[3,-1]
@@ -1065,40 +1062,41 @@ zannas2019_formatted_sex <- str_sub(zannas2019_unformatted_sex, 6, 30)
 #Formatting condition and miscellaneous information.
 zannas2019_unformatted_condition <- zannas2019_unformatted_table[2,-1]
 zannas2019_formatted_condition <- str_sub(zannas2019_unformatted_condition, 12, 30)
-zannas2019_formatted_condition[zannas2019_formatted_condition=="Vehicle"] <- "Control"
+zannas2019_formatted_condition[zannas2019_formatted_condition=="control"] <- "Control"
+zannas2019_formatted_condition[zannas2019_formatted_condition=="case"] <- "Depression"
 
-zannas2019_unformatted_donor <- zannas2019_unformatted_table[1,-1]
-zannas2019_unformatted_donor <- str_sub(zannas2019_unformatted_donor,8,10)
-zannas2019_formatted_donor <- paste(rep("Y",280),zannas2019_unformatted_donor,sep="")
+zannas2019_formatted_donor <- paste(rep("Y",537),c(1:537),sep="")
 
-zannas2019_unformatted_arrangement <- zannas2019_unformatted_table[5,-1]
-zannas2019_formatted_arrangement <- str_sub(zannas2019_unformatted_arrangement,1,100)
+zannas2019_unformatted_arrangement <- zannas2019_unformatted_table[1,-1]
+zannas2019_formatted_arrangement <- str_sub(zannas2019_unformatted_arrangement,25,100)
 
 zannas2019_samples <- data.frame(ID=zannas2019_formatted_samples,
-                                   Author=rep("Thompson",280),
-                                   Year=rep(2020,280),
-                                   Tissue=rep("Lung",56),
-                                   CellType=rep("Airway Smooth Muscle",56),
-                                   Age=zannas2019_formatted_ages,
-                                   Condition=zannas2019_formatted_condition,
-                                   Sex=zannas2019_formatted_sex,
-                                   DonorID=zannas2019_formatted_donor,
-                                   Misc=rep(NA,280))
+                                 Author=rep("Zannas",537),
+                                 Year=rep(2019,537),
+                                 Tissue=rep("Blood",537),
+                                 CellType=rep("Blood",537),
+                                 Age=zannas2019_formatted_ages,
+                                 Condition=zannas2019_formatted_condition,
+                                 Sex=zannas2019_formatted_sex,
+                                 DonorID=zannas2019_formatted_donor,
+                                 Misc=rep(NA,537))
 
-zannas2019_cpgs <- data.table::fread("zannas2019/GSE146376_ProcessedMethData_70_ForGEO.csv",
-                                       header=FALSE)  %>%
+zannas2019_cpgs <- data.table::fread("Zannas2019/GSE128235_matrix_normalized.txt",
+                                     header=FALSE)  %>%
   as.data.frame()
-row.names(zannas2019_cpgs) <- zannas2019_cpgs$V1
-zannas2019_cpgs <- zannas2019_cpgs[,-1]
-zannas2019_cpgs <- zannas2019_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),280)]
+rownames(zannas2019_cpgs) <- zannas2019_cpgs[,2]
+zannas2019_cpgs <- zannas2019_cpgs[,-c(1,2)]
+zannas2019_cpgs <- zannas2019_cpgs[, rep(c(rep(TRUE, 2- 1), FALSE),537)]
 
-zannas2019_colnames <- read_csv("zannas2019/colnames.csv",
-                                  col_names = FALSE)
+zannas2019_colnames <- read_tsv("Zannas2019/first_line.txt",
+                                col_names = FALSE)
 zannas2019_colnames <- str_sub(unlist(zannas2019_colnames[1,]),1,100)
-zannas2019_colnames <- zannas2019_colnames[-1]
-zannas2019_colnames <- zannas2019_colnames[rep(c(rep(TRUE, 2- 1), FALSE),280)]
+zannas2019_colnames <- zannas2019_colnames[-c(1,2)]
+zannas2019_colnames <- zannas2019_colnames[rep(c(rep(TRUE, 2- 1), FALSE),537)]
+zannas2019_colnames <- str_sub(zannas2019_colnames,7,15)
 colnames(zannas2019_cpgs) <- zannas2019_colnames
-
+zannas2019_cpgs <- zannas2019_cpgs[,zannas2019_formatted_arrangement]
+zannas2019_formatted_arrangement == colnames(zannas2019_cpgs)
 colnames(zannas2019_cpgs) <- zannas2019_formatted_samples
 
 zannas2019_cpgs <- zannas2019_cpgs[rownames(zannas2019_cpgs) %in% shared_cpgs,]
