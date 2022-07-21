@@ -819,7 +819,7 @@ davalos2022_formatted_samples <- str_sub(davalos2022_unformatted_samples,1,62)[2
 
 #Formatting ages.
 davalos2022_unformatted_ages <- davalos2022_unformatted_table[4,-1]
-davalos2022_formatted_ages <- as.numeric(str_sub(davalos2022_unformatted_ages, 13,100))
+davalos2022_formatted_ages <- as.numeric(str_sub(davalos2022_unformatted_ages, 13,15))
 
 #Formatting sex.
 davalos2022_unformatted_sex <- davalos2022_unformatted_table[3,-1]
