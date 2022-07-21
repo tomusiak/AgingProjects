@@ -24,7 +24,17 @@ library(umap)
 require(clusterExperiment)
 library(stringr)
 library(tidyr)
+library(Rfast)
 library(minfi)
+
+#Reading in database data for training and testing.
+complete_cpg_table <- data.table::fread("ClockConstruction/complete_cpg_table.csv",header=TRUE) 
+row.names(complete_cpg_table) <- complete_cpg_table$cpg
+filtered_cpg_table <- complete_cpg_table
+filtered_cpg_table <- filtered_cpg_table[,-c(1,2)]
+complete_sample_table <- read.csv("ClockConstruction/complete_sample_table.csv",row.names=1)
+filtered_cpg_table[filtered_cpg_table == "NULL"] <- NA
+filtered_cpg_table[filtered_cpg_table == "null"] <- NA
 
 #Read in clock data and metadata. Merge them and process them.
 clock_data <- read.csv("subset_data/clock_data.csv")
@@ -67,14 +77,14 @@ umap_plot_df$type <- factor(umap_plot_df$type, levels=c("naive", "central_memory
                                                         "effector_memory","temra"))
 ggplot(
   umap_plot_df,
-  aes(x = X1, y = X2, color=age)) +
+  aes(x = X1, y = X2, color=type)) +
   labs(x="UMAP Component 1", y="UMAP Component 2", title = "UMAP Visualization - Before Filtering") +
   theme_classic() +
-  geom_point() # Plot individual points to make a scatterplot
-ggplot(umap_plot_df,aes(x=type,y=X1, color=age)) + 
+  geom_point(size=8) # Plot individual points to make a scatterplot
+ggplot(umap_plot_df,aes(x=type,y=X1, color=type)) + 
   theme_classic() +
   labs(x="CD8 Cell Subtype", y="UMAP Component 1",title="UMAP Component 1 Tracks Cell Lineage") +
-  geom_point()
+  geom_point(size=8)
 
 #In the figures above, we found that UMAP component 2 seems to correlate with cell
 # differentiation. We can use this to create a "pseudotime analysis" trajectory of bulk
@@ -125,10 +135,10 @@ nodiff_umap_plot_df$type <- factor(nodiff_umap_plot_df$type,
 #Plotting all of this now.
 ggplot(
   nodiff_umap_plot_df,
-  aes(x = X1, y = X2, color=age )) +
+  aes(x = X1, y = X2, color=type )) +
   labs(x="UMAP Component 1", y="UMAP Component 2", title = "UMAP Visualization - After Filtering") +
   theme_classic() +
-  geom_point() # Plot individual points to make a scatterplot
+  geom_point(size=8) # Plot individual points to make a scatterplot
 ggplot(nodiff_umap_plot_df,aes(x=X1,y=X2, color=type)) + 
   theme_classic() +
   labs(x="UMAP Component 2", y="Age",title="UMAP Component 2 Tracks Age") +
@@ -137,6 +147,8 @@ ggplot(nodiff_umap_plot_df,aes(x=age,y=X1)) +
   theme_classic() +
   labs(x="Age", y="UMAP Component 1",title="UMAP Component 1 Tracks Age") +
   geom_point()
+
+# ml_cpg_table <- ml_cpg_table[rownames(ml_cpg_table) %in% filtered_cpgs,]
 
 #Writes list of candidate CpGs to be used for new clock construction.
 write.csv(rownames(filtered_cpgs),"ClockConstruction/nodiff_cpgs.csv")

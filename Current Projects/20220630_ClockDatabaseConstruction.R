@@ -15,11 +15,12 @@ library(methylumi)
 library(minfi)
 library(stringr)
 library(data.table)
+library(ggplot2)
 
-sample_table <- read.csv("ClockConstruction/sample_table.csv",row.names=1)
-cpg_table <- data.table::fread("ClockConstruction/cpg_table.csv",header=TRUE)  %>% as.data.frame()
-row.names(cpg_table) <- cpg_table$V1
-cpg_table <- cpg_table[,-1]
+sample_table <- read.csv("ClockConstruction/complete_sample_table.csv",row.names=1)
+#cpg_table <- data.table::fread("ClockConstruction/cpg_table.csv",header=TRUE)  %>% as.data.frame()
+#row.names(cpg_table) <- cpg_table$V1
+#cpg_table <- cpg_table[,-1]
 
 #Reading in the 450K dataset from Magnaye 2022 et al.
 magnaye2022EPIC_unformatted_table <- read.table("Magnaye2022/GSE201872-GPL21145_series_matrix.txt",
@@ -1845,18 +1846,62 @@ cpg_table <- merge(cpg_table,gopalan2017_cpgs, all=TRUE)
 
 ###########################################################################
 
-cpg_table <- na.omit(cpg_table)
-sample_table <- sample_table[sample_table$ID %in% colnames(cpg_table),]
-cpg_table <- cpg_table[,colnames(cpg_table) %in% sample_table$ID]
-cpg_table <- cpg_table[,unique(colnames(cpg_table))]
+authors <- sample_table %>% group_by(Author) %>% dplyr::summarize(Number=n())
+ggplot(authors, aes(x="", y=Number, fill=Author)) + 
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start=0) + theme_classic() 
+
+tissues <- sample_table %>% group_by(Tissue) %>% dplyr::summarize(Number=n())
+ggplot(tissues, aes(x="", y=Number, fill=Tissue)) + 
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start=0) + theme_classic() 
+
+sample_table$Condition[sample_table$Condition=="COVID"] <- "COVID-19"
+sample_table$Condition[sample_table$Condition=="Schizophrenis"] <- "Schizophrenia"
+sample_table$Condition[sample_table$Condition=="Combined"] <- "IL13+IL17"
+sample_table$Condition[sample_table$Condition=="hepatocellular carcinoma"] <- "Hepatocellular Carcinoma"
+condition <- sample_table %>% group_by(Condition) %>% dplyr::summarize(Number=n())
+ggplot(condition, aes(x="", y=Number, fill=Condition)) + 
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start=0) + theme_classic() 
+
+
+sample_table$Sex[sample_table$Sex=="F"] <- "Female"
+sample_table$Sex[sample_table$Sex=="female"] <- "Female"
+sample_table$Sex[sample_table$Sex=="H"] <- "Male"
+sample_table$Sex[sample_table$Sex=="M"] <- "Male"
+sample_table$Sex[sample_table$Sex=="male"] <- "Male"
+sample_table$Sex[sample_table$Sex=="Unsure"] <- "Female"
+
+sex <- sample_table %>% group_by(Sex) %>% dplyr::summarize(Number=n())
+ggplot(sex, aes(x="", y=Number, fill=Sex)) + 
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start=0) + theme_classic() 
+
+sample_table$CellType[sample_table$CellType=="Brain Cells"] <- "Brain"
+sample_table$CellType[sample_table$CellType=="Epithelial (Colorectal)"] <- "Epithelial"
+sample_table$CellType[sample_table$CellType=="Epithelial Cells"] <- "Epithelial"
+sample_table$CellType[sample_table$CellType=="Epithelial Cells"] <- "Epithelial"
+sample_table$CellType[sample_table$CellType=="Epithelial Cells"] <- "Epithelial"
+sample_table$CellType[sample_table$CellType=="Airway Smooth Muscle"] <- "Muscle"
+sample_table$CellType[sample_table$CellType=="Muscle Cells"] <- "Muscle"
+
+cell_type <- sample_table %>% group_by(CellType) %>% dplyr::summarize(Number=n())
+
+#############################################################################
+
+# cpg_table <- na.omit(cpg_table)
+# sample_table <- sample_table[sample_table$ID %in% colnames(cpg_table),]
+# cpg_table <- cpg_table[,colnames(cpg_table) %in% sample_table$ID]
+# cpg_table <- cpg_table[,unique(colnames(cpg_table))]
 
 healthy_samples <- sample_table[sample_table$Condition=="Control",1]
 healthy_sample_table <- sample_table[sample_table$Condition=="Control",]
 healthy_cpg_table <- cpg_table[,colnames(cpg_table) %in% healthy_samples]
 
-data.table::fwrite(cpg_table,"ClockConstruction/cpg_table.csv", 
+data.table::fwrite(cpg_table,"ClockConstruction/complete_cpg_table.csv", 
                    row.names = TRUE)
-data.table::fwrite(sample_table,"ClockConstruction/sample_table.csv",
+data.table::fwrite(sample_table,"ClockConstruction/complete_sample_table.csv",
                    row.names = TRUE)
 data.table::fwrite(healthy_cpg_table,"ClockConstruction/healthy_cpg_table.csv", 
                    row.names = TRUE)
